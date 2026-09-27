@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "defaultSets": 3,
+  "defaultRest": 90,
+  "workouts": [
+    {
+      "id": "A",
+      "name": "Allenamento A",
+      "blocks": [
+        { "rest": 120, "exercises": [
+          { "id": "panca-piana", "name": "Panca piana", "type": "weight", "reps": { "min": 8, "max": 10 } }
+        ]},
+        { "exercises": [
+          { "id": "curl-bilanciere", "name": "Curl bilanciere", "type": "weight", "reps": { "min": 10, "max": 12 } },
+          { "id": "french-press", "name": "French press", "type": "weight", "reps": { "min": 10, "max": 12 } }
+        ]}
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Allenamento B",
+      "blocks": [
+        { "rest": 120, "exercises": [
+          { "id": "squat", "name": "Squat", "type": "weight", "reps": { "min": 8, "max": 10 } }
+        ]},
+        { "exercises": [
+          { "id": "plank", "name": "Plank", "type": "time", "duration": { "min": 45, "max": 60 } }
+        ]}
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Allenamento C",
+      "blocks": [
+        { "exercises": [
+          { "id": "trazioni", "name": "Trazioni", "type": "bodyweight", "sets": 4, "reps": { "min": 6, "max": 8 } }
+        ]},
+        { "exercises": [
+          { "id": "panca-piana", "name": "Panca piana", "type": "weight", "reps": { "min": 10, "max": 12 } }
+        ]}
+      ]
+    }
+  ]
+}
