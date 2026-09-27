@@ -20,14 +20,12 @@ import {
   updateSet,
 } from '../session.js';
 import { escapeHtml, formatDuration, formatNumber, formatRange, formatSet, parseNumberInput } from '../format.js';
-import { beep, vibrate } from '../device.js';
 import { faceSvg } from './faces.js';
 
 const REPEAT_DELAY_MS = 400;
 const REPEAT_INTERVAL_MS = 90;
 const TICK_MS = 250;
 const ENDING_MS = 10000;
-const REST_VIBRATION = [200, 100, 200];
 
 const FIELD_LABELS = { weight: 'peso', reps: 'ripetizioni', duration: 'durata' };
 const UNITS = { weight: 'kg × rip', bodyweight: 'zavorra kg × rip', time: 'secondi' };
@@ -36,8 +34,8 @@ const outcomeClass = (outcome) => (outcome === 'fallita' || outcome === 'carico-
 
 const targetText = (target) => `${target.sets} × ${formatRange(target[countKey(target.type)])}`;
 
-const stepperHtml = (field, value, outcome, setNumber) => {
-  const label = `${FIELD_LABELS[field]} serie ${setNumber}`;
+const stepperHtml = (field, value, outcome, name, setNumber) => {
+  const label = `${FIELD_LABELS[field]} ${name} serie ${setNumber}`;
   return `
     <div class="stepper">
       <button type="button" class="stepper__btn" data-action="step" data-field="${field}" data-dir="-1" aria-label="Diminuisci ${label}">−</button>
@@ -55,17 +53,18 @@ const setHtml = (session, exerciseId, setIndex, previous, showName) => {
   const prev = previous?.[setIndex] ?? null;
   const prevText = prev ? formatSet(prev, target.type) : '';
   const number = setIndex + 1;
+  const name = escapeHtml(target.name);
   return `
     <div class="set" data-exercise="${escapeHtml(exerciseId)}" data-set="${setIndex}">
-      ${showName ? `<p class="set__name">${escapeHtml(target.name)}</p>` : ''}
+      ${showName ? `<p class="set__name">${name}</p>` : ''}
       <div class="set__fields">
-        ${target.type === 'time' ? '' : stepperHtml('weight', set.weight, null, number)}
-        ${stepperHtml(key, set[key], outcome, number)}
+        ${target.type === 'time' ? '' : stepperHtml('weight', set.weight, null, name, number)}
+        ${stepperHtml(key, set[key], outcome, name, number)}
       </div>
       <div class="set__meta">
         <span class="set__index">${number}</span>
         <span class="set__prev">${prev && prevText !== formatSet(set, target.type) ? `prec. ${escapeHtml(prevText)}` : ''}</span>
-        <div class="efforts" role="group" aria-label="Fatica serie ${number}">
+        <div class="efforts" role="group" aria-label="Fatica ${name} serie ${number}">
           ${EFFORTS.map(
             (effort) => `<button type="button" class="effort effort--${effort}" data-action="effort" data-effort="${effort}"
               aria-pressed="${set.effort === effort}" aria-label="${EFFORT_LABELS[effort]}">${faceSvg(effort)}</button>`,
@@ -145,6 +144,7 @@ export const renderSession = (root, ctx) => {
   );
   const expanded = new Set();
   let repeat = null;
+  let suppressClick = false;
 
   root.innerHTML = sessionHtml(initial, expanded, previousById);
   const restBar = root.querySelector('.rest-bar');
@@ -186,59 +186,59 @@ export const renderSession = (root, ctx) => {
     refreshOutcome(row, exerciseId, setIndex);
   };
 
+  const stepInfo = (button) => ({ ...setTargetOf(button), field: button.dataset.field, dir: Number(button.dataset.dir) });
+
+  // Restituisce il blocco da ridisegnare se la ripetizione rapida è partita, altrimenti null.
   const cancelRepeat = () => {
     if (!repeat) return null;
     clearTimeout(repeat.timeout);
     clearInterval(repeat.interval);
-    const { blockIndex } = repeat;
+    const { blockIndex, fired } = repeat;
     repeat = null;
-    return blockIndex;
+    return fired ? blockIndex : null;
   };
   const stopRepeat = () => {
     const blockIndex = cancelRepeat();
     if (blockIndex !== null) redrawBlock(blockIndex);
+    return blockIndex !== null;
   };
 
   const tick = () => {
-    const state = ctx.getState();
-    const session = state.activeSession;
-    if (!session) return;
+    const session = getSession();
     const now = new Date();
-    const status = restStatus(session, now);
-    if (status === 'running') {
-      const remaining = restRemainingMs(session, now);
-      restTime.textContent = formatDuration(Math.ceil(remaining / 1000));
-      restBar.classList.toggle('is-ending', remaining <= ENDING_MS);
-      restBar.hidden = false;
+    if (!session || restStatus(session, now) !== 'running') {
+      restBar.hidden = true;
       return;
     }
-    restBar.hidden = true;
-    if (status === 'idle') return;
-    if (status === 'expired-live') {
-      vibrate(REST_VIBRATION);
-      if (state.settings.sound) beep();
-    }
-    ctx.commit(clearRest(state));
+    const remaining = restRemainingMs(session, now);
+    restTime.textContent = formatDuration(Math.ceil(remaining / 1000));
+    restBar.classList.toggle('is-ending', remaining <= ENDING_MS);
+    restBar.hidden = false;
   };
 
+  // Il primo passo avviene sul click, così uno scroll che parte da −/+ (pointercancel) non cambia il valore.
+  // pointerdown arma solo la pressione prolungata.
   const onPointerDown = (event) => {
     const button = event.target.closest('[data-action="step"]');
     if (!button) return;
-    event.preventDefault();
-    stopRepeat();
-    const info = {
-      ...setTargetOf(button),
-      field: button.dataset.field,
-      dir: Number(button.dataset.dir),
-    };
-    applyStep(info);
+    cancelRepeat();
+    suppressClick = false;
+    const info = stepInfo(button);
     repeat = {
       blockIndex: blockIndexOf(button),
+      fired: false,
       interval: null,
       timeout: setTimeout(() => {
+        repeat.fired = true;
+        applyStep(info);
         repeat.interval = setInterval(() => applyStep(info), REPEAT_INTERVAL_MS);
       }, REPEAT_DELAY_MS),
     };
+  };
+
+  // Dopo una pressione prolungata il click che segue il rilascio non deve aggiungere un passo.
+  const onPointerUp = () => {
+    if (stopRepeat()) suppressClick = true;
   };
 
   const onClick = (event) => {
@@ -248,10 +248,10 @@ export const renderSession = (root, ctx) => {
     const now = new Date();
 
     if (action === 'step') {
-      // Tastiera (Invio/Spazio): click senza pointerdown.
-      if (event.detail === 0) {
-        applyStep({ ...setTargetOf(target), field: target.dataset.field, dir: Number(target.dataset.dir) });
-      }
+      // Il click da tastiera (detail 0) non segue mai una pressione prolungata.
+      const suppressed = suppressClick && event.detail !== 0;
+      suppressClick = false;
+      if (!suppressed) applyStep(stepInfo(target));
       return;
     }
     if (action === 'effort') {
@@ -336,7 +336,7 @@ export const renderSession = (root, ctx) => {
   root.addEventListener('input', onInput);
   root.addEventListener('change', onChange);
   root.addEventListener('keydown', onKeyDown);
-  window.addEventListener('pointerup', stopRepeat);
+  window.addEventListener('pointerup', onPointerUp);
   window.addEventListener('pointercancel', stopRepeat);
 
   return () => {
@@ -347,7 +347,7 @@ export const renderSession = (root, ctx) => {
     root.removeEventListener('input', onInput);
     root.removeEventListener('change', onChange);
     root.removeEventListener('keydown', onKeyDown);
-    window.removeEventListener('pointerup', stopRepeat);
+    window.removeEventListener('pointerup', onPointerUp);
     window.removeEventListener('pointercancel', stopRepeat);
   };
 };

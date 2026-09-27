@@ -1,11 +1,14 @@
 import { loadProgram } from './program.js';
 import { loadState, saveState } from './store.js';
-import { keepScreenOn, unlockAudio } from './device.js';
+import { clearRest, restStatus } from './session.js';
+import { beep, keepScreenOn, unlockAudio, vibrate } from './device.js';
 import { renderHome } from './views/home.js';
 import { renderSession } from './views/session.js';
 import { renderHistory } from './views/history.js';
 
 const NOTICE_MS = 4000;
+const REST_WATCH_MS = 250;
+const REST_VIBRATION = [200, 100, 200];
 
 const createNotifier = (element) => {
   let timeout = null;
@@ -35,6 +38,23 @@ const requestPersistence = async () => {
   } catch {
     return false;
   }
+};
+
+// Fine recupero a livello app: l'avviso arriva su qualunque vista.
+// Un recupero scaduto da più di REST_LIVE_GRACE_MS (es. app riaperta) si chiude senza avviso.
+const watchRest = (ctx) => {
+  const check = () => {
+    const state = ctx.getState();
+    const status = restStatus(state.activeSession, new Date());
+    if (status !== 'expired-live' && status !== 'expired-stale') return;
+    if (status === 'expired-live') {
+      vibrate(REST_VIBRATION);
+      if (state.settings.sound) beep();
+    }
+    ctx.commit(clearRest(state));
+  };
+  check();
+  setInterval(check, REST_WATCH_MS);
 };
 
 const startRouter = (root, ctx) => {
@@ -90,6 +110,7 @@ const main = async () => {
   };
 
   requestPersistence().then((granted) => { ctx.persistDenied = !granted; });
+  watchRest(ctx);
   startRouter(root, ctx);
 };
 
