@@ -69,6 +69,15 @@ const isSession = (session) => {
   // Validate blocks structure
   if (!session.blocks.every(isBlock)) return false;
 
+  // Validate every target value
+  if (!Object.values(session.targets).every(isTarget)) return false;
+
+  // Validate every entries value
+  if (!Object.values(session.entries).every(isSetList)) return false;
+
+  // Validate that every entries key has a matching targets key
+  if (!Object.keys(session.entries).every((id) => id in session.targets)) return false;
+
   // Validate that all exerciseIds in blocks have corresponding targets and entries
   const blockExerciseIds = new Set();
   session.blocks.forEach((block) => {

@@ -150,3 +150,71 @@ test('importState rifiuta finished session con entries non array', () => {
     isStoreError('sessions non valide'),
   );
 });
+
+test('importState rifiuta finished session con entries extra non array', () => {
+  const p = program();
+  let state = playSession(p, createEmptyState(), 'A', { panca: [{ weight: 60, effort: 'giusta' }] },
+    '2026-09-20T18:00:00.000Z', '2026-09-20T19:00:00.000Z');
+  const corrupted = {
+    ...state,
+    sessions: [{ ...state.sessions[0], entries: { ...state.sessions[0].entries, garbage: 'not-an-array' } }],
+  };
+  assert.throws(
+    () => importState(JSON.stringify(corrupted)),
+    isStoreError('sessions non valide'),
+  );
+});
+
+test('importState rifiuta finished session con entries extra senza targets', () => {
+  const p = program();
+  let state = playSession(p, createEmptyState(), 'A', { panca: [{ weight: 60, effort: 'giusta' }] },
+    '2026-09-20T18:00:00.000Z', '2026-09-20T19:00:00.000Z');
+  const corrupted = {
+    ...state,
+    sessions: [{ ...state.sessions[0], entries: { ...state.sessions[0].entries, garbage: [] } }],
+  };
+  assert.throws(
+    () => importState(JSON.stringify(corrupted)),
+    isStoreError('sessions non valide'),
+  );
+});
+
+test('importState rifiuta finished session con targets extra non object', () => {
+  const p = program();
+  let state = playSession(p, createEmptyState(), 'A', { panca: [{ weight: 60, effort: 'giusta' }] },
+    '2026-09-20T18:00:00.000Z', '2026-09-20T19:00:00.000Z');
+  const corrupted = {
+    ...state,
+    sessions: [{ ...state.sessions[0], targets: { ...state.sessions[0].targets, garbage: 'not-an-object' } }],
+  };
+  assert.throws(
+    () => importState(JSON.stringify(corrupted)),
+    isStoreError('sessions non valide'),
+  );
+});
+
+test('importState rifiuta activeSession con entries extra non array', () => {
+  const p = program();
+  const state = startSession(p, createEmptyState(), 'A', at('2026-09-27T18:00:00.000Z'));
+  const corrupted = {
+    ...state,
+    activeSession: { ...state.activeSession, entries: { ...state.activeSession.entries, garbage: 'not-an-array' } },
+  };
+  assert.throws(
+    () => importState(JSON.stringify(corrupted)),
+    isStoreError('activeSession non valida'),
+  );
+});
+
+test('importState rifiuta activeSession con entries extra senza targets', () => {
+  const p = program();
+  const state = startSession(p, createEmptyState(), 'A', at('2026-09-27T18:00:00.000Z'));
+  const corrupted = {
+    ...state,
+    activeSession: { ...state.activeSession, entries: { ...state.activeSession.entries, garbage: [] } },
+  };
+  assert.throws(
+    () => importState(JSON.stringify(corrupted)),
+    isStoreError('activeSession non valida'),
+  );
+});
