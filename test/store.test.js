@@ -100,3 +100,53 @@ test('isBackupDue', () => {
   assert.equal(isBackupDue({ ...withSessions, lastExportAt: '2026-09-17T10:00:00.000Z' }, now), false);
   assert.equal(isBackupDue({ ...withSessions, lastExportAt: '2026-08-27T09:00:00.000Z' }, now), true);
 });
+
+test('importState rifiuta entries non array', () => {
+  const p = program();
+  const state = startSession(p, createEmptyState(), 'A', at('2026-09-27T18:00:00.000Z'));
+  const corrupted = { ...state, activeSession: { ...state.activeSession, entries: { panca: 'x' } } };
+  assert.throws(
+    () => importState(JSON.stringify(corrupted)),
+    isStoreError('activeSession non valida'),
+  );
+});
+
+test('importState rifiuta blocks senza exerciseIds array', () => {
+  const p = program();
+  const state = startSession(p, createEmptyState(), 'A', at('2026-09-27T18:00:00.000Z'));
+  const corrupted = { ...state, activeSession: { ...state.activeSession, blocks: [{ rest: 120 }] } };
+  assert.throws(
+    () => importState(JSON.stringify(corrupted)),
+    isStoreError('activeSession non valida'),
+  );
+});
+
+test('importState rifiuta activeSession con exerciseId in blocks ma non in entries', () => {
+  const p = program();
+  const state = startSession(p, createEmptyState(), 'A', at('2026-09-27T18:00:00.000Z'));
+  const corrupted = {
+    ...state,
+    activeSession: {
+      ...state.activeSession,
+      blocks: [{ rest: 120, exerciseIds: ['panca', 'missing'] }],
+    },
+  };
+  assert.throws(
+    () => importState(JSON.stringify(corrupted)),
+    isStoreError('activeSession non valida'),
+  );
+});
+
+test('importState rifiuta finished session con entries non array', () => {
+  const p = program();
+  let state = playSession(p, createEmptyState(), 'A', { panca: [{ weight: 60, effort: 'giusta' }] },
+    '2026-09-20T18:00:00.000Z', '2026-09-20T19:00:00.000Z');
+  const corrupted = {
+    ...state,
+    sessions: [{ ...state.sessions[0], entries: { panca: 'x' } }],
+  };
+  assert.throws(
+    () => importState(JSON.stringify(corrupted)),
+    isStoreError('sessions non valide'),
+  );
+});

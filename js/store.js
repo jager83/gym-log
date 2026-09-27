@@ -37,14 +37,50 @@ export const migrate = (raw) => {
 
 const isObject = (value) => Boolean(value) && typeof value === 'object';
 
-const isSession = (session) =>
-  isObject(session) &&
-  typeof session.id === 'string' &&
-  typeof session.workoutId === 'string' &&
-  typeof session.startedAt === 'string' &&
-  Array.isArray(session.blocks) &&
-  isObject(session.targets) &&
-  isObject(session.entries);
+const isBlock = (block) =>
+  isObject(block) &&
+  Array.isArray(block.exerciseIds) &&
+  block.exerciseIds.every((id) => typeof id === 'string') &&
+  Number.isInteger(block.rest) &&
+  block.rest > 0;
+
+const isTarget = (target) =>
+  isObject(target) &&
+  typeof target.name === 'string' &&
+  typeof target.type === 'string';
+
+const isSetList = (setList) =>
+  Array.isArray(setList) &&
+  setList.every((set) => isObject(set));
+
+const isSession = (session) => {
+  if (
+    !isObject(session) ||
+    typeof session.id !== 'string' ||
+    typeof session.workoutId !== 'string' ||
+    typeof session.startedAt !== 'string' ||
+    !Array.isArray(session.blocks) ||
+    !isObject(session.targets) ||
+    !isObject(session.entries)
+  ) {
+    return false;
+  }
+
+  // Validate blocks structure
+  if (!session.blocks.every(isBlock)) return false;
+
+  // Validate that all exerciseIds in blocks have corresponding targets and entries
+  const blockExerciseIds = new Set();
+  session.blocks.forEach((block) => {
+    block.exerciseIds.forEach((id) => blockExerciseIds.add(id));
+  });
+  for (const id of blockExerciseIds) {
+    if (!isTarget(session.targets[id])) return false;
+    if (!isSetList(session.entries[id])) return false;
+  }
+
+  return true;
+};
 
 export const validateState = (state) => {
   if (!Array.isArray(state.sessions) || !state.sessions.every((s) => isSession(s) && typeof s.endedAt === 'string')) {
