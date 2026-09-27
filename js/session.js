@@ -1,0 +1,171 @@
+import { countKey, findWorkout } from './program.js';
+import { isDone } from './metrics.js';
+
+export const EFFORTS = ['facile', 'giusta', 'dura'];
+export const EFFORT_LABELS = { facile: 'Facile', giusta: 'Giusta', dura: 'Dura' };
+export const STEPS = { weight: 0.5, reps: 1, duration: 5 };
+export const REST_ADJUST_SECONDS = 15;
+export const REST_LIVE_GRACE_MS = 3000;
+
+const isoAfter = (timeMs, seconds) => new Date(timeMs + seconds * 1000).toISOString();
+
+const withSession = (state, patch) =>
+  state.activeSession ? { ...state, activeSession: { ...state.activeSession, ...patch } } : state;
+
+export const nextWorkoutId = (program, sessions) => {
+  const last = sessions.at(-1);
+  const index = last ? program.workouts.findIndex((workout) => workout.id === last.workoutId) : -1;
+  if (index === -1) return program.workouts[0].id;
+  return program.workouts[(index + 1) % program.workouts.length].id;
+};
+
+export const lastDoneByWorkout = (sessions) =>
+  sessions.reduce((result, session) => ({ ...result, [session.workoutId]: session.endedAt }), {});
+
+export const lastDoneSets = (sessions, exerciseId) => {
+  for (let index = sessions.length - 1; index >= 0; index -= 1) {
+    const done = (sessions[index].entries[exerciseId] ?? []).filter(isDone);
+    if (done.length) return done;
+  }
+  return null;
+};
+
+const prefillSet = (exercise, previous, setIndex) => {
+  const source = previous ? previous[setIndex] ?? previous.at(-1) : null;
+  const key = countKey(exercise.type);
+  const set = { [key]: exercise[key].max, effort: null };
+  if (exercise.type === 'weight') set.weight = source?.weight ?? null;
+  if (exercise.type === 'bodyweight') set.weight = source?.weight ?? 0;
+  return set;
+};
+
+export const startSession = (program, state, workoutId, now) => {
+  if (state.activeSession) throw new Error('Sessione già aperta');
+  const workout = findWorkout(program, workoutId);
+  if (!workout) throw new Error(`Allenamento sconosciuto: ${workoutId}`);
+
+  const blocks = [];
+  const targets = {};
+  const entries = {};
+  workout.blocks.forEach((block) => {
+    blocks.push({ rest: block.rest, exerciseIds: block.exercises.map((exercise) => exercise.id) });
+    block.exercises.forEach((exercise) => {
+      const { id, ...target } = exercise;
+      const key = countKey(exercise.type);
+      targets[id] = { ...target, [key]: { ...exercise[key] } };
+      const previous = lastDoneSets(state.sessions, id);
+      entries[id] = Array.from({ length: exercise.sets }, (_, setIndex) => prefillSet(exercise, previous, setIndex));
+    });
+  });
+
+  return {
+    ...state,
+    activeSession: {
+      id: `s_${now.getTime().toString(36)}`,
+      workoutId,
+      workoutName: workout.name,
+      programVersion: program.version,
+      startedAt: now.toISOString(),
+      restEndsAt: null,
+      blocks,
+      targets,
+      entries,
+    },
+  };
+};
+
+export const interleaveSets = (block, targets) => {
+  const rounds = Math.max(...block.exerciseIds.map((exerciseId) => targets[exerciseId].sets));
+  const order = [];
+  for (let setIndex = 0; setIndex < rounds; setIndex += 1) {
+    block.exerciseIds.forEach((exerciseId) => {
+      if (setIndex < targets[exerciseId].sets) order.push({ exerciseId, setIndex });
+    });
+  }
+  return order;
+};
+
+const blockOf = (session, exerciseId) => session.blocks.find((block) => block.exerciseIds.includes(exerciseId)) ?? null;
+
+export const shouldStartRest = (session, exerciseId, setIndex) => {
+  const block = blockOf(session, exerciseId);
+  if (!block) return false;
+  const order = interleaveSets(block, session.targets);
+  const position = order.findIndex((item) => item.exerciseId === exerciseId && item.setIndex === setIndex);
+  if (position === -1 || position === order.length - 1) return false;
+  return order[position + 1].setIndex !== setIndex;
+};
+
+export const clampValue = (field, value) => {
+  if (value === null || value === undefined || Number.isNaN(value)) return null;
+  if (field === 'weight') return Math.max(0, Math.round(value * 2) / 2);
+  return Math.max(0, Math.round(value));
+};
+
+export const stepValue = (field, value, direction) => clampValue(field, (value ?? 0) + direction * STEPS[field]);
+
+const applyPatch = (set, patch) =>
+  Object.entries(patch).reduce(
+    (next, [field, value]) => ({
+      ...next,
+      [field]: field === 'effort' ? (EFFORTS.includes(value) ? value : null) : clampValue(field, value),
+    }),
+    set,
+  );
+
+export const updateSet = (state, exerciseId, setIndex, patch, now) => {
+  const session = state.activeSession;
+  const current = session?.entries[exerciseId]?.[setIndex];
+  if (!current) return state;
+
+  const next = applyPatch(current, patch);
+  const sets = session.entries[exerciseId].map((set, index) => (index === setIndex ? next : set));
+  const startsRest = !isDone(current) && isDone(next) && shouldStartRest(session, exerciseId, setIndex);
+  const restEndsAt = startsRest ? isoAfter(now.getTime(), blockOf(session, exerciseId).rest) : session.restEndsAt;
+
+  return withSession(state, { restEndsAt, entries: { ...session.entries, [exerciseId]: sets } });
+};
+
+export const currentBlockIndex = (session) => {
+  const index = session.blocks.findIndex((block) =>
+    block.exerciseIds.some((exerciseId) => !session.entries[exerciseId].every(isDone)),
+  );
+  return index === -1 ? session.blocks.length - 1 : index;
+};
+
+export const startRest = (state, seconds, now) => withSession(state, { restEndsAt: isoAfter(now.getTime(), seconds) });
+
+export const extendRest = (state, seconds) => {
+  const endsAt = state.activeSession?.restEndsAt;
+  if (!endsAt) return state;
+  return withSession(state, { restEndsAt: isoAfter(Date.parse(endsAt), seconds) });
+};
+
+export const clearRest = (state) => withSession(state, { restEndsAt: null });
+
+export const restRemainingMs = (session, now) =>
+  session?.restEndsAt ? Math.max(0, Date.parse(session.restEndsAt) - now.getTime()) : 0;
+
+export const restStatus = (session, now) => {
+  if (!session?.restEndsAt) return 'idle';
+  const overdue = now.getTime() - Date.parse(session.restEndsAt);
+  if (overdue < 0) return 'running';
+  return overdue <= REST_LIVE_GRACE_MS ? 'expired-live' : 'expired-stale';
+};
+
+export const hasDoneSets = (session) => Object.values(session.entries).some((sets) => sets.some(isDone));
+
+export const discardSession = (state) => ({ ...state, activeSession: null });
+
+export const finishSession = (state, now) => {
+  const session = state.activeSession;
+  if (!session) return state;
+  if (!hasDoneSets(session)) return discardSession(state);
+  return {
+    ...state,
+    activeSession: null,
+    sessions: [...state.sessions, { ...session, restEndsAt: null, endedAt: now.toISOString() }],
+  };
+};
+
+export const setSound = (state, enabled) => ({ ...state, settings: { ...state.settings, sound: enabled } });
