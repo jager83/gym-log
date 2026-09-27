@@ -218,3 +218,68 @@ test('importState rifiuta activeSession con entries extra senza targets', () => 
     isStoreError('activeSession non valida'),
   );
 });
+
+const withActive = (patchSession) => {
+  const state = startSession(program(), createEmptyState(), 'A', at('2026-09-27T18:00:00.000Z'));
+  return JSON.stringify({ ...state, activeSession: patchSession(state.activeSession) });
+};
+
+const withPanca = (patchTarget, patchSets = (sets) => sets) =>
+  withActive((session) => ({
+    ...session,
+    targets: { ...session.targets, panca: patchTarget(session.targets.panca) },
+    entries: { ...session.entries, panca: patchSets(session.entries.panca) },
+  }));
+
+test('importState rifiuta target senza reps', () => {
+  const text = withPanca(({ reps, ...target }) => target);
+  assert.throws(() => importState(text), isStoreError('activeSession non valida'));
+});
+
+test('importState rifiuta target con type sconosciuto', () => {
+  const text = withPanca((target) => ({ ...target, type: 'cardio' }));
+  assert.throws(() => importState(text), isStoreError('activeSession non valida'));
+});
+
+test('importState rifiuta target con range non valido', () => {
+  const inverted = withPanca((target) => ({ ...target, reps: { min: 10, max: 8 } }));
+  const decimal = withPanca((target) => ({ ...target, reps: { min: 8.5, max: 10 } }));
+  assert.throws(() => importState(inverted), isStoreError('activeSession non valida'));
+  assert.throws(() => importState(decimal), isStoreError('activeSession non valida'));
+});
+
+test('importState rifiuta sets non intero', () => {
+  const text = withPanca((target) => ({ ...target, sets: '<img src=x onerror=alert(1)>' }));
+  assert.throws(() => importState(text), isStoreError('activeSession non valida'));
+});
+
+test('importState rifiuta entries più corte di sets', () => {
+  const text = withPanca((target) => target, (sets) => sets.slice(0, 1));
+  assert.throws(() => importState(text), isStoreError('activeSession non valida'));
+});
+
+test('importState rifiuta effort sconosciuto', () => {
+  const text = withPanca((target) => target, (sets) => sets.map((set) => ({ ...set, effort: 'boh' })));
+  assert.throws(() => importState(text), isStoreError('activeSession non valida'));
+});
+
+test('importState rifiuta weight non numerico', () => {
+  const text = withPanca((target) => target, (sets) => sets.map((set) => ({ ...set, weight: 'x' })));
+  assert.throws(() => importState(text), isStoreError('activeSession non valida'));
+});
+
+test('importState rifiuta una sessione terminata con set non valido', () => {
+  const state = playSession(program(), createEmptyState(), 'A', { panca: [{ weight: 60, effort: 'giusta' }] },
+    '2026-09-20T18:00:00.000Z', '2026-09-20T19:00:00.000Z');
+  const [session] = state.sessions;
+  const corrupted = {
+    ...state,
+    sessions: [{ ...session, entries: { ...session.entries, panca: session.entries.panca.map((set) => ({ ...set, effort: 'boh' })) } }],
+  };
+  assert.throws(() => importState(JSON.stringify(corrupted)), isStoreError('sessions non valide'));
+});
+
+test('importState rifiuta lastExportAt non stringa', () => {
+  const text = JSON.stringify({ ...createEmptyState(), lastExportAt: 5 });
+  assert.throws(() => importState(text), isStoreError('lastExportAt non valido'));
+});

@@ -1,3 +1,6 @@
+import { EXERCISE_TYPES, countKey } from './program.js';
+import { EFFORTS } from './session.js';
+
 export const STORAGE_KEY = 'gym-log';
 export const SCHEMA_VERSION = 1;
 export const BACKUP_REMINDER_DAYS = 30;
@@ -44,14 +47,29 @@ const isBlock = (block) =>
   Number.isInteger(block.rest) &&
   block.rest > 0;
 
+const isCount = (value) => Number.isInteger(value) && value >= 0;
+
+const isRange = (range) => isObject(range) && isCount(range.min) && isCount(range.max) && range.min <= range.max;
+
 const isTarget = (target) =>
   isObject(target) &&
   typeof target.name === 'string' &&
-  typeof target.type === 'string';
+  EXERCISE_TYPES.includes(target.type) &&
+  Number.isInteger(target.sets) &&
+  target.sets > 0 &&
+  isRange(target[countKey(target.type)]);
 
-const isSetList = (setList) =>
+const isOptionalNumber = (value) => value === null || value === undefined || typeof value === 'number';
+
+const isSet = (set) =>
+  isObject(set) &&
+  (set.effort === null || EFFORTS.includes(set.effort)) &&
+  ['weight', 'reps', 'duration'].every((field) => isOptionalNumber(set[field]));
+
+const isSetList = (setList, target) =>
   Array.isArray(setList) &&
-  setList.every((set) => isObject(set));
+  setList.length === target.sets &&
+  setList.every(isSet);
 
 const isSession = (session) => {
   if (
@@ -72,11 +90,11 @@ const isSession = (session) => {
   // Validate every target value
   if (!Object.values(session.targets).every(isTarget)) return false;
 
-  // Validate every entries value
-  if (!Object.values(session.entries).every(isSetList)) return false;
-
-  // Validate that every entries key has a matching targets key
-  if (!Object.keys(session.entries).every((id) => id in session.targets)) return false;
+  // Validate that every entries key has a matching target and one set per target set
+  const entriesMatchTargets = Object.entries(session.entries).every(
+    ([id, setList]) => Object.hasOwn(session.targets, id) && isSetList(setList, session.targets[id]),
+  );
+  if (!entriesMatchTargets) return false;
 
   // Validate that all exerciseIds in blocks have corresponding targets and entries
   const blockExerciseIds = new Set();
@@ -85,7 +103,7 @@ const isSession = (session) => {
   });
   for (const id of blockExerciseIds) {
     if (!isTarget(session.targets[id])) return false;
-    if (!isSetList(session.entries[id])) return false;
+    if (!isSetList(session.entries[id], session.targets[id])) return false;
   }
 
   return true;
@@ -97,6 +115,7 @@ export const validateState = (state) => {
   }
   if (state.activeSession !== null && !isSession(state.activeSession)) throw new StoreError('activeSession non valida');
   if (!isObject(state.settings) || typeof state.settings.sound !== 'boolean') throw new StoreError('settings non validi');
+  if (state.lastExportAt !== null && typeof state.lastExportAt !== 'string') throw new StoreError('lastExportAt non valido');
   return state;
 };
 
