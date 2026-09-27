@@ -269,6 +269,289 @@ a {
   gap: 8px;
 }
 
+/* Sessione */
+.legend {
+  display: flex;
+  gap: 16px;
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend .face {
+  width: 20px;
+  height: 20px;
+}
+
+.legend .face--facile {
+  color: var(--easy);
+}
+
+.legend .face--giusta {
+  color: var(--ok);
+}
+
+.legend .face--dura {
+  color: var(--hard);
+}
+
+.block {
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.block--done {
+  opacity: 0.8;
+}
+
+.block__tag {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.block__title {
+  margin: 0;
+  font-size: 18px;
+}
+
+.block__target {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.block__summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.round__label {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.set {
+  padding: 8px 0;
+}
+
+.set + .set {
+  border-top: 1px solid var(--line);
+}
+
+.round__label + .set {
+  border-top: 0;
+}
+
+.set__name {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.set__fields {
+  display: flex;
+  gap: 8px;
+}
+
+.set__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.set__index {
+  width: 16px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.set__prev {
+  flex: 1;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.stepper {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.stepper__btn {
+  flex: none;
+  width: var(--tap);
+  height: var(--tap);
+  border: 0;
+  background: none;
+  font-size: 22px;
+  user-select: none;
+}
+
+.stepper__input {
+  flex: 1;
+  min-width: 0;
+  height: var(--tap);
+  border: 0;
+  background: none;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.stepper__input.is-fallita {
+  color: var(--hard);
+}
+
+.stepper__input.is-carico-basso {
+  color: var(--low);
+}
+
+.efforts {
+  display: flex;
+}
+
+.effort {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+}
+
+.face {
+  width: 32px;
+  height: 32px;
+  transition: transform 0.15s;
+}
+
+.face__head {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+
+.face__eye {
+  fill: currentColor;
+}
+
+.face__mouth {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.effort--facile[aria-pressed="true"] {
+  color: var(--easy);
+}
+
+.effort--giusta[aria-pressed="true"] {
+  color: var(--ok);
+}
+
+.effort--dura[aria-pressed="true"] {
+  color: var(--hard);
+}
+
+.effort[aria-pressed="true"] .face {
+  transform: scale(1.12);
+}
+
+.effort[aria-pressed="true"] .face__head {
+  fill: currentColor;
+}
+
+.effort[aria-pressed="true"] .face__eye {
+  fill: var(--surface);
+}
+
+.effort[aria-pressed="true"] .face__mouth {
+  stroke: var(--surface);
+}
+
+.session__footer {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.session__actions {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+}
+
+.rest-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  background: var(--text);
+  color: var(--bg);
+}
+
+.rest-bar[hidden] {
+  display: none;
+}
+
+.rest-bar.is-ending {
+  background: var(--hard);
+  color: #ffffff;
+}
+
+.rest-bar__time {
+  flex: 1;
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rest-bar button {
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  font-weight: 600;
+}
+
 /* Tablet */
 @media (min-width: 769px) {
   .app {
