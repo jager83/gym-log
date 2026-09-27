@@ -109,3 +109,17 @@ test('exerciseHistory usa i target del giorno e salta le sessioni senza serie fa
 test('retiredExercises elenca gli esercizi con storico non più in scheda', () => {
   assert.deepEqual(retiredExercises(program(), sessions), [{ id: 'stacco', name: 'Stacco' }]);
 });
+
+test('retiredExercises ignora gli esercizi fuori scheda senza serie fatte', () => {
+  const withSkipped = [
+    ...sessions,
+    {
+      id: 's4',
+      workoutId: 'C',
+      endedAt: '2026-09-26T19:00:00.000Z',
+      targets: { croci: { name: 'Croci', type: 'weight', sets: 1, reps: { min: 10, max: 12 } } },
+      entries: { croci: [{ weight: 12, reps: 12, effort: null }] },
+    },
+  ];
+  assert.deepEqual(retiredExercises(program(), withSkipped), [{ id: 'stacco', name: 'Stacco' }]);
+});

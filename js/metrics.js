@@ -61,8 +61,8 @@ export const retiredExercises = (program, sessions) => {
   );
   const retired = new Map();
   sessions.forEach((session) => {
-    Object.keys(session.entries).forEach((exerciseId) => {
-      if (!inProgram.has(exerciseId)) retired.set(exerciseId, session.targets[exerciseId].name);
+    Object.entries(session.entries).forEach(([exerciseId, sets]) => {
+      if (!inProgram.has(exerciseId) && sets.some(isDone)) retired.set(exerciseId, session.targets[exerciseId].name);
     });
   });
   return [...retired].map(([id, name]) => ({ id, name }));
