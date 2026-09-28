@@ -55,7 +55,7 @@ const detailHtml = (program, sessions, exerciseId) => {
   const history = exerciseHistory(sessions, exerciseId);
   const name = findExercise(program, exerciseId)?.name ?? history.at(-1)?.name ?? exerciseId;
   const header = headerHtml(name, '#/history', 'Torna allo storico');
-  const loadNote = exerciseLoad(program, sessions, exerciseId) === 'per-dumbbell' ? '<p class="muted">peso a manubrio</p>' : '';
+  const loadNote = exerciseLoad(program, sessions, exerciseId) === 'per-dumbbell' ? '<p class="history__load">peso a manubrio</p>' : '';
   if (!history.length) return `<section class="history">${header}${loadNote}<p class="muted">Nessuna sessione registrata.</p></section>`;
 
   const { type } = history.at(-1);
@@ -80,7 +80,7 @@ const detailHtml = (program, sessions, exerciseId) => {
       ${header}
       ${loadNote}
       <p class="history__metric">${metricLabel}</p>
-      ${chart}
+      ${chart ? `<div class="chart-card">${chart}</div>` : ''}
       <ul class="log">${log}</ul>
     </section>`;
 };

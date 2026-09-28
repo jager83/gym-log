@@ -872,51 +872,94 @@ input:focus-visible {
 }
 
 /* Storico */
-.history__group {
-  margin: 16px 0 4px;
-  color: var(--ink-3);
-  font-size: 13px;
-  letter-spacing: 0.06em;
+.history__group,
+.history__metric,
+.log__date {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .07em;
   text-transform: uppercase;
+  color: var(--ink-3);
 }
 
-.history__list {
+.history__group {
+  margin: 24px 0 8px;
+}
+
+.history__list,
+.log {
   margin: 0;
-  padding: 0;
+  padding: 0 16px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
   list-style: none;
+}
+
+.history__list > li + li,
+.log__item + .log__item {
+  border-top: 1.5px solid var(--line);
 }
 
 .history__item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: var(--tap);
-  padding: 0 4px;
-  border-bottom: 1px solid var(--line);
+  gap: 12px;
+  min-height: 56px;
   color: var(--ink);
+  font-weight: 600;
   text-decoration: none;
 }
 
-.history__metric {
-  margin: 16px 0 4px;
-  color: var(--ink-3);
+.history__item .muted {
+  flex: none;
   font-size: 14px;
+  font-weight: 400;
+}
+
+.history__load {
+  display: inline-flex;
+  margin-bottom: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.history__metric {
+  margin: 8px 0 8px;
+}
+
+.chart-card {
+  padding: 12px 8px 4px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
 }
 
 .chart {
   display: block;
   width: 100%;
   height: auto;
+  overflow: visible;
 }
 
 .chart-line {
   fill: none;
   stroke: var(--accent);
-  stroke-width: 2;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .chart-dot {
   fill: var(--accent);
+  stroke: var(--surface);
+  stroke-width: 1.5;
 }
 
 .chart-grid {
@@ -925,38 +968,31 @@ input:focus-visible {
 
 .chart-axis {
   fill: var(--ink-3);
+  font-family: var(--mono);
   font-size: 11px;
 }
 
 .log {
-  margin: 16px 0 0;
-  padding: 0;
-  list-style: none;
+  margin-top: 16px;
 }
 
 .log__item {
   display: grid;
-  gap: 2px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.log__date {
-  color: var(--ink-3);
-  font-size: 13px;
+  gap: 6px;
+  padding: 12px 0;
 }
 
 .log__sets {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 12px;
+  gap: 6px 14px;
   font-variant-numeric: tabular-nums;
 }
 
 .log__set {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .log__set.is-fallita {
