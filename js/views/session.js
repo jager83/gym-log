@@ -293,7 +293,10 @@ export const renderSession = (root, ctx) => {
       return;
     }
     if (action === 'finish') {
-      if (!hasDoneSets(getSession()) && !window.confirm('Nessuna serie fatta: la sessione verrà scartata. Continuare?')) return;
+      const message = hasDoneSets(getSession())
+        ? 'Terminare l\'allenamento? Non potrai più modificarlo.'
+        : 'Nessuna serie fatta: la sessione verrà scartata. Continuare?';
+      if (!window.confirm(message)) return;
       ctx.commit(finishSession(ctx.getState(), now));
       ctx.navigate('#/');
       return;
