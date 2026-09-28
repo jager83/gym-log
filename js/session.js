@@ -151,11 +151,22 @@ export const updateSet = (state, exerciseId, setIndex, patch, now) => {
   const next = applyPatch(current, patch);
   const sets = session.entries[exerciseId].map((set, index) => (index === setIndex ? next : set));
   const blockIndex = blockIndexOf(session, exerciseId);
+
+  // Un recupero attivo si chiude prima di applicare la patch: se la serie modificata appartiene
+  // a un blocco diverso da quello in recupero (qualunque campo), o se la patch segna la fatica
+  // (null -> valore, qualunque blocco: si sta chiudendo una serie mentre si riposava un'altra).
+  const marksEffort = current.effort === null && next.effort !== null;
+  const closesRest = session.restEndsAt !== null && (marksEffort || blockIndex !== session.restBlockIndex);
+
+  // Poi si applica C1: se la serie appena segnata chiude un giro, parte il recupero nuovo
+  // (vince su closesRest: si può chiudere il vecchio recupero e aprirne subito uno nuovo).
   const startsRest = !isDone(current) && isDone(next) && shouldStartRest(session, exerciseId, setIndex);
 
   return withSession(state, {
-    restEndsAt: startsRest ? isoAfter(now.getTime(), session.blocks[blockIndex].rest) : session.restEndsAt,
-    restBlockIndex: startsRest ? blockIndex : session.restBlockIndex,
+    restEndsAt: startsRest
+      ? isoAfter(now.getTime(), session.blocks[blockIndex].rest)
+      : closesRest ? null : session.restEndsAt,
+    restBlockIndex: startsRest ? blockIndex : closesRest ? null : session.restBlockIndex,
     entries: { ...session.entries, [exerciseId]: sets },
   });
 };

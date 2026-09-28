@@ -233,6 +233,61 @@ test('updateSet nel superset avvia il recupero solo a fine giro, con il restBloc
   assert.equal(state.activeSession.restBlockIndex, 1);
 });
 
+test('updateSet (C3): un blocco diverso da quello in recupero lo chiude, lo stesso blocco no', () => {
+  let state = startSession(program(), emptyState(), 'A', at(T0));
+  state = updateSet(state, 'panca', 0, { effort: 'giusta' }, at(T0));
+  state = updateSet(state, 'panca', 1, { effort: 'giusta' }, at(T0));
+  // Ultima serie di panca (blocco 0, non finale): C1, il recupero parte.
+  state = updateSet(state, 'panca', 2, { effort: 'giusta' }, at(T0));
+  assert.equal(state.activeSession.restBlockIndex, 0);
+  assert.notEqual(state.activeSession.restEndsAt, null);
+
+  // Stesso blocco (0): modificare il peso non chiude il recupero (si prepara la serie dopo).
+  const beforeSameBlock = state.activeSession.restEndsAt;
+  state = updateSet(state, 'panca', 2, { weight: 60 }, at(T0));
+  assert.equal(state.activeSession.restEndsAt, beforeSameBlock);
+  assert.equal(state.activeSession.restBlockIndex, 0);
+
+  // Blocco diverso (1): modificare il peso del curl chiude il recupero del blocco 0.
+  state = updateSet(state, 'curl', 0, { weight: 20 }, at(T0));
+  assert.equal(state.activeSession.restEndsAt, null);
+  assert.equal(state.activeSession.restBlockIndex, null);
+});
+
+test('updateSet (C3): la fatica segnata chiude sempre il recupero attivo, anche nello stesso blocco', () => {
+  let state = startSession(program(), emptyState(), 'A', at(T0));
+  state = updateSet(state, 'curl', 0, { effort: 'giusta' }, at(T0));
+  // Fine giro 0 (curl+trazioni): parte il recupero, restBlockIndex 1.
+  state = updateSet(state, 'trazioni', 0, { effort: 'giusta' }, at(T0));
+  assert.equal(state.activeSession.restBlockIndex, 1);
+  assert.notEqual(state.activeSession.restEndsAt, null);
+
+  // curl,1 è il primo esercizio del giro 1: non chiude il giro, ma la fatica segnata chiude
+  // comunque il recupero precedente (anche se è nello stesso blocco); nessun nuovo recupero.
+  state = updateSet(state, 'curl', 1, { effort: 'giusta' }, at(T0));
+  assert.equal(state.activeSession.restEndsAt, null);
+  assert.equal(state.activeSession.restBlockIndex, null);
+
+  // trazioni,1 chiude il giro 1: parte un nuovo recupero, con il restBlockIndex giusto (1).
+  state = updateSet(state, 'trazioni', 1, { effort: 'giusta' }, at(T0));
+  assert.notEqual(state.activeSession.restEndsAt, null);
+  assert.equal(state.activeSession.restBlockIndex, 1);
+});
+
+test('updateSet (C3): ultima serie di un blocco non finale avvia il recupero, dell\'ultimo blocco no', () => {
+  let state = startSession(program(), emptyState(), 'A', at(T0));
+  [0, 1, 2].forEach((index) => { state = updateSet(state, 'panca', index, { effort: 'giusta' }, at(T0)); });
+  assert.notEqual(state.activeSession.restEndsAt, null, 'ultima serie di panca (blocco non finale): il recupero parte');
+
+  [0, 1, 2].forEach((index) => {
+    state = updateSet(state, 'curl', index, { effort: 'giusta' }, at(T0));
+    state = updateSet(state, 'trazioni', index, { effort: 'giusta' }, at(T0));
+  });
+  state = updateSet(state, 'trazioni', 3, { effort: 'giusta' }, at(T0));
+  assert.equal(state.activeSession.restEndsAt, null, 'ultima serie dell\'ultimo blocco: fine allenamento, nessun recupero');
+  assert.equal(state.activeSession.restBlockIndex, null);
+});
+
 test('updateSet applica il clamp e accetta null', () => {
   let state = startSession(program(), emptyState(), 'A', at(T0));
   state = updateSet(state, 'panca', 0, { weight: 62.3, reps: 9.6 }, at(T0));
