@@ -163,6 +163,12 @@ export const exportState = (state, now) => {
 
 export const importState = (text) => parseState(text);
 
+// Il testo grezzo di localStorage[STORAGE_KEY], invariato, per farlo scaricare all'utente quando è corrotto.
+export const rawBackup = (text, now) => ({
+  filename: `gym-log-grezzo-${toDateStamp(now)}.json`,
+  json: text,
+});
+
 // Un'altra scheda dello stesso origin ha scritto localStorage[STORAGE_KEY]: ricostruisce lo stato da adottare.
 export const stateFromStorageEvent = (key, newValue) => {
   if (key !== STORAGE_KEY) return null;

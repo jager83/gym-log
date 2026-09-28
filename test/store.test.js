@@ -8,6 +8,7 @@ import {
   importState,
   isBackupDue,
   loadState,
+  rawBackup,
   saveState,
   stateFromStorageEvent,
   toDateStamp,
@@ -286,6 +287,14 @@ test('stateFromStorageEvent: chiave diversa, cancellazione, dati validi e non va
   const state = createEmptyState();
   assert.deepEqual(stateFromStorageEvent(STORAGE_KEY, JSON.stringify(state)), state);
   assert.throws(() => stateFromStorageEvent(STORAGE_KEY, '{'), isStoreError('Dati non validi: JSON illeggibile'));
+});
+
+test('rawBackup produce il nome file grezzo e lascia il testo invariato', () => {
+  const now = new Date(2026, 8, 27, 10, 0);
+  const text = '{ rotto';
+  const { filename, json } = rawBackup(text, now);
+  assert.equal(filename, 'gym-log-grezzo-2026-09-27.json');
+  assert.equal(json, text);
 });
 
 test('importState rifiuta lastExportAt non stringa', () => {

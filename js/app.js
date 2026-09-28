@@ -1,7 +1,7 @@
 import { loadProgram } from './program.js';
-import { StoreError, loadState, saveState, stateFromStorageEvent } from './store.js';
+import { STORAGE_KEY, StoreError, loadState, rawBackup, saveState, stateFromStorageEvent } from './store.js';
 import { clearRest, restStatus } from './session.js';
-import { beep, keepScreenOn, unlockAudio, vibrate } from './device.js';
+import { beep, downloadText, keepScreenOn, unlockAudio, vibrate } from './device.js';
 import { renderHome } from './views/home.js';
 import { renderSession } from './views/session.js';
 import { renderHistory } from './views/history.js';
@@ -22,9 +22,22 @@ const createNotifier = (element) => {
   };
 };
 
-const showFatal = (root, message) => {
-  root.innerHTML = '<section class="fatal"><h1>Errore</h1><p></p></section>';
+// `rawText`: contenuto grezzo di localStorage[STORAGE_KEY], se leggibile. Il pulsante di scarico
+// compare solo in quel caso; il contenuto salvato non viene mai letto due volte né modificato.
+const showFatal = (root, message, rawText) => {
+  const hasBackup = typeof rawText === 'string';
+  root.innerHTML = `
+    <section class="fatal">
+      <h1>Errore</h1>
+      <p></p>
+      ${hasBackup ? '<button type="button" class="button" data-action="download-backup">Scarica dati salvati</button>' : ''}
+    </section>`;
   root.querySelector('p').textContent = message;
+  if (!hasBackup) return;
+  root.querySelector('[data-action="download-backup"]').addEventListener('click', () => {
+    const { filename, json } = rawBackup(rawText, new Date());
+    downloadText(filename, json);
+  });
 };
 
 const registerServiceWorker = () => {
@@ -106,12 +119,24 @@ const main = async () => {
   keepScreenOn(() => notify('Schermo: il blocco automatico resta attivo'));
 
   let program;
-  let state;
   try {
     program = await loadProgram();
-    state = loadState(window.localStorage);
   } catch (error) {
     showFatal(root, error.message);
+    return;
+  }
+
+  let state;
+  try {
+    state = loadState(window.localStorage);
+  } catch (error) {
+    let rawText = null;
+    try {
+      rawText = window.localStorage.getItem(STORAGE_KEY);
+    } catch {
+      rawText = null;
+    }
+    showFatal(root, error.message, rawText === null ? undefined : rawText);
     return;
   }
 
