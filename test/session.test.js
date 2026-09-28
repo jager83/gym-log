@@ -57,6 +57,7 @@ test('startSession al primo avvio: struttura, target copiati, precompilato vuoto
   assert.equal(session.programVersion, 2);
   assert.equal(session.startedAt, T0);
   assert.equal(session.restEndsAt, null);
+  assert.equal(session.restBlockIndex, null);
   assert.deepEqual(session.blocks, [
     { rest: 120, exerciseIds: ['panca'] },
     { rest: 90, exerciseIds: ['curl', 'trazioni'] },
@@ -211,8 +212,10 @@ test('updateSet avvia il recupero solo alla prima segnatura della fatica', () =>
   let state = startSession(program(), emptyState(), 'A', at(T0));
   state = updateSet(state, 'panca', 0, { effort: 'giusta' }, at(T0));
   assert.equal(state.activeSession.restEndsAt, '2026-09-27T18:02:00.000Z');
+  assert.equal(state.activeSession.restBlockIndex, 0);
 
   state = clearRest(state);
+  assert.equal(state.activeSession.restBlockIndex, null);
   state = updateSet(state, 'panca', 0, { effort: 'dura' }, at(T0));
   assert.equal(state.activeSession.restEndsAt, null);
 
@@ -221,12 +224,13 @@ test('updateSet avvia il recupero solo alla prima segnatura della fatica', () =>
   assert.equal(state.activeSession.entries.panca[0].effort, null);
 });
 
-test('updateSet nel superset avvia il recupero solo a fine giro', () => {
+test('updateSet nel superset avvia il recupero solo a fine giro, con il restBlockIndex del blocco', () => {
   let state = startSession(program(), emptyState(), 'A', at(T0));
   state = updateSet(state, 'curl', 0, { effort: 'giusta' }, at(T0));
   assert.equal(state.activeSession.restEndsAt, null);
   state = updateSet(state, 'trazioni', 0, { effort: 'giusta' }, at(T0));
   assert.equal(state.activeSession.restEndsAt, '2026-09-27T18:01:30.000Z');
+  assert.equal(state.activeSession.restBlockIndex, 1);
 });
 
 test('updateSet applica il clamp e accetta null', () => {
@@ -272,10 +276,14 @@ test('timer: start, extend, clear, remaining e stati', () => {
   assert.equal(restStatus(state.activeSession, at(T0)), 'idle');
   assert.equal(extendRest(state, 15), state);
 
-  state = startRest(state, 60, at(T0));
+  // startRest prende il blockIndex del blocco che ha avviato il recupero (C2): la vista passa
+  // currentBlockIndex(session), qui simuliamo il blocco 0.
+  state = startRest(state, 60, at(T0), 0);
   assert.equal(state.activeSession.restEndsAt, '2026-09-27T18:01:00.000Z');
+  assert.equal(state.activeSession.restBlockIndex, 0);
   state = extendRest(state, 15);
   assert.equal(state.activeSession.restEndsAt, '2026-09-27T18:01:15.000Z');
+  assert.equal(state.activeSession.restBlockIndex, 0, 'extendRest mantiene il restBlockIndex');
   assert.equal(restRemainingMs(state.activeSession, at('2026-09-27T18:01:00.000Z')), 15000);
   assert.equal(restStatus(state.activeSession, at('2026-09-27T18:01:00.000Z')), 'running');
   assert.equal(restStatus(state.activeSession, at('2026-09-27T18:01:16.000Z')), 'expired-live');
@@ -283,10 +291,11 @@ test('timer: start, extend, clear, remaining e stati', () => {
 
   state = clearRest(state);
   assert.equal(state.activeSession.restEndsAt, null);
+  assert.equal(state.activeSession.restBlockIndex, null);
 });
 
 test('timer scaduto ad app chiusa è stale, niente avviso tardivo', () => {
-  const state = startRest(startSession(program(), emptyState(), 'A', at(T0)), 60, at(T0));
+  const state = startRest(startSession(program(), emptyState(), 'A', at(T0)), 60, at(T0), 0);
   assert.equal(restStatus(state.activeSession, at('2026-09-27T18:30:00.000Z')), 'expired-stale');
   assert.equal(restStatus(null, at(T0)), 'idle');
 });
@@ -300,6 +309,7 @@ test('finishSession sposta la sessione nello storico', () => {
   assert.equal(state.sessions.length, 1);
   assert.equal(state.sessions[0].endedAt, T1);
   assert.equal(state.sessions[0].restEndsAt, null);
+  assert.equal(state.sessions[0].restBlockIndex, null);
 });
 
 test('finishSession senza serie fatte scarta la sessione', () => {

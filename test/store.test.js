@@ -59,6 +59,27 @@ test('validateState accetta activeSession.bodyWeight numero > 0, null o assente'
   assert.doesNotThrow(() => importState(JSON.stringify({ ...state, activeSession: sessionWithoutBodyWeight })));
 });
 
+test('validateState accetta activeSession.restBlockIndex intero >= 0, null o assente', () => {
+  const p = program();
+  const state = startSession(p, createEmptyState(), 'A', at('2026-09-27T18:00:00.000Z'));
+  const withRestBlockIndex = (restBlockIndex) => ({ ...state, activeSession: { ...state.activeSession, restBlockIndex } });
+  assert.doesNotThrow(() => importState(JSON.stringify(withRestBlockIndex(0))));
+  assert.doesNotThrow(() => importState(JSON.stringify(withRestBlockIndex(1))));
+  assert.doesNotThrow(() => importState(JSON.stringify(withRestBlockIndex(null))));
+  const { restBlockIndex, ...sessionWithoutRestBlockIndex } = state.activeSession;
+  assert.doesNotThrow(() => importState(JSON.stringify({ ...state, activeSession: sessionWithoutRestBlockIndex })));
+});
+
+test('validateState rifiuta activeSession.restBlockIndex non valido', () => {
+  const p = program();
+  const state = startSession(p, createEmptyState(), 'A', at('2026-09-27T18:00:00.000Z'));
+  const withRestBlockIndex = (restBlockIndex) =>
+    JSON.stringify({ ...state, activeSession: { ...state.activeSession, restBlockIndex } });
+  assert.throws(() => importState(withRestBlockIndex(-1)), isStoreError('activeSession non valida'));
+  assert.throws(() => importState(withRestBlockIndex(1.5)), isStoreError('activeSession non valida'));
+  assert.throws(() => importState(withRestBlockIndex('0')), isStoreError('activeSession non valida'));
+});
+
 test('validateState rifiuta activeSession.bodyWeight non valido', () => {
   const p = program();
   const state = startSession(p, createEmptyState(), 'A', at('2026-09-27T18:00:00.000Z'));

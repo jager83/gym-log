@@ -65,6 +65,8 @@ const isOptionalNumber = (value) => value === null || value === undefined || typ
 const isOptionalPositiveNumber = (value) =>
   value === null || value === undefined || (typeof value === 'number' && value > 0);
 
+const isOptionalNonNegativeInt = (value) => value === null || value === undefined || isCount(value);
+
 const isSet = (set) =>
   isObject(set) &&
   (set.effort === null || EFFORTS.includes(set.effort)) &&
@@ -82,6 +84,7 @@ const isSession = (session) => {
     typeof session.workoutId !== 'string' ||
     typeof session.startedAt !== 'string' ||
     !isOptionalPositiveNumber(session.bodyWeight) ||
+    !isOptionalNonNegativeInt(session.restBlockIndex) ||
     !Array.isArray(session.blocks) ||
     !isObject(session.targets) ||
     !isObject(session.entries)

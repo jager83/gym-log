@@ -90,6 +90,7 @@ export const startSession = (program, state, workoutId, now) => {
       programVersion: program.version,
       startedAt: now.toISOString(),
       restEndsAt: null,
+      restBlockIndex: null,
       bodyWeight: state.settings.bodyWeight ?? null,
       blocks,
       targets,
@@ -149,12 +150,14 @@ export const updateSet = (state, exerciseId, setIndex, patch, now) => {
 
   const next = applyPatch(current, patch);
   const sets = session.entries[exerciseId].map((set, index) => (index === setIndex ? next : set));
+  const blockIndex = blockIndexOf(session, exerciseId);
   const startsRest = !isDone(current) && isDone(next) && shouldStartRest(session, exerciseId, setIndex);
-  const restEndsAt = startsRest
-    ? isoAfter(now.getTime(), session.blocks[blockIndexOf(session, exerciseId)].rest)
-    : session.restEndsAt;
 
-  return withSession(state, { restEndsAt, entries: { ...session.entries, [exerciseId]: sets } });
+  return withSession(state, {
+    restEndsAt: startsRest ? isoAfter(now.getTime(), session.blocks[blockIndex].rest) : session.restEndsAt,
+    restBlockIndex: startsRest ? blockIndex : session.restBlockIndex,
+    entries: { ...session.entries, [exerciseId]: sets },
+  });
 };
 
 export const currentBlockIndex = (session) => {
@@ -164,15 +167,17 @@ export const currentBlockIndex = (session) => {
   return index === -1 ? session.blocks.length - 1 : index;
 };
 
-export const startRest = (state, seconds, now) => withSession(state, { restEndsAt: isoAfter(now.getTime(), seconds) });
+export const startRest = (state, seconds, now, blockIndex) =>
+  withSession(state, { restEndsAt: isoAfter(now.getTime(), seconds), restBlockIndex: blockIndex });
 
+// Mantiene restBlockIndex: si sta solo allungando il recupero in corso, il blocco non cambia.
 export const extendRest = (state, seconds) => {
   const endsAt = state.activeSession?.restEndsAt;
   if (!endsAt) return state;
   return withSession(state, { restEndsAt: isoAfter(Date.parse(endsAt), seconds) });
 };
 
-export const clearRest = (state) => withSession(state, { restEndsAt: null });
+export const clearRest = (state) => withSession(state, { restEndsAt: null, restBlockIndex: null });
 
 export const restRemainingMs = (session, now) =>
   session?.restEndsAt ? Math.max(0, Date.parse(session.restEndsAt) - now.getTime()) : 0;
@@ -195,7 +200,7 @@ export const finishSession = (state, now) => {
   return {
     ...state,
     activeSession: null,
-    sessions: [...state.sessions, { ...session, restEndsAt: null, endedAt: now.toISOString() }],
+    sessions: [...state.sessions, { ...session, restEndsAt: null, restBlockIndex: null, endedAt: now.toISOString() }],
   };
 };
 

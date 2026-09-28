@@ -275,7 +275,8 @@ export const renderSession = (root, ctx) => {
     }
     if (action === 'rest-start') {
       const session = getSession();
-      ctx.commit(startRest(ctx.getState(), session.blocks[currentBlockIndex(session)].rest, now));
+      const blockIndex = currentBlockIndex(session);
+      ctx.commit(startRest(ctx.getState(), session.blocks[blockIndex].rest, now, blockIndex));
       tick();
       return;
     }
