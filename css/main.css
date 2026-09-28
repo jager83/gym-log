@@ -346,6 +346,17 @@ a {
   opacity: 0.8;
 }
 
+.block--completed {
+  border-color: var(--easy);
+}
+
+.block__completed {
+  margin: 0 0 8px;
+  color: var(--easy);
+  font-size: 16px;
+  font-weight: 700;
+}
+
 .block__tag {
   margin: 0 0 4px;
   color: var(--accent);

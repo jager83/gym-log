@@ -26,6 +26,7 @@ const REPEAT_DELAY_MS = 400;
 const REPEAT_INTERVAL_MS = 90;
 const TICK_MS = 250;
 const ENDING_MS = 10000;
+const AUTO_COLLAPSE_MS = 1500;
 
 const FIELD_LABELS = { weight: 'peso', reps: 'ripetizioni', duration: 'durata' };
 const UNITS = { weight: 'kg × rip', bodyweight: 'zavorra kg × rip', time: 'secondi' };
@@ -76,13 +77,53 @@ const setHtml = (session, exerciseId, setIndex, previous, showName) => {
     </div>`;
 };
 
-const blockHtml = (session, blockIndex, expanded, previousById) => {
-  const block = session.blocks[blockIndex];
-  const complete = block.exerciseIds.every((exerciseId) => session.entries[exerciseId].every(isDone));
-  const superset = block.exerciseIds.length > 1;
-  const names = block.exerciseIds.map((exerciseId) => escapeHtml(session.targets[exerciseId].name)).join(' + ');
+// Un blocco è completo quando tutte le serie di tutti i suoi esercizi sono fatte (fatica segnata).
+const isBlockComplete = (session, blockIndex) =>
+  session.blocks[blockIndex].exerciseIds.every((exerciseId) => session.entries[exerciseId].every(isDone));
 
-  if (complete && !expanded.has(blockIndex)) {
+// Il blocco che ha in corso un recupero attivo, o null se nessun recupero è in corso.
+const restingBlockIndex = (session) => (session?.restEndsAt ? session.restBlockIndex : null);
+
+const exerciseHeaderHtml = (session, block) =>
+  block.exerciseIds
+    .map((exerciseId) => {
+      const target = session.targets[exerciseId];
+      return `<h2 class="block__title">${escapeHtml(target.name)}</h2>
+        <p class="block__target">${targetText(target)} · ${unitsText(target)}</p>`;
+    })
+    .join('');
+
+const setsRowsHtml = (session, block, previousById, superset) => {
+  const order = interleaveSets(block, session.targets);
+  return order
+    .map(({ exerciseId, setIndex }, index) => {
+      const roundStart = superset && (index === 0 || order[index - 1].setIndex !== setIndex);
+      return `${roundStart ? `<p class="round__label">Serie ${setIndex + 1}</p>` : ''}${setHtml(session, exerciseId, setIndex, previousById[exerciseId], superset)}`;
+    })
+    .join('');
+};
+
+// `manualOpen`: blocchi completati riaperti a mano con "Mostra" (mostrano poi "Chiudi").
+// `pendingCollapse`: blocchi appena completati senza un recupero attivo (l'ultimo della sessione),
+// in attesa di compattarsi da soli dopo AUTO_COLLAPSE_MS.
+const blockHtml = (session, blockIndex, manualOpen, previousById, pendingCollapse) => {
+  const block = session.blocks[blockIndex];
+  const complete = isBlockComplete(session, blockIndex);
+  const superset = block.exerciseIds.length > 1;
+
+  if (!complete) {
+    return `
+      <article class="block" data-block="${blockIndex}">
+        ${superset ? '<p class="block__tag">Superset</p>' : ''}
+        ${exerciseHeaderHtml(session, block)}
+        <div class="block__sets">${setsRowsHtml(session, block, previousById, superset)}</div>
+      </article>`;
+  }
+
+  const names = block.exerciseIds.map((exerciseId) => escapeHtml(session.targets[exerciseId].name)).join(' + ');
+  const autoOpen = restingBlockIndex(session) === blockIndex || pendingCollapse.has(blockIndex);
+
+  if (!autoOpen && !manualOpen.has(blockIndex)) {
     return `
       <article class="block block--done" data-block="${blockIndex}">
         <button type="button" class="block__summary" data-action="toggle-block" aria-expanded="false">
@@ -91,38 +132,27 @@ const blockHtml = (session, blockIndex, expanded, previousById) => {
       </article>`;
   }
 
-  const header = block.exerciseIds
-    .map((exerciseId) => {
-      const target = session.targets[exerciseId];
-      return `<h2 class="block__title">${escapeHtml(target.name)}</h2>
-        <p class="block__target">${targetText(target)} · ${unitsText(target)}</p>`;
-    })
-    .join('');
-  const order = interleaveSets(block, session.targets);
-  const rows = order
-    .map(({ exerciseId, setIndex }, index) => {
-      const roundStart = superset && (index === 0 || order[index - 1].setIndex !== setIndex);
-      return `${roundStart ? `<p class="round__label">Serie ${setIndex + 1}</p>` : ''}${setHtml(session, exerciseId, setIndex, previousById[exerciseId], superset)}`;
-    })
-    .join('');
+  const header = autoOpen
+    ? '<p class="block__completed" aria-live="polite">✓ Completato</p>'
+    : exerciseHeaderHtml(session, block);
 
   return `
-    <article class="block" data-block="${blockIndex}">
+    <article class="block block--completed" data-block="${blockIndex}">
       ${superset ? '<p class="block__tag">Superset</p>' : ''}
       ${header}
-      ${complete ? '<button type="button" class="link" data-action="toggle-block" aria-expanded="true">Compatta</button>' : ''}
-      <div class="block__sets">${rows}</div>
+      ${autoOpen ? '' : '<button type="button" class="link" data-action="toggle-block" aria-expanded="true">Chiudi</button>'}
+      <div class="block__sets">${setsRowsHtml(session, block, previousById, superset)}</div>
     </article>`;
 };
 
-const sessionHtml = (session, expanded, previousById) => `
+const sessionHtml = (session, manualOpen, previousById, pendingCollapse) => `
   <section class="session">
     <header class="page-header">
       <a class="back" href="#/" aria-label="Torna alla home">‹</a>
       <h1>${escapeHtml(session.workoutName)}</h1>
     </header>
     <p class="legend">${EFFORTS.map((effort) => `<span>${faceSvg(effort)}${EFFORT_LABELS[effort]}</span>`).join('')}</p>
-    <div class="blocks">${session.blocks.map((_, index) => blockHtml(session, index, expanded, previousById)).join('')}</div>
+    <div class="blocks">${session.blocks.map((_, index) => blockHtml(session, index, manualOpen, previousById, pendingCollapse)).join('')}</div>
     <div class="session__footer">
       <div class="session__actions">
         <button type="button" class="button" data-action="rest-start">Recupero</button>
@@ -144,18 +174,39 @@ export const renderSession = (root, ctx) => {
   const previousById = Object.fromEntries(
     Object.keys(initial.entries).map((exerciseId) => [exerciseId, lastDoneSets(ctx.getState().sessions, exerciseId)]),
   );
-  const expanded = new Set();
+  const manualOpen = new Set();
+  const pendingCollapse = new Map(); // blockIndex -> timeoutId, per il blocco completato senza recupero
   let repeat = null;
   let suppressClick = false;
 
-  root.innerHTML = sessionHtml(initial, expanded, previousById);
+  root.innerHTML = sessionHtml(initial, manualOpen, previousById, pendingCollapse);
   const restBar = root.querySelector('.rest-bar');
   const restTime = restBar.querySelector('.rest-bar__time');
   const soundButton = restBar.querySelector('[data-action="sound"]');
 
   const redrawBlock = (blockIndex) => {
     const element = root.querySelector(`.block[data-block="${blockIndex}"]`);
-    if (element) element.outerHTML = blockHtml(getSession(), blockIndex, expanded, previousById);
+    if (element) element.outerHTML = blockHtml(getSession(), blockIndex, manualOpen, previousById, pendingCollapse);
+  };
+
+  const clearPendingCollapse = (blockIndex) => {
+    const timeoutId = pendingCollapse.get(blockIndex);
+    if (timeoutId === undefined) return;
+    clearTimeout(timeoutId);
+    pendingCollapse.delete(blockIndex);
+  };
+
+  // Il blocco completato è l'ultimo della sessione (nessun recupero): mostra "✓ Completato" e si
+  // compatta da solo dopo AUTO_COLLAPSE_MS.
+  const schedulePendingCollapse = (blockIndex) => {
+    clearPendingCollapse(blockIndex);
+    pendingCollapse.set(
+      blockIndex,
+      setTimeout(() => {
+        pendingCollapse.delete(blockIndex);
+        redrawBlock(blockIndex);
+      }, AUTO_COLLAPSE_MS),
+    );
   };
   const blockIndexOf = (element) => Number(element.closest('.block').dataset.block);
   const setTargetOf = (element) => {
@@ -186,9 +237,14 @@ export const renderSession = (root, ctx) => {
       getSession().entries[exerciseId][setIndex][field],
     );
     refreshOutcome(row, exerciseId, setIndex);
+    // Un peso/ripetizioni/durata toccati in un altro blocco possono chiudere un recupero altrove (C3).
+    tick();
   };
 
   const stepInfo = (button) => ({ ...setTargetOf(button), field: button.dataset.field, dir: Number(button.dataset.dir) });
+
+  // Blocco in recupero all'ultimo tick, per accorgersi in tick() quando smette di esserlo.
+  let prevRestingBlock = restingBlockIndex(getSession());
 
   // Restituisce il blocco da ridisegnare se la ripetizione rapida è partita, altrimenti null.
   const cancelRepeat = () => {
@@ -208,6 +264,13 @@ export const renderSession = (root, ctx) => {
   const tick = () => {
     const session = getSession();
     const now = new Date();
+
+    // Rileva il passaggio da recupero attivo a nessun recupero (scaduto, "Salta", o chiuso da
+    // un'altra modifica) e ridisegna il blocco che stava riposando, così la card si compatta.
+    const currentRestingBlock = restingBlockIndex(session);
+    if (session && prevRestingBlock !== null && prevRestingBlock !== currentRestingBlock) redrawBlock(prevRestingBlock);
+    prevRestingBlock = currentRestingBlock;
+
     if (!session || restStatus(session, now) !== 'running') {
       restBar.hidden = true;
       return;
@@ -261,15 +324,28 @@ export const renderSession = (root, ctx) => {
       const current = getSession().entries[exerciseId][setIndex].effort;
       const effort = current === target.dataset.effort ? null : target.dataset.effort;
       const blockIndex = blockIndexOf(target);
+      const wasComplete = isBlockComplete(getSession(), blockIndex);
+
       ctx.commit(updateSet(ctx.getState(), exerciseId, setIndex, { effort }, now));
+
+      const session = getSession();
+      const isComplete = isBlockComplete(session, blockIndex);
+      if (!isComplete) {
+        // Una serie di una card completata è tornata "non fatta": card normale, niente stato residuo.
+        manualOpen.delete(blockIndex);
+        clearPendingCollapse(blockIndex);
+      } else if (!wasComplete && restingBlockIndex(session) !== blockIndex) {
+        // Il blocco si è appena completato e non ha un recupero attivo (è l'ultimo della sessione).
+        schedulePendingCollapse(blockIndex);
+      }
       redrawBlock(blockIndex);
       tick();
       return;
     }
     if (action === 'toggle-block') {
       const blockIndex = blockIndexOf(target);
-      if (expanded.has(blockIndex)) expanded.delete(blockIndex);
-      else expanded.add(blockIndex);
+      if (manualOpen.has(blockIndex)) manualOpen.delete(blockIndex);
+      else manualOpen.add(blockIndex);
       redrawBlock(blockIndex);
       return;
     }
@@ -277,6 +353,7 @@ export const renderSession = (root, ctx) => {
       const session = getSession();
       const blockIndex = currentBlockIndex(session);
       ctx.commit(startRest(ctx.getState(), session.blocks[blockIndex].rest, now, blockIndex));
+      redrawBlock(blockIndex);
       tick();
       return;
     }
@@ -319,6 +396,8 @@ export const renderSession = (root, ctx) => {
       updateSet(ctx.getState(), exerciseId, setIndex, { [input.dataset.field]: parseNumberInput(input.value) }, new Date()),
     );
     refreshOutcome(row, exerciseId, setIndex);
+    // Un peso/ripetizioni/durata toccati in un altro blocco possono chiudere un recupero altrove (C3).
+    tick();
   };
 
   // Su blur mostra il valore normalizzato senza ridisegnare il blocco:
@@ -348,6 +427,8 @@ export const renderSession = (root, ctx) => {
   return () => {
     clearInterval(timer);
     cancelRepeat();
+    pendingCollapse.forEach((timeoutId) => clearTimeout(timeoutId));
+    pendingCollapse.clear();
     root.removeEventListener('pointerdown', onPointerDown);
     root.removeEventListener('click', onClick);
     root.removeEventListener('input', onInput);
