@@ -62,6 +62,11 @@ export const renderHome = (root, ctx) => {
       return;
     }
     if (action === 'start') {
+      if (ctx.getState().activeSession) {
+        ctx.navigate('#/session');
+        return;
+      }
+      root.querySelectorAll('[data-action="start"], [data-action="resume"]').forEach((button) => { button.disabled = true; });
       ctx.commit(startSession(ctx.program, ctx.getState(), workout, new Date()));
       ctx.navigate('#/session');
       return;
