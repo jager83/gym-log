@@ -9,6 +9,7 @@ import {
   isBackupDue,
   loadState,
   saveState,
+  stateFromStorageEvent,
   toDateStamp,
 } from '../js/store.js';
 import { startSession, updateSet } from '../js/session.js';
@@ -277,6 +278,14 @@ test('importState rifiuta una sessione terminata con set non valido', () => {
     sessions: [{ ...session, entries: { ...session.entries, panca: session.entries.panca.map((set) => ({ ...set, effort: 'boh' })) } }],
   };
   assert.throws(() => importState(JSON.stringify(corrupted)), isStoreError('sessions non valide'));
+});
+
+test('stateFromStorageEvent: chiave diversa, cancellazione, dati validi e non validi', () => {
+  assert.equal(stateFromStorageEvent('altra-chiave', '{}'), null);
+  assert.deepEqual(stateFromStorageEvent(STORAGE_KEY, null), createEmptyState());
+  const state = createEmptyState();
+  assert.deepEqual(stateFromStorageEvent(STORAGE_KEY, JSON.stringify(state)), state);
+  assert.throws(() => stateFromStorageEvent(STORAGE_KEY, '{'), isStoreError('Dati non validi: JSON illeggibile'));
 });
 
 test('importState rifiuta lastExportAt non stringa', () => {

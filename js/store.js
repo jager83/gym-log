@@ -163,6 +163,13 @@ export const exportState = (state, now) => {
 
 export const importState = (text) => parseState(text);
 
+// Un'altra scheda dello stesso origin ha scritto localStorage[STORAGE_KEY]: ricostruisce lo stato da adottare.
+export const stateFromStorageEvent = (key, newValue) => {
+  if (key !== STORAGE_KEY) return null;
+  if (newValue === null) return createEmptyState();
+  return parseState(newValue);
+};
+
 export const isBackupDue = (state, now) => {
   if (state.sessions.length === 0) return false;
   if (!state.lastExportAt) return true;

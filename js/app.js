@@ -1,5 +1,5 @@
 import { loadProgram } from './program.js';
-import { loadState, saveState } from './store.js';
+import { StoreError, loadState, saveState, stateFromStorageEvent } from './store.js';
 import { clearRest, restStatus } from './session.js';
 import { beep, keepScreenOn, unlockAudio, vibrate } from './device.js';
 import { renderHome } from './views/home.js';
@@ -57,6 +57,8 @@ const watchRest = (ctx) => {
   setInterval(check, REST_WATCH_MS);
 };
 
+// Restituisce `rerender`, che ridisegna la vista corrente senza cambiare hash: usata quando lo
+// stato cambia da fuori (un'altra scheda), per non confondere un ridisegno con una navigazione.
 const startRouter = (root, ctx) => {
   let cleanup = null;
   const route = () => {
@@ -73,6 +75,26 @@ const startRouter = (root, ctx) => {
   };
   window.addEventListener('hashchange', route);
   route();
+  return route;
+};
+
+// Un'altra scheda/finestra dello stesso origin ha salvato lo stato: lo adottiamo senza risalvare
+// (eviterebbe un ping-pong di eventi `storage` tra le schede).
+const watchStorage = (ctx, rerender, setState) => {
+  window.addEventListener('storage', (event) => {
+    let nextState;
+    try {
+      nextState = stateFromStorageEvent(event.key, event.newValue);
+    } catch (error) {
+      if (!(error instanceof StoreError)) throw error;
+      ctx.notify(error.message, true);
+      return;
+    }
+    if (nextState === null) return;
+    setState(nextState);
+    rerender();
+    ctx.notify('Dati aggiornati da un\'altra finestra');
+  });
 };
 
 const main = async () => {
@@ -111,7 +133,8 @@ const main = async () => {
 
   requestPersistence().then((granted) => { ctx.persistDenied = !granted; });
   watchRest(ctx);
-  startRouter(root, ctx);
+  const rerender = startRouter(root, ctx);
+  watchStorage(ctx, rerender, (nextState) => { state = nextState; });
 };
 
 main();
