@@ -1,4 +1,5 @@
 export const EXERCISE_TYPES = ['weight', 'bodyweight', 'time'];
+export const LOAD_VALUES = ['total', 'per-dumbbell'];
 
 const DEFAULTS = { version: 1, defaultSets: 3, defaultRest: 90 };
 
@@ -34,8 +35,17 @@ const normalizeExercise = (raw, defaultSets, seen) => {
   if (typeof raw.name !== 'string' || raw.name === '') throw new ProgramError(`${label}: name mancante`);
   if (!EXERCISE_TYPES.includes(raw.type)) throw new ProgramError(`${label}: type sconosciuto "${raw.type}"`);
 
+  if (raw.load !== undefined && raw.type !== 'weight') {
+    throw new ProgramError(`${label}: load ammesso solo per type weight`);
+  }
+  let load;
+  if (raw.type === 'weight') {
+    load = raw.load ?? 'total';
+    if (!LOAD_VALUES.includes(load)) throw new ProgramError(`${label}: load sconosciuto "${raw.load}"`);
+  }
+
   const previous = seen.get(raw.id);
-  if (previous && (previous.name !== raw.name || previous.type !== raw.type)) {
+  if (previous && (previous.name !== raw.name || previous.type !== raw.type || previous.load !== load)) {
     throw new ProgramError(`id duplicato: ${raw.id}`);
   }
 
@@ -49,6 +59,7 @@ const normalizeExercise = (raw, defaultSets, seen) => {
     type: raw.type,
     sets,
     [key]: normalizeRange(raw[key], `${label}: ${key}`),
+    ...(raw.type === 'weight' ? { load } : {}),
   };
   seen.set(raw.id, exercise);
   return exercise;

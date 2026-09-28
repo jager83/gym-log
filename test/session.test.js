@@ -61,7 +61,13 @@ test('startSession al primo avvio: struttura, target copiati, precompilato vuoto
     { rest: 120, exerciseIds: ['panca'] },
     { rest: 90, exerciseIds: ['curl', 'trazioni'] },
   ]);
-  assert.deepEqual(session.targets.panca, { name: 'Panca piana', type: 'weight', sets: 3, reps: { min: 8, max: 10 } });
+  assert.deepEqual(session.targets.panca, {
+    name: 'Panca piana',
+    type: 'weight',
+    sets: 3,
+    reps: { min: 8, max: 10 },
+    load: 'total',
+  });
   assert.deepEqual(session.entries.panca, [
     { reps: 10, effort: null, weight: null },
     { reps: 10, effort: null, weight: null },

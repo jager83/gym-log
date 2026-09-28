@@ -27,6 +27,34 @@ test('normalizza numeri singoli in range e applica i default', () => {
   assert.equal(p.version, 2);
 });
 
+test('load: default "total" per type weight, assente per gli altri tipi', () => {
+  const p = program();
+  assert.equal(findExercise(p, 'panca').load, 'total');
+  assert.equal('load' in findExercise(p, 'trazioni'), false);
+  assert.equal('load' in findExercise(p, 'plank'), false);
+});
+
+test('load: valore "per-dumbbell" valido', () => {
+  const raw = rawProgram();
+  raw.workouts[0].blocks[1].exercises[0].load = 'per-dumbbell';
+  const p = normalizeProgram(raw);
+  assert.equal(findExercise(p, 'curl').load, 'per-dumbbell');
+});
+
+test('load: valore sconosciuto', () => {
+  expectError((r) => { r.workouts[0].blocks[1].exercises[0].load = 'per-arm'; }, 'esercizio curl: load sconosciuto "per-arm"');
+});
+
+test('load: ammesso solo per type weight', () => {
+  expectError(
+    (r) => { r.workouts[0].blocks[1].exercises[1].load = 'total'; },
+    'esercizio trazioni: load ammesso solo per type weight',
+  );
+});
+
+test('load: diverso sullo stesso id tra allenamenti è un id duplicato', () => {
+  expectError((r) => { r.workouts[0].blocks[0].exercises[0].load = 'per-dumbbell'; }, 'id duplicato: panca');
+});
 test('applica i default globali quando mancano', () => {
   const raw = rawProgram();
   delete raw.defaultSets;
