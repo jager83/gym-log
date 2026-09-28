@@ -21,6 +21,14 @@ test('ogni modulo JS, il CSS, la scheda e il manifest sono in SHELL', () => {
   );
 });
 
+test('ogni font in fonts/ è in SHELL', () => {
+  const fontFiles = readdirSync(new URL('fonts/', root))
+    .filter((path) => path.endsWith('.woff2'))
+    .map((path) => `fonts/${path}`);
+  assert.ok(fontFiles.length > 0, 'nessun font in fonts/');
+  fontFiles.forEach((path) => assert.ok(shell.includes(path), `manca in SHELL: ${path}`));
+});
+
 test('CACHE_VERSION è definita', () => {
   assert.match(source, /const CACHE_VERSION = 'gym-log-v\d+';/);
 });

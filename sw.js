@@ -23,6 +23,9 @@ const SHELL = [
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',
+  'fonts/atkinson-hyperlegible-mono-latin-var.woff2',
+  'fonts/atkinson-hyperlegible-next-latin-var.woff2',
+  'fonts/bricolage-grotesque-latin-var.woff2',
 ];
 
 self.addEventListener('install', (event) => {
