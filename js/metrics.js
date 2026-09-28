@@ -3,6 +3,7 @@ import { countKey } from './program.js';
 export const METRIC_LABELS = {
   weight: '1RM stimato (kg)',
   bodyweight: 'Ripetizioni massime',
+  bodyweightLoad: '1RM stimato peso corporeo + zavorra (kg)',
   time: 'Durata massima (s)',
 };
 
@@ -21,20 +22,35 @@ export const setOutcome = (set, type, target) => {
   return 'ok';
 };
 
-const setMetric = (set, type) => {
+const usesBodyWeightLoad = (type, bodyWeight) => type === 'bodyweight' && typeof bodyWeight === 'number' && bodyWeight > 0;
+
+const setMetric = (set, type, bodyWeight) => {
   if (type === 'weight') {
-    return typeof set.weight === 'number' && typeof set.reps === 'number' ? epley(set.weight, set.reps) : null;
+    return typeof set.weight === 'number' && set.weight > 0 && typeof set.reps === 'number'
+      ? epley(set.weight, set.reps)
+      : null;
+  }
+  if (usesBodyWeightLoad(type, bodyWeight)) {
+    return typeof set.reps === 'number' ? epley(bodyWeight + (set.weight ?? 0), set.reps) : null;
   }
   const value = set[countKey(type)];
   return typeof value === 'number' ? value : null;
 };
 
-export const sessionMetric = (sets, type) => {
+export const sessionMetric = (sets, type, bodyWeight = null) => {
   const values = sets
     .filter(isDone)
-    .map((set) => setMetric(set, type))
+    .map((set) => setMetric(set, type, bodyWeight))
     .filter((value) => value !== null);
   return values.length ? Math.max(...values) : null;
+};
+
+// Metrica che ha prodotto `value`: '1rm' per weight, o per bodyweight quando bodyWeight è impostato;
+// 'reps' per bodyweight senza bodyWeight; 'duration' per time.
+const metricKind = (type, bodyWeight) => {
+  if (type === 'time') return 'duration';
+  if (type === 'weight' || usesBodyWeightLoad(type, bodyWeight)) return '1rm';
+  return 'reps';
 };
 
 export const exerciseHistory = (sessions, exerciseId) =>
@@ -43,6 +59,7 @@ export const exerciseHistory = (sessions, exerciseId) =>
     .map((session) => {
       const target = session.targets[exerciseId];
       const sets = session.entries[exerciseId];
+      const bodyWeight = session.bodyWeight ?? null;
       return {
         sessionId: session.id,
         date: session.endedAt,
@@ -50,10 +67,28 @@ export const exerciseHistory = (sessions, exerciseId) =>
         type: target.type,
         target: target[countKey(target.type)],
         sets: sets.filter(isDone),
-        value: sessionMetric(sets, target.type),
+        value: sessionMetric(sets, target.type, bodyWeight),
+        metric: metricKind(target.type, bodyWeight),
       };
     })
     .sort((a, b) => a.date.localeCompare(b.date));
+
+// Serie del grafico storico: per bodyweight, se lo storico contiene almeno una voce con 1RM
+// (peso corporeo + zavorra), usa solo quelle con la relativa etichetta; altrimenti le ripetizioni.
+// Per gli altri tipi, l'etichetta corrente. Solo punti con value non null; null se nessuno resta.
+export const chartSeries = (history) => {
+  if (!history.length) return null;
+  const { type } = history[0];
+  let label = METRIC_LABELS[type];
+  let entries = history;
+  if (type === 'bodyweight') {
+    const hasLoad = history.some((item) => item.metric === '1rm');
+    label = hasLoad ? METRIC_LABELS.bodyweightLoad : METRIC_LABELS.bodyweight;
+    entries = history.filter((item) => item.metric === (hasLoad ? '1rm' : 'reps'));
+  }
+  const points = entries.filter((item) => item.value !== null).map((item) => ({ date: item.date, value: item.value }));
+  return points.length ? { label, points } : null;
+};
 
 export const retiredExercises = (program, sessions) => {
   const inProgram = new Set(
