@@ -71,6 +71,12 @@ test('startSession al primo avvio: struttura, target copiati, precompilato vuoto
   assert.deepEqual(session.entries.trazioni[0], { reps: 8, effort: null, weight: 0 });
 });
 
+test('startSession copia bodyWeight dalle settings, o null se assente', () => {
+  const withWeight = { ...emptyState(), settings: { sound: true, bodyWeight: 78.5 } };
+  assert.equal(startSession(program(), withWeight, 'A', at(T0)).activeSession.bodyWeight, 78.5);
+  assert.equal(startSession(program(), emptyState(), 'A', at(T0)).activeSession.bodyWeight, null);
+});
+
 test('startSession precompila il tempo dal massimo del range', () => {
   const session = startSession(program(), emptyState(), 'B', at(T0)).activeSession;
   assert.deepEqual(session.entries.plank[0], { duration: 60, effort: null });

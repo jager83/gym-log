@@ -49,6 +49,26 @@ test('validateState accetta settings.bodyWeight numero > 0, null o assente', () 
   assert.doesNotThrow(() => importState(JSON.stringify({ ...createEmptyState(), settings: settingsWithoutBodyWeight })));
 });
 
+test('validateState accetta activeSession.bodyWeight numero > 0, null o assente', () => {
+  const p = program();
+  const state = startSession(p, createEmptyState(), 'A', at('2026-09-27T18:00:00.000Z'));
+  const withBodyWeight = (bodyWeight) => ({ ...state, activeSession: { ...state.activeSession, bodyWeight } });
+  assert.doesNotThrow(() => importState(JSON.stringify(withBodyWeight(78.5))));
+  assert.doesNotThrow(() => importState(JSON.stringify(withBodyWeight(null))));
+  const { bodyWeight, ...sessionWithoutBodyWeight } = state.activeSession;
+  assert.doesNotThrow(() => importState(JSON.stringify({ ...state, activeSession: sessionWithoutBodyWeight })));
+});
+
+test('validateState rifiuta activeSession.bodyWeight non valido', () => {
+  const p = program();
+  const state = startSession(p, createEmptyState(), 'A', at('2026-09-27T18:00:00.000Z'));
+  const withBodyWeight = (bodyWeight) =>
+    JSON.stringify({ ...state, activeSession: { ...state.activeSession, bodyWeight } });
+  assert.throws(() => importState(withBodyWeight(0)), isStoreError('activeSession non valida'));
+  assert.throws(() => importState(withBodyWeight(-5)), isStoreError('activeSession non valida'));
+  assert.throws(() => importState(withBodyWeight('78')), isStoreError('activeSession non valida'));
+});
+
 test('validateState rifiuta settings.bodyWeight non valido', () => {
   const withBodyWeight = (bodyWeight) => JSON.stringify({ ...createEmptyState(), settings: { sound: true, bodyWeight } });
   assert.throws(() => importState(withBodyWeight(0)), isStoreError('settings non validi'));

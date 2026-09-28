@@ -80,6 +80,7 @@ const isSession = (session) => {
     typeof session.id !== 'string' ||
     typeof session.workoutId !== 'string' ||
     typeof session.startedAt !== 'string' ||
+    !isOptionalPositiveNumber(session.bodyWeight) ||
     !Array.isArray(session.blocks) ||
     !isObject(session.targets) ||
     !isObject(session.entries)

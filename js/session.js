@@ -90,6 +90,7 @@ export const startSession = (program, state, workoutId, now) => {
       programVersion: program.version,
       startedAt: now.toISOString(),
       restEndsAt: null,
+      bodyWeight: state.settings.bodyWeight ?? null,
       blocks,
       targets,
       entries,
