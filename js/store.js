@@ -19,7 +19,7 @@ export class StoreError extends Error {
 
 export const createEmptyState = () => ({
   schemaVersion: SCHEMA_VERSION,
-  settings: { sound: true },
+  settings: { sound: true, bodyWeight: null },
   lastExportAt: null,
   activeSession: null,
   sessions: [],
@@ -60,6 +60,9 @@ const isTarget = (target) =>
   isRange(target[countKey(target.type)]);
 
 const isOptionalNumber = (value) => value === null || value === undefined || typeof value === 'number';
+
+const isOptionalPositiveNumber = (value) =>
+  value === null || value === undefined || (typeof value === 'number' && value > 0);
 
 const isSet = (set) =>
   isObject(set) &&
@@ -115,6 +118,7 @@ export const validateState = (state) => {
   }
   if (state.activeSession !== null && !isSession(state.activeSession)) throw new StoreError('activeSession non valida');
   if (!isObject(state.settings) || typeof state.settings.sound !== 'boolean') throw new StoreError('settings non validi');
+  if (!isOptionalPositiveNumber(state.settings.bodyWeight)) throw new StoreError('settings non validi');
   if (state.lastExportAt !== null && typeof state.lastExportAt !== 'string') throw new StoreError('lastExportAt non valido');
   return state;
 };

@@ -14,6 +14,7 @@ import {
   nextWorkoutId,
   restRemainingMs,
   restStatus,
+  setBodyWeight,
   setSound,
   shouldStartRest,
   sourceSet,
@@ -294,4 +295,14 @@ test('finishSession e discardSession senza sessione aperta non cambiano nulla', 
 
 test('setSound', () => {
   assert.equal(setSound(emptyState(), false).settings.sound, false);
+});
+
+test('setBodyWeight arrotonda a 0,1 kg, accetta null e riporta a null valori non validi', () => {
+  assert.equal(setBodyWeight(emptyState(), 78.34).settings.bodyWeight, 78.3);
+  assert.equal(setBodyWeight(emptyState(), 78).settings.bodyWeight, 78);
+  assert.equal(setBodyWeight(emptyState(), null).settings.bodyWeight, null);
+  assert.equal(setBodyWeight(emptyState(), 0).settings.bodyWeight, null);
+  assert.equal(setBodyWeight(emptyState(), -5).settings.bodyWeight, null);
+  assert.equal(setBodyWeight(emptyState(), Number.NaN).settings.bodyWeight, null);
+  assert.equal(setBodyWeight(emptyState(), undefined).settings.bodyWeight, null);
 });

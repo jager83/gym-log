@@ -1,5 +1,5 @@
 import { countKey, findWorkout } from './program.js';
-import { isDone } from './metrics.js';
+import { isDone, round1 } from './metrics.js';
 
 export const EFFORTS = ['facile', 'giusta', 'dura'];
 export const EFFORT_LABELS = { facile: 'Facile', giusta: 'Giusta', dura: 'Dura' };
@@ -192,3 +192,8 @@ export const finishSession = (state, now) => {
 };
 
 export const setSound = (state, enabled) => ({ ...state, settings: { ...state.settings, sound: enabled } });
+
+export const setBodyWeight = (state, value) => {
+  const bodyWeight = typeof value === 'number' && Number.isFinite(value) && value > 0 ? round1(value) : null;
+  return { ...state, settings: { ...state.settings, bodyWeight } };
+};

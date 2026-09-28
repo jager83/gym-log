@@ -37,6 +37,25 @@ test('loadState senza dati restituisce lo stato vuoto', () => {
   assert.deepEqual(createEmptyState(), emptyState());
 });
 
+test('createEmptyState include bodyWeight a null', () => {
+  assert.equal(createEmptyState().settings.bodyWeight, null);
+});
+
+test('validateState accetta settings.bodyWeight numero > 0, null o assente', () => {
+  const withBodyWeight = (bodyWeight) => ({ ...createEmptyState(), settings: { sound: true, bodyWeight } });
+  assert.doesNotThrow(() => importState(JSON.stringify(withBodyWeight(78.5))));
+  assert.doesNotThrow(() => importState(JSON.stringify(withBodyWeight(null))));
+  const { bodyWeight, ...settingsWithoutBodyWeight } = withBodyWeight(null).settings;
+  assert.doesNotThrow(() => importState(JSON.stringify({ ...createEmptyState(), settings: settingsWithoutBodyWeight })));
+});
+
+test('validateState rifiuta settings.bodyWeight non valido', () => {
+  const withBodyWeight = (bodyWeight) => JSON.stringify({ ...createEmptyState(), settings: { sound: true, bodyWeight } });
+  assert.throws(() => importState(withBodyWeight(0)), isStoreError('settings non validi'));
+  assert.throws(() => importState(withBodyWeight(-5)), isStoreError('settings non validi'));
+  assert.throws(() => importState(withBodyWeight('78')), isStoreError('settings non validi'));
+});
+
 test('save e load conservano una sessione aperta', () => {
   const storage = memoryStorage();
   let state = startSession(program(), createEmptyState(), 'A', at('2026-09-27T18:00:00.000Z'));

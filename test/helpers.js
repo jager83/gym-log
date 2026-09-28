@@ -3,7 +3,7 @@ import { at } from './fixtures.js';
 
 export const emptyState = () => ({
   schemaVersion: 1,
-  settings: { sound: true },
+  settings: { sound: true, bodyWeight: null },
   lastExportAt: null,
   activeSession: null,
   sessions: [],
