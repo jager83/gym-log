@@ -55,6 +55,7 @@ test('load: ammesso solo per type weight', () => {
 test('load: diverso sullo stesso id tra allenamenti è un id duplicato', () => {
   expectError((r) => { r.workouts[0].blocks[0].exercises[0].load = 'per-dumbbell'; }, 'id duplicato: panca');
 });
+
 test('applica i default globali quando mancano', () => {
   const raw = rawProgram();
   delete raw.defaultSets;
