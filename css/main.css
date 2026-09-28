@@ -38,13 +38,15 @@
   --accent: #2f5bff;
   --accent-ink: #ffffff;
   --accent-soft: #e2e9ff;
+  --accent-strong: #1c3fd6;
   --pink: #ff3d7f;
-  --pink-ink: #ffffff;
+  --pink-ink: #16181d;
   --sun: #ffc800;
   --sun-soft: #fff3c2;
   --on-sun: #16181d;
   --ok: #06915a;
   --ok-soft: #d2f7e4;
+  --ok-strong: #05724a;
   --bad: #e0112b;
   --bad-soft: #ffdde1;
   --float-shadow: 0 14px 30px -16px rgba(22, 24, 29, .28);
@@ -553,7 +555,7 @@ input:focus-visible {
   padding: 5px 12px;
   border-radius: 999px;
   background: var(--ok-soft);
-  color: var(--ok);
+  color: var(--ok-strong);
   font-size: 15px;
   font-weight: 700;
 }
@@ -681,6 +683,7 @@ input:focus-visible {
   display: flex;
   flex: 1;
   min-width: 0;
+  container-type: inline-size;
   align-items: center;
   border: 1.5px solid var(--line);
   border-radius: 999px;
@@ -717,6 +720,13 @@ input:focus-visible {
   font-variant-numeric: tabular-nums;
   letter-spacing: -.02em;
   text-align: center;
+}
+
+/* Stepper stretto (360px, due per riga): numero più piccolo per valori come "102,5" */
+@container (max-width: 175px) {
+  .stepper__input {
+    font-size: 19px;
+  }
 }
 
 .stepper__input.is-fallita {
@@ -871,6 +881,14 @@ input:focus-visible {
   outline-color: #ffffff;
 }
 
+.rest-bar.is-ending button {
+  border-color: rgba(22, 24, 29, .45);
+}
+
+.rest-bar.is-ending button:focus-visible {
+  outline-color: var(--ink);
+}
+
 /* Storico */
 .history__group,
 .history__metric,
@@ -925,7 +943,7 @@ input:focus-visible {
   padding: 5px 12px;
   border-radius: 999px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-strong);
   font-size: 14px;
   font-weight: 700;
 }
