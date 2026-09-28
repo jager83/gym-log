@@ -127,7 +127,7 @@ const blockHtml = (session, blockIndex, manualOpen, previousById, pendingCollaps
     return `
       <article class="block block--done" data-block="${blockIndex}">
         <button type="button" class="block__summary" data-action="toggle-block" aria-expanded="false">
-          <span>✓ ${names}</span><span class="muted">Mostra</span>
+          <span><span class="block__check">✓</span> ${names}</span><span class="muted">Mostra</span>
         </button>
       </article>`;
   }
