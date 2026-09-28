@@ -40,7 +40,7 @@ const homeHtml = (program, state, backupDue) => {
           <p class="muted">Ultimo export: ${state.lastExportAt ? formatDay(state.lastExportAt) : 'mai'}</p>
           <div class="backup__actions">
             <button type="button" class="button" data-action="export">Esporta</button>
-            <label class="button">Importa<input type="file" accept="application/json,.json" data-action="import" hidden></label>
+            <label class="button">Importa<input type="file" accept="application/json,.json" data-action="import" class="visually-hidden"></label>
           </div>
         </details>
       </nav>
