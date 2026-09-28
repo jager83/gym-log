@@ -304,6 +304,17 @@ test('importState rifiuta effort sconosciuto', () => {
   assert.throws(() => importState(text), isStoreError('activeSession non valida'));
 });
 
+test('importState accetta target senza load, "total" o "per-dumbbell"', () => {
+  assert.doesNotThrow(() => importState(withPanca((target) => { const { load, ...rest } = target; return rest; })));
+  assert.doesNotThrow(() => importState(withPanca((target) => ({ ...target, load: 'total' }))));
+  assert.doesNotThrow(() => importState(withPanca((target) => ({ ...target, load: 'per-dumbbell' }))));
+});
+
+test('importState rifiuta target con load sconosciuto', () => {
+  const text = withPanca((target) => ({ ...target, load: 'per-arm' }));
+  assert.throws(() => importState(text), isStoreError('activeSession non valida'));
+});
+
 test('importState rifiuta weight non numerico', () => {
   const text = withPanca((target) => target, (sets) => sets.map((set) => ({ ...set, weight: 'x' })));
   assert.throws(() => importState(text), isStoreError('activeSession non valida'));

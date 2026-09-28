@@ -1,4 +1,4 @@
-import { EXERCISE_TYPES, countKey } from './program.js';
+import { EXERCISE_TYPES, LOAD_VALUES, countKey } from './program.js';
 import { EFFORTS } from './session.js';
 
 export const STORAGE_KEY = 'gym-log';
@@ -57,7 +57,8 @@ const isTarget = (target) =>
   EXERCISE_TYPES.includes(target.type) &&
   Number.isInteger(target.sets) &&
   target.sets > 0 &&
-  isRange(target[countKey(target.type)]);
+  isRange(target[countKey(target.type)]) &&
+  (target.load === undefined || LOAD_VALUES.includes(target.load));
 
 const isOptionalNumber = (value) => value === null || value === undefined || typeof value === 'number';
 
