@@ -1,8 +1,11 @@
 import { findWorkout } from '../program.js';
-import { lastDoneByWorkout, nextWorkoutId, startSession } from '../session.js';
+import { lastDoneByWorkout, nextWorkoutId, setBodyWeight, startSession } from '../session.js';
 import { exportState, importState, isBackupDue } from '../store.js';
-import { escapeHtml, formatDay, formatTime } from '../format.js';
+import { escapeHtml, formatDay, formatNumber, formatTime, parseNumberInput } from '../format.js';
 import { downloadText } from '../device.js';
+
+const bodyWeightSummary = (bodyWeight) =>
+  bodyWeight === null ? 'Peso corporeo: non impostato' : `Peso corporeo: ${formatNumber(bodyWeight)} kg`;
 
 const homeHtml = (program, state, backupDue) => {
   const active = state.activeSession;
@@ -41,6 +44,15 @@ const homeHtml = (program, state, backupDue) => {
           <div class="backup__actions">
             <button type="button" class="button" data-action="export">Esporta</button>
             <label class="button">Importa<input type="file" accept="application/json,.json" data-action="import" class="visually-hidden"></label>
+          </div>
+        </details>
+        <details class="body-weight">
+          <summary class="body-weight__summary">${escapeHtml(bodyWeightSummary(state.settings.bodyWeight))}</summary>
+          <div class="body-weight__actions">
+            <input type="text" inputmode="decimal" autocomplete="off" class="body-weight__input"
+              value="${state.settings.bodyWeight === null ? '' : formatNumber(state.settings.bodyWeight)}"
+              aria-label="Peso corporeo in kg">
+            <button type="button" class="button" data-action="save-body-weight">Salva</button>
           </div>
         </details>
       </nav>
@@ -82,6 +94,13 @@ export const renderHome = (root, ctx) => {
       downloadText(filename, json);
       ctx.commit(state);
       draw();
+      return;
+    }
+    if (action === 'save-body-weight') {
+      const input = root.querySelector('.body-weight__input');
+      ctx.commit(setBodyWeight(ctx.getState(), parseNumberInput(input.value)));
+      draw();
+      ctx.notify('Peso corporeo salvato');
     }
   };
 

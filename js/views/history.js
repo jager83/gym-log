@@ -1,5 +1,5 @@
 import { findExercise } from '../program.js';
-import { METRIC_LABELS, exerciseHistory, retiredExercises, setOutcome } from '../metrics.js';
+import { METRIC_LABELS, chartSeries, exerciseHistory, retiredExercises, setOutcome } from '../metrics.js';
 import { EFFORT_LABELS } from '../session.js';
 import { lineChartSvg } from '../chart.js';
 import { escapeHtml, formatDate, formatDay, formatSet } from '../format.js';
@@ -50,10 +50,11 @@ const detailHtml = (program, sessions, exerciseId) => {
   if (!history.length) return `<section class="history">${header}<p class="muted">Nessuna sessione registrata.</p></section>`;
 
   const { type } = history.at(-1);
-  const points = history
-    .filter((item) => item.value !== null)
-    .map((item) => ({ label: formatDay(item.date), value: item.value }));
-  const chart = points.length ? lineChartSvg(points, { title: METRIC_LABELS[type] }) : '';
+  const series = chartSeries(history);
+  const metricLabel = series ? series.label : METRIC_LABELS[type];
+  const chart = series
+    ? lineChartSvg(series.points.map((point) => ({ label: formatDay(point.date), value: point.value })), { title: metricLabel })
+    : '';
   const log = [...history]
     .reverse()
     .map(
@@ -68,7 +69,7 @@ const detailHtml = (program, sessions, exerciseId) => {
   return `
     <section class="history">
       ${header}
-      <p class="history__metric">${METRIC_LABELS[type]}</p>
+      <p class="history__metric">${metricLabel}</p>
       ${chart}
       <ul class="log">${log}</ul>
     </section>`;

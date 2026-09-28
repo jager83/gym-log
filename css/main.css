@@ -259,31 +259,47 @@ a {
 }
 
 .home__links > a,
-.backup__summary {
+.backup__summary,
+.body-weight__summary {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-height: var(--tap);
 }
 
-.backup__summary {
+.backup__summary,
+.body-weight__summary {
   color: var(--accent);
   text-decoration: underline;
   list-style: none;
   cursor: pointer;
 }
 
-.backup__summary::-webkit-details-marker {
+.backup__summary::-webkit-details-marker,
+.body-weight__summary::-webkit-details-marker {
   display: none;
 }
 
-.backup[open] {
+.backup[open],
+.body-weight[open] {
   flex-basis: 100%;
 }
 
-.backup__actions {
+.backup__actions,
+.body-weight__actions {
   display: flex;
   gap: 8px;
+}
+
+.body-weight__input {
+  flex: 1;
+  min-width: 0;
+  height: var(--tap);
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 16px;
 }
 
 /* Sessione */
