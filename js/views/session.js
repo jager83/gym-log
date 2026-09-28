@@ -34,8 +34,10 @@ const outcomeClass = (outcome) => (outcome === 'fallita' || outcome === 'carico-
 
 const targetText = (target) => `${target.sets} × ${formatRange(target[countKey(target.type)])}`;
 
-const stepperHtml = (field, value, outcome, name, setNumber) => {
-  const label = `${FIELD_LABELS[field]} ${name} serie ${setNumber}`;
+const unitsText = (target) => (target.type === 'weight' && target.load === 'per-dumbbell' ? 'kg a manubrio × rip' : UNITS[target.type]);
+
+const stepperHtml = (field, value, outcome, name, setNumber, fieldLabel = FIELD_LABELS[field]) => {
+  const label = `${fieldLabel} ${name} serie ${setNumber}`;
   return `
     <div class="stepper">
       <button type="button" class="stepper__btn" data-action="step" data-field="${field}" data-dir="-1" aria-label="Diminuisci ${label}">−</button>
@@ -58,7 +60,7 @@ const setHtml = (session, exerciseId, setIndex, previous, showName) => {
     <div class="set" data-exercise="${escapeHtml(exerciseId)}" data-set="${setIndex}">
       ${showName ? `<p class="set__name">${name}</p>` : ''}
       <div class="set__fields">
-        ${target.type === 'time' ? '' : stepperHtml('weight', set.weight, null, name, number)}
+        ${target.type === 'time' ? '' : stepperHtml('weight', set.weight, null, name, number, target.load === 'per-dumbbell' ? 'peso a manubrio' : FIELD_LABELS.weight)}
         ${stepperHtml(key, set[key], outcome, name, number)}
       </div>
       <div class="set__meta">
@@ -93,7 +95,7 @@ const blockHtml = (session, blockIndex, expanded, previousById) => {
     .map((exerciseId) => {
       const target = session.targets[exerciseId];
       return `<h2 class="block__title">${escapeHtml(target.name)}</h2>
-        <p class="block__target">${targetText(target)} · ${UNITS[target.type]}</p>`;
+        <p class="block__target">${targetText(target)} · ${unitsText(target)}</p>`;
     })
     .join('');
   const order = interleaveSets(block, session.targets);
