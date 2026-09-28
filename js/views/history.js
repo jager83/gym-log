@@ -43,11 +43,20 @@ const logSetHtml = (set, item) => {
     </span>`;
 };
 
+// Load dell'esercizio: dalla scheda attuale se ancora presente, altrimenti dall'ultimo target salvato.
+const exerciseLoad = (program, sessions, exerciseId) => {
+  const fromProgram = findExercise(program, exerciseId)?.load;
+  if (fromProgram) return fromProgram;
+  const lastSession = [...sessions].reverse().find((session) => session.targets[exerciseId]);
+  return lastSession?.targets[exerciseId]?.load;
+};
+
 const detailHtml = (program, sessions, exerciseId) => {
   const history = exerciseHistory(sessions, exerciseId);
   const name = findExercise(program, exerciseId)?.name ?? history.at(-1)?.name ?? exerciseId;
   const header = headerHtml(name, '#/history', 'Torna allo storico');
-  if (!history.length) return `<section class="history">${header}<p class="muted">Nessuna sessione registrata.</p></section>`;
+  const loadNote = exerciseLoad(program, sessions, exerciseId) === 'per-dumbbell' ? '<p class="muted">peso a manubrio</p>' : '';
+  if (!history.length) return `<section class="history">${header}${loadNote}<p class="muted">Nessuna sessione registrata.</p></section>`;
 
   const { type } = history.at(-1);
   const series = chartSeries(history);
@@ -69,6 +78,7 @@ const detailHtml = (program, sessions, exerciseId) => {
   return `
     <section class="history">
       ${header}
+      ${loadNote}
       <p class="history__metric">${metricLabel}</p>
       ${chart}
       <ul class="log">${log}</ul>
