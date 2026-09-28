@@ -109,14 +109,19 @@ export const interleaveSets = (block, targets) => {
   return order;
 };
 
-const blockOf = (session, exerciseId) => session.blocks.find((block) => block.exerciseIds.includes(exerciseId)) ?? null;
+const blockIndexOf = (session, exerciseId) => session.blocks.findIndex((block) => block.exerciseIds.includes(exerciseId));
 
+// Vero alla fine di ogni giro del blocco (blocco singolo: ogni serie; superset: l'ultimo
+// esercizio del giro), inclusa l'ultima serie del blocco. Falso solo per l'ultima serie
+// dell'ultimo blocco della sessione (fine allenamento) e per esercizi/serie inesistenti.
 export const shouldStartRest = (session, exerciseId, setIndex) => {
-  const block = blockOf(session, exerciseId);
-  if (!block) return false;
+  const blockIndex = blockIndexOf(session, exerciseId);
+  if (blockIndex === -1) return false;
+  const block = session.blocks[blockIndex];
   const order = interleaveSets(block, session.targets);
   const position = order.findIndex((item) => item.exerciseId === exerciseId && item.setIndex === setIndex);
-  if (position === -1 || position === order.length - 1) return false;
+  if (position === -1) return false;
+  if (position === order.length - 1) return blockIndex !== session.blocks.length - 1;
   return order[position + 1].setIndex !== setIndex;
 };
 
@@ -145,7 +150,9 @@ export const updateSet = (state, exerciseId, setIndex, patch, now) => {
   const next = applyPatch(current, patch);
   const sets = session.entries[exerciseId].map((set, index) => (index === setIndex ? next : set));
   const startsRest = !isDone(current) && isDone(next) && shouldStartRest(session, exerciseId, setIndex);
-  const restEndsAt = startsRest ? isoAfter(now.getTime(), blockOf(session, exerciseId).rest) : session.restEndsAt;
+  const restEndsAt = startsRest
+    ? isoAfter(now.getTime(), session.blocks[blockIndexOf(session, exerciseId)].rest)
+    : session.restEndsAt;
 
   return withSession(state, { restEndsAt, entries: { ...session.entries, [exerciseId]: sets } });
 };

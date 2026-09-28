@@ -188,13 +188,23 @@ test('shouldStartRest: blocco singolo e superset', () => {
   const session = startSession(program(), emptyState(), 'A', at(T0)).activeSession;
   assert.equal(shouldStartRest(session, 'panca', 0), true);
   assert.equal(shouldStartRest(session, 'panca', 1), true);
-  assert.equal(shouldStartRest(session, 'panca', 2), false);
+  // panca è l'ultima serie di un blocco NON finale (segue il superset curl+trazioni):
+  // C1 lo rende true, non più false, perché il recupero deve partire anche a fine esercizio.
+  assert.equal(shouldStartRest(session, 'panca', 2), true);
   assert.equal(shouldStartRest(session, 'curl', 0), false);
   assert.equal(shouldStartRest(session, 'trazioni', 0), true);
   assert.equal(shouldStartRest(session, 'curl', 2), false);
   assert.equal(shouldStartRest(session, 'trazioni', 2), true);
+  // trazioni,3 è l'ultima serie dell'ultimo blocco della sessione: resta false (fine allenamento).
   assert.equal(shouldStartRest(session, 'trazioni', 3), false);
   assert.equal(shouldStartRest(session, 'nope', 0), false);
+});
+
+test('shouldStartRest: ultima serie di un blocco singolo non finale è true (C1)', () => {
+  const session = startSession(program(), emptyState(), 'B', at(T0)).activeSession;
+  // Allenamento B: blocco 0 = panca (4 serie, non finale), blocco 1 (ultimo, 3 serie di default) = plank.
+  assert.equal(shouldStartRest(session, 'panca', 3), true);
+  assert.equal(shouldStartRest(session, 'plank', 2), false);
 });
 
 test('updateSet avvia il recupero solo alla prima segnatura della fatica', () => {
