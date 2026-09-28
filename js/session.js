@@ -22,16 +22,39 @@ export const nextWorkoutId = (program, sessions) => {
 export const lastDoneByWorkout = (sessions) =>
   sessions.reduce((result, session) => ({ ...result, [session.workoutId]: session.endedAt }), {});
 
+// Array posizionale completo (serie fatte e non) della sessione terminata più recente con
+// almeno una serie fatta di quell'esercizio; null se nessuna sessione lo contiene fatto.
 export const lastDoneSets = (sessions, exerciseId) => {
   for (let index = sessions.length - 1; index >= 0; index -= 1) {
-    const done = (sessions[index].entries[exerciseId] ?? []).filter(isDone);
-    if (done.length) return done;
+    const sets = sessions[index].entries[exerciseId];
+    if (sets && sets.some(isDone)) return sets;
+  }
+  return null;
+};
+
+// Serie da cui precompilare l'indice setIndex: stessa posizione se fatta; altrimenti l'ultima
+// fatta con indice minore; se non ce n'è, la prima fatta con indice maggiore; oltre la
+// lunghezza di previous, l'ultima serie fatta.
+export const sourceSet = (previous, setIndex) => {
+  if (!previous) return null;
+  if (setIndex >= previous.length) {
+    for (let index = previous.length - 1; index >= 0; index -= 1) {
+      if (isDone(previous[index])) return previous[index];
+    }
+    return null;
+  }
+  if (isDone(previous[setIndex])) return previous[setIndex];
+  for (let index = setIndex - 1; index >= 0; index -= 1) {
+    if (isDone(previous[index])) return previous[index];
+  }
+  for (let index = setIndex + 1; index < previous.length; index += 1) {
+    if (isDone(previous[index])) return previous[index];
   }
   return null;
 };
 
 const prefillSet = (exercise, previous, setIndex) => {
-  const source = previous ? previous[setIndex] ?? previous.at(-1) : null;
+  const source = sourceSet(previous, setIndex);
   const key = countKey(exercise.type);
   const set = { [key]: exercise[key].max, effort: null };
   if (exercise.type === 'weight') set.weight = source?.weight ?? null;

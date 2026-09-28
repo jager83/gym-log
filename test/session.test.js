@@ -11,10 +11,12 @@ import {
   interleaveSets,
   lastDoneByWorkout,
   nextWorkoutId,
+  lastDoneSets,
   restRemainingMs,
   restStatus,
   setSound,
   shouldStartRest,
+  sourceSet,
   startRest,
   startSession,
   stepValue,
@@ -105,6 +107,60 @@ test('precompilato: zavorra per esercizi a corpo libero', () => {
   const afterA = playSession(p, emptyState(), 'A', { trazioni: [{ weight: 5, effort: 'giusta' }] }, T0, T1);
   const session = startSession(p, afterA, 'A', at('2026-10-01T18:00:00.000Z')).activeSession;
   assert.deepEqual(session.entries.trazioni.map((set) => set.weight), [5, 5, 5, 5]);
+});
+
+test('lastDoneSets restituisce l\'array posizionale completo, non solo le serie fatte', () => {
+  const sessions = [
+    {
+      entries: {
+        panca: [
+          { weight: 60, effort: 'giusta' },
+          { weight: null, effort: null },
+          { weight: 65, effort: 'giusta' },
+        ],
+      },
+    },
+  ];
+  const result = lastDoneSets(sessions, 'panca');
+  assert.equal(result.length, 3);
+  assert.equal(result[1].effort, null);
+  assert.equal(lastDoneSets(sessions, 'nope'), null);
+});
+
+test('sourceSet: stessa posizione se fatta, poi ultima fatta prima, poi prima fatta dopo, oltre la lunghezza ultima fatta', () => {
+  const a = { weight: 60, effort: 'giusta' };
+  const skipped = { weight: null, effort: null };
+  const c = { weight: 65, effort: 'giusta' };
+  const previous = [a, skipped, c];
+  assert.equal(sourceSet(previous, 0), a);
+  assert.equal(sourceSet(previous, 1), a);
+  assert.equal(sourceSet(previous, 2), c);
+  assert.equal(sourceSet(previous, 5), c);
+
+  const onlyLast = [skipped, c];
+  assert.equal(sourceSet(onlyLast, 0), c);
+  assert.equal(sourceSet(onlyLast, 1), c);
+  assert.equal(sourceSet(onlyLast, 2), c);
+
+  assert.equal(sourceSet(null, 0), null);
+});
+
+test('precompilato: serie saltata in mezzo, la successiva prende la fatta precedente', () => {
+  const p = program();
+  const afterA = playSession(p, emptyState(), 'A', {
+    panca: [{ weight: 60, effort: 'giusta' }, , { weight: 65, effort: 'giusta' }],
+  }, T0, T1);
+  const session = startSession(p, afterA, 'A', at('2026-09-29T18:00:00.000Z')).activeSession;
+  assert.deepEqual(session.entries.panca.map((set) => set.weight), [60, 60, 65]);
+});
+
+test('precompilato: prima serie saltata, prende la prima fatta successiva; oltre la lunghezza prende l\'ultima fatta', () => {
+  const p = program();
+  const afterA = playSession(p, emptyState(), 'A', {
+    panca: [, { weight: 62.5, effort: 'giusta' }],
+  }, T0, T1);
+  const session = startSession(p, afterA, 'B', at('2026-09-29T18:00:00.000Z')).activeSession;
+  assert.deepEqual(session.entries.panca.map((set) => set.weight), [62.5, 62.5, 62.5, 62.5]);
 });
 
 test('interleaveSets alterna i superset e continua con l\'esercizio che ha più serie', () => {

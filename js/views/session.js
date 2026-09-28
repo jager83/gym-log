@@ -50,7 +50,7 @@ const setHtml = (session, exerciseId, setIndex, previous, showName) => {
   const key = countKey(target.type);
   const set = session.entries[exerciseId][setIndex];
   const outcome = setOutcome(set, target.type, target[key]);
-  const prev = previous?.[setIndex] ?? null;
+  const prev = previous?.[setIndex] && isDone(previous[setIndex]) ? previous[setIndex] : null;
   const prevText = prev ? formatSet(prev, target.type) : '';
   const number = setIndex + 1;
   const name = escapeHtml(target.name);
