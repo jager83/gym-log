@@ -23,7 +23,7 @@ const createNotifier = (element) => {
 };
 
 // `rawText`: contenuto grezzo di localStorage[STORAGE_KEY], se leggibile. Il pulsante di scarico
-// compare solo in quel caso; il contenuto salvato non viene mai letto due volte né modificato.
+// compare solo in quel caso; questa funzione non lo modifica né lo cancella, si limita a mostrarlo.
 const showFatal = (root, message, rawText) => {
   const hasBackup = typeof rawText === 'string';
   root.innerHTML = `
