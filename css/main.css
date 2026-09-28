@@ -272,67 +272,138 @@ input:focus-visible {
 .hero {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 4px 16px;
-  width: 100%;
-  padding: 24px 20px;
-  border: 0;
-  border-radius: var(--r-md);
-  background: var(--accent);
-  color: var(--accent-ink);
+  gap: 8px 16px;
+  width: calc(100% - 8px);
+  padding: 22px 20px;
+  border: 2.5px solid var(--accent);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: 8px 8px 0 var(--accent);
+  color: var(--ink);
   text-align: left;
 }
 
-.hero__kicker,
-.hero__meta {
+.hero__kicker {
   grid-column: 1;
-  font-size: 14px;
-  opacity: 0.85;
+  justify-self: start;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--pink);
+  color: var(--pink-ink);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .07em;
+  text-transform: uppercase;
 }
 
 .hero__title {
   grid-column: 1;
-  font-size: 28px;
-  font-weight: 700;
+  min-width: 0;
+  font-family: var(--display);
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.hero__meta {
+  grid-column: 1;
+  color: var(--ink-3);
+  font-size: 15px;
 }
 
 .hero__play {
+  display: grid;
   grid-column: 2;
   grid-row: 1 / span 3;
   align-self: center;
-  font-size: 32px;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  padding-left: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 24px;
+  line-height: 1;
 }
 
 .workout-list {
-  margin: 16px 0 0;
+  display: grid;
+  gap: 10px;
+  margin: 28px 0 0;
   padding: 0;
   list-style: none;
 }
 
 .workout-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 14px;
   width: 100%;
-  min-height: 56px;
-  margin-bottom: 8px;
-  padding: 0 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
+  min-height: 72px;
+  padding: 12px 16px 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-lg);
   background: var(--surface);
-  font-size: 18px;
+  color: var(--ink);
+  text-align: left;
 }
 
 .workout-item:disabled {
   cursor: default;
-  opacity: 0.5;
+  opacity: .5;
+}
+
+.workout-item__badge {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 500;
+  transform: rotate(-4deg);
+}
+
+.workout-list > li:nth-child(3n+2) .workout-item__badge {
+  background: var(--pink);
+  color: var(--pink-ink);
+  transform: rotate(3deg);
+}
+
+.workout-list > li:nth-child(3n) .workout-item__badge {
+  background: var(--sun);
+  color: var(--on-sun);
+  transform: rotate(-2deg);
+}
+
+.workout-item__name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.workout-item__last {
+  flex: none;
+  font-size: 14px;
 }
 
 .home__links {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 16px;
-  margin-top: 24px;
+  gap: 10px;
+  margin-top: 28px;
 }
 
 .home__links > a,
@@ -340,14 +411,20 @@ input:focus-visible {
 .body-weight__summary {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-height: var(--tap);
+  padding: 0 18px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .backup__summary,
 .body-weight__summary {
-  color: var(--accent);
-  text-decoration: underline;
   list-style: none;
   cursor: pointer;
 }
@@ -359,7 +436,20 @@ input:focus-visible {
 
 .backup[open],
 .body-weight[open] {
+  display: grid;
   flex-basis: 100%;
+  gap: 12px;
+}
+
+.backup[open] > summary,
+.body-weight[open] > summary {
+  justify-self: start;
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.backup p {
+  font-size: 15px;
 }
 
 .backup__actions,
@@ -372,11 +462,12 @@ input:focus-visible {
   flex: 1;
   min-width: 0;
   height: var(--tap);
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  font-size: 16px;
+  padding: 0 14px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 17px;
 }
 
 /* Sessione */

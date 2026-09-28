@@ -7,6 +7,9 @@ import { downloadText } from '../device.js';
 const bodyWeightSummary = (bodyWeight) =>
   bodyWeight === null ? 'Peso corporeo: non impostato' : `Peso corporeo: ${formatNumber(bodyWeight)} kg`;
 
+// Lettera del badge: primo carattere dell'id (o del nome se l'id manca).
+const workoutLetter = (workout) => (workout.id || workout.name).charAt(0).toUpperCase();
+
 const homeHtml = (program, state, backupDue) => {
   const active = state.activeSession;
   const lastDates = lastDoneByWorkout(state.sessions);
@@ -29,8 +32,9 @@ const homeHtml = (program, state, backupDue) => {
             (workout) => `
           <li>
             <button type="button" class="workout-item" data-action="start" data-workout="${escapeHtml(workout.id)}" ${active ? 'disabled' : ''}>
-              <span>${escapeHtml(workout.name)}</span>
-              <span class="muted">${lastLabel(workout.id)}</span>
+              <span class="workout-item__badge" aria-hidden="true">${escapeHtml(workoutLetter(workout))}</span>
+              <span class="workout-item__name">${escapeHtml(workout.name)}</span>
+              <span class="workout-item__last muted">${lastLabel(workout.id)}</span>
             </button>
           </li>`,
           )
