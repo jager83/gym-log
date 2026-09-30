@@ -95,6 +95,7 @@ export const startSession = (program, state, workoutId, now) => {
       startedAt: now.toISOString(),
       restEndsAt: null,
       restBlockIndex: null,
+      timer: null,
       bodyWeight: state.settings.bodyWeight ?? null,
       blocks,
       targets,
@@ -222,7 +223,7 @@ export const finishSession = (state, now) => {
   return {
     ...state,
     activeSession: null,
-    sessions: [...state.sessions, { ...session, restEndsAt: null, restBlockIndex: null, endedAt: now.toISOString() }],
+    sessions: [...state.sessions, { ...session, restEndsAt: null, restBlockIndex: null, timer: null, endedAt: now.toISOString() }],
   };
 };
 

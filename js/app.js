@@ -1,14 +1,15 @@
 import { loadProgram } from './program.js';
 import { STORAGE_KEY, StoreError, loadState, rawBackup, saveState, stateFromStorageEvent } from './store.js';
 import { clearRest, restStatus } from './session.js';
+import { advanceTimer } from './timer.js';
 import { beep, downloadText, keepScreenOn, unlockAudio, vibrate } from './device.js';
 import { renderHome } from './views/home.js';
 import { renderSession } from './views/session.js';
 import { renderHistory } from './views/history.js';
 
 const NOTICE_MS = 4000;
-const REST_WATCH_MS = 250;
-const REST_VIBRATION = [200, 100, 200];
+const SESSION_WATCH_MS = 250;
+const END_VIBRATION = [200, 100, 200];
 
 const createNotifier = (element) => {
   let timeout = null;
@@ -53,21 +54,41 @@ const requestPersistence = async () => {
   }
 };
 
+// Avviso di fine recupero / timer (vibrazione, suono se attivo).
+const alertEnd = (state) => {
+  vibrate(END_VIBRATION);
+  if (state.settings.sound) beep();
+};
+
 // Fine recupero a livello app: l'avviso arriva su qualunque vista.
 // Un recupero scaduto da più di REST_LIVE_GRACE_MS (es. app riaperta) si chiude senza avviso.
-const watchRest = (ctx) => {
+const checkRest = (ctx) => {
+  const state = ctx.getState();
+  const status = restStatus(state.activeSession, new Date());
+  if (status !== 'expired-live' && status !== 'expired-stale') return;
+  if (status === 'expired-live') alertEnd(state);
+  ctx.commit(clearRest(state));
+};
+
+// Transizioni automatiche del timer (fine lato, cambio lato, fine): unico punto che avvisa,
+// le viste mostrano solo lo stato. Scadenze ad app chiusa: advanceTimer non chiede l'avviso.
+const checkTimer = (ctx) => {
+  const state = ctx.getState();
+  const { state: nextState, alert } = advanceTimer(state, new Date(), state.settings);
+  if (nextState === state) return;
+  if (alert) alertEnd(state);
+  ctx.commit(nextState);
+};
+
+// Un solo intervallo per recupero e timer. Il timer passa per primo: chiudendo una serie di
+// stretching può avviare un recupero, che il controllo successivo trova già aggiornato.
+const watchSession = (ctx) => {
   const check = () => {
-    const state = ctx.getState();
-    const status = restStatus(state.activeSession, new Date());
-    if (status !== 'expired-live' && status !== 'expired-stale') return;
-    if (status === 'expired-live') {
-      vibrate(REST_VIBRATION);
-      if (state.settings.sound) beep();
-    }
-    ctx.commit(clearRest(state));
+    checkTimer(ctx);
+    checkRest(ctx);
   };
   check();
-  setInterval(check, REST_WATCH_MS);
+  setInterval(check, SESSION_WATCH_MS);
 };
 
 // Restituisce `rerender`, che ridisegna la vista corrente senza cambiare hash: usata quando lo
@@ -157,7 +178,7 @@ const main = async () => {
   };
 
   requestPersistence().then((granted) => { ctx.persistDenied = !granted; });
-  watchRest(ctx);
+  watchSession(ctx);
   const rerender = startRouter(root, ctx);
   watchStorage(ctx, rerender, (nextState) => { state = nextState; });
 };
