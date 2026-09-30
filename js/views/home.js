@@ -1,4 +1,5 @@
-import { lastDoneByWorkout, nextWorkoutId, setBodyWeight, startSession } from '../session.js';
+import { discardSession, lastDoneByWorkout, nextWorkoutId, setBodyWeight, startSession } from '../session.js';
+import { isDone } from '../metrics.js';
 import { exportState, importState, isBackupDue } from '../store.js';
 import { escapeHtml, formatDay, formatNumber, formatTime, parseNumberInput } from '../format.js';
 import { downloadText } from '../device.js';
@@ -6,6 +7,15 @@ import { alertDialog, confirmDialog } from './modal.js';
 
 const bodyWeightSummary = (bodyWeight) =>
   bodyWeight === null ? 'Peso corporeo: non impostato' : `Peso corporeo: ${formatNumber(bodyWeight)} kg`;
+
+const doneSetsCount = (session) => Object.values(session.entries).flat().filter(isDone).length;
+
+// Messaggio di scarto: avvisa quante serie segnate andranno perse.
+const discardMessage = (session) => {
+  const count = doneSetsCount(session);
+  if (count === 0) return 'I dati inseriti andranno persi.';
+  return `Hai ${count} ${count === 1 ? 'serie segnata' : 'serie segnate'} in ${session.workoutName}: andranno perse.`;
+};
 
 const homeHtml = (program, state, backupDue) => {
   const active = state.activeSession;
@@ -20,7 +30,8 @@ const homeHtml = (program, state, backupDue) => {
         <span class="hero__title">${escapeHtml(active.workoutName)}</span>
         <span class="hero__meta">iniziato alle ${formatTime(active.startedAt)}</span>
         <span class="hero__play" aria-hidden="true">▶</span>
-      </button>`
+      </button>
+      <button type="button" class="link home__discard" data-action="discard-active">Scarta allenamento</button>`
     : '';
 
   return `
@@ -29,11 +40,11 @@ const homeHtml = (program, state, backupDue) => {
       <ul class="workout-list">
         ${program.workouts
           .map((workout) => {
-            const isNext = workout.id === nextId;
+            const isNext = !active && workout.id === nextId;
             return `
           <li>
             <button type="button" class="workout-card${isNext ? ' workout-card--next' : ''}" data-action="start"
-              data-workout="${escapeHtml(workout.id)}" ${active ? 'disabled' : ''}>
+              data-workout="${escapeHtml(workout.id)}">
               ${isNext ? '<span class="workout-card__kicker">Prossimo</span>' : ''}
               <span class="workout-card__name">${escapeHtml(workout.name)}</span>
               <span class="workout-card__meta muted">${lastLabel(workout.id)}</span>
@@ -71,6 +82,45 @@ export const renderHome = (root, ctx) => {
     root.innerHTML = homeHtml(ctx.program, state, isBackupDue(state, new Date()) || ctx.persistDenied);
   };
 
+  const startWorkout = (workoutId) => {
+    const buttons = root.querySelectorAll('[data-action="start"], [data-action="resume"]');
+    buttons.forEach((button) => { button.disabled = true; });
+    try {
+      ctx.commit(startSession(ctx.program, ctx.getState(), workoutId, new Date()));
+      ctx.navigate('#/session');
+    } catch (error) {
+      buttons.forEach((button) => { button.disabled = false; });
+      alertDialog({ title: 'Errore', message: error.message });
+    }
+  };
+
+  const confirmDiscardActive = async () => {
+    const active = ctx.getState().activeSession;
+    if (!active) return;
+    const confirmed = await confirmDialog({
+      title: 'Scartare l\'allenamento in corso?',
+      message: discardMessage(active),
+      confirmLabel: 'Scarta',
+      danger: true,
+    });
+    if (!confirmed) return;
+    ctx.commit(discardSession(ctx.getState()));
+    draw();
+  };
+
+  const switchWorkout = async (active, workoutId) => {
+    const nextName = ctx.program.workouts.find((item) => item.id === workoutId)?.name ?? workoutId;
+    const confirmed = await confirmDialog({
+      title: `Iniziare ${nextName}?`,
+      message: `Hai ${active.workoutName} in corso: verrà scartato. ${discardMessage(active)}`,
+      confirmLabel: 'Scarta e inizia',
+      danger: true,
+    });
+    if (!confirmed) return;
+    ctx.commit(discardSession(ctx.getState()));
+    startWorkout(workoutId);
+  };
+
   const onClick = (event) => {
     const target = event.target.closest('[data-action]');
     if (!target) return;
@@ -79,20 +129,21 @@ export const renderHome = (root, ctx) => {
       ctx.navigate('#/focus');
       return;
     }
+    if (action === 'discard-active') {
+      confirmDiscardActive();
+      return;
+    }
     if (action === 'start') {
-      if (ctx.getState().activeSession) {
-        ctx.navigate('#/session');
+      const active = ctx.getState().activeSession;
+      if (active && active.workoutId === workout) {
+        ctx.navigate('#/focus');
         return;
       }
-      const buttons = root.querySelectorAll('[data-action="start"], [data-action="resume"]');
-      buttons.forEach((button) => { button.disabled = true; });
-      try {
-        ctx.commit(startSession(ctx.program, ctx.getState(), workout, new Date()));
-        ctx.navigate('#/session');
-      } catch (error) {
-        buttons.forEach((button) => { button.disabled = false; });
-        alertDialog({ title: 'Errore', message: error.message });
+      if (active) {
+        switchWorkout(active, workout);
+        return;
       }
+      startWorkout(workout);
       return;
     }
     if (action === 'export') {

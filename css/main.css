@@ -365,6 +365,11 @@ input:focus-visible {
   color: var(--ink);
 }
 
+.home__discard {
+  display: block;
+  margin: 4px 0 8px;
+}
+
 .workout-card__kicker {
   padding: 3px 10px;
   border-radius: 999px;

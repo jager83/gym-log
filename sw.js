@@ -1,6 +1,6 @@
 // Incrementa CACHE_VERSION a ogni deploy (codice o scheda): la nuova versione
 // si scarica in background e si attiva alla successiva riapertura dell'app.
-const CACHE_VERSION = 'gym-log-v8';
+const CACHE_VERSION = 'gym-log-v9';
 
 const SHELL = [
   './',
