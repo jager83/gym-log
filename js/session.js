@@ -158,7 +158,7 @@ export const updateSet = (state, exerciseId, setIndex, patch, now) => {
   const current = session?.entries[exerciseId]?.[setIndex];
   if (!current) return state;
 
-  const category = session.targets[exerciseId].category;
+  const category = session.targets[exerciseId].category ?? 'forza';
   const next = applyPatch(current, patch, category);
   const sets = session.entries[exerciseId].map((set, index) => (index === setIndex ? next : set));
   const blockIndex = blockIndexOf(session, exerciseId);

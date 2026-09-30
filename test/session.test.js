@@ -387,6 +387,18 @@ test('updateSet: effort "fatto" accettato solo per category diversa da forza', (
   assert.equal(stretchState.activeSession.entries.quad[0].effort, 'facile');
 });
 
+test('updateSet: target senza category (backup precedente al Task 1) si comporta come forza, rifiuta "fatto"', () => {
+  let state = startSession(program(), emptyState(), 'A', at(T0));
+  // Simula un backup salvato prima del Task 1: il target non ha il campo category.
+  const { category, ...targetWithoutCategory } = state.activeSession.targets.panca;
+  state = {
+    ...state,
+    activeSession: { ...state.activeSession, targets: { ...state.activeSession.targets, panca: targetWithoutCategory } },
+  };
+  state = updateSet(state, 'panca', 0, { effort: DONE_EFFORT }, at(T0));
+  assert.equal(state.activeSession.entries.panca[0].effort, null);
+});
+
 test('currentBlockIndex segue il primo blocco incompleto', () => {
   let state = startSession(program(), emptyState(), 'C', at(T0));
   assert.equal(currentBlockIndex(state.activeSession), 0);
