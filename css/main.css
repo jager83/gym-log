@@ -1086,6 +1086,13 @@ input:focus-visible {
   gap: 6px;
 }
 
+.log__check {
+  flex: none;
+  color: var(--ok);
+  font-weight: 700;
+  line-height: 1;
+}
+
 .log__set.is-fallita {
   color: var(--bad);
 }

@@ -1,7 +1,8 @@
-import { findExercise } from '../program.js';
-import { METRIC_LABELS, chartSeries, exerciseHistory, retiredExercises, setOutcome } from '../metrics.js';
+import { countKey, findExercise } from '../program.js';
+import { METRIC_LABELS, chartSeries, exerciseHistory, retiredExercises } from '../metrics.js';
 import { EFFORT_LABELS } from '../session.js';
 import { lineChartSvg } from '../chart.js';
+import { outcomeClass, outcomeOf } from './controls.js';
 import { escapeHtml, formatDate, formatDay, formatSet } from '../format.js';
 
 const headerHtml = (title, backHash, backLabel) => `
@@ -34,13 +35,30 @@ const listHtml = (program, sessions) => {
   return `<section class="history">${headerHtml('Storico', '#/', 'Torna alla home')}${groups.join('')}</section>`;
 };
 
-const logSetHtml = (set, item) => {
-  const outcome = setOutcome(set, item.type, item.target);
-  const className = outcome === 'fallita' || outcome === 'carico-basso' ? ` is-${outcome}` : '';
+// Forza e cardio: pallino della fatica; stretching/mobilità: ✓ "Fatto" (nessuna faccina).
+const setMarkerHtml = (set, category) =>
+  category === 'forza'
+    ? `<span class="dot dot--${set.effort}" role="img" aria-label="${EFFORT_LABELS[set.effort]}"></span>`
+    : '<span class="log__check" role="img" aria-label="Fatto">✓</span>';
+
+// `item` è una voce di exerciseHistory: l'esito segue le regole della sessione (outcomeOf),
+// quindi nessun esito per cardio, con o senza obiettivo di durata.
+export const logSetHtml = (set, item) => {
+  const outcome = outcomeOf(set, { type: item.type, [countKey(item.type)]: item.target });
+  const className = outcomeClass(outcome);
   return `
-    <span class="log__set${className}">
-      <span class="dot dot--${set.effort}" role="img" aria-label="${EFFORT_LABELS[set.effort]}"></span>${escapeHtml(formatSet(set, item.type))}
+    <span class="log__set${className ? ` ${className}` : ''}">
+      ${setMarkerHtml(set, item.category)}${escapeHtml(formatSet(set, item.type))}
     </span>`;
+};
+
+// Etichetta della metrica sopra il grafico: quella della serie se c'è; senza serie solo per la
+// forza non cardio. Nessuna per stretching/mobilità (niente grafico) né per cardio senza valori.
+export const historyMetricLabel = (history, series) => {
+  if (series) return series.label;
+  const { type, category } = history.at(-1);
+  if (category !== 'forza' || type === 'cardio') return null;
+  return METRIC_LABELS[type];
 };
 
 // Load dell'esercizio: dalla scheda attuale se ancora presente, altrimenti dall'ultimo target salvato.
@@ -58,9 +76,8 @@ const detailHtml = (program, sessions, exerciseId) => {
   const loadNote = exerciseLoad(program, sessions, exerciseId) === 'per-dumbbell' ? '<p class="history__load">peso a manubrio</p>' : '';
   if (!history.length) return `<section class="history">${header}${loadNote}<p class="muted">Nessuna sessione registrata.</p></section>`;
 
-  const { type } = history.at(-1);
   const series = chartSeries(history);
-  const metricLabel = series ? series.label : METRIC_LABELS[type];
+  const metricLabel = historyMetricLabel(history, series);
   const chart = series
     ? lineChartSvg(series.points.map((point) => ({ label: formatDay(point.date), value: point.value })), { title: metricLabel })
     : '';
@@ -79,7 +96,7 @@ const detailHtml = (program, sessions, exerciseId) => {
     <section class="history">
       ${header}
       ${loadNote}
-      <p class="history__metric">${metricLabel}</p>
+      ${metricLabel ? `<p class="history__metric">${metricLabel}</p>` : ''}
       ${chart ? `<div class="chart-card">${chart}</div>` : ''}
       <ul class="log">${log}</ul>
     </section>`;
