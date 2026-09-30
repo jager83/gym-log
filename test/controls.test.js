@@ -74,10 +74,10 @@ test('setFields e unitsText: niente zavorra per bodyweight di stretching/mobilit
   assert.deepEqual(setFields(oldPushUp).map(([field]) => field), ['weight', 'reps']);
 });
 
-test('adviceHtml: riga con "Usa" per up/down, solo testo per up-time', () => {
-  const up = { kind: 'up', value: 62.5, text: "Prova 62,5 kg · l'ultima volta 10 rip su tutte le serie" };
+test('adviceHtml: riga con "Usa" per up, solo testo per up-time', () => {
+  const up = { kind: 'up', value: 62.5, text: "Prova 62,5 kg · l'ultima volta oltre 10 rip su tutte le serie" };
   const html = adviceHtml(up, 'panca', { weight: 60, reps: 10, effort: null });
-  assert.match(html, /Prova 62,5 kg · l&#39;ultima volta 10 rip su tutte le serie/);
+  assert.match(html, /Prova 62,5 kg · l&#39;ultima volta oltre 10 rip su tutte le serie/);
   assert.match(html, /data-action="use-advice" data-exercise="panca"/);
   assert.match(html, /data-value="62.5"/);
   assert.match(html, /aria-label="Usa il peso suggerito 62,5 kg"/);

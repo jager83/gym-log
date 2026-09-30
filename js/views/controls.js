@@ -188,12 +188,11 @@ export const stepSet = (ctx, { row, exerciseId, setIndex, field, dir }) => {
 
 // --- Suggerimento di carico (advice.js) -------------------------------------------------------
 
-const ADVICE_USABLE = ['up', 'down'];
 
 // Riga del suggerimento, solo finché la serie 1 non è fatta e il peso suggerito non è già impostato.
 export const adviceHtml = (advice, exerciseId, firstSet) => {
   if (!advice || isDone(firstSet)) return '';
-  const usable = ADVICE_USABLE.includes(advice.kind);
+  const usable = advice.kind === 'up';
   if (usable && firstSet.weight === advice.value) return '';
   const button = usable
     ? `<button type="button" class="button advice__use" data-action="use-advice" data-exercise="${escapeHtml(exerciseId)}"
