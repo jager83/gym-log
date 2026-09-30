@@ -1,5 +1,5 @@
 import { EXERCISE_TYPES, LOAD_VALUES, countKey } from './program.js';
-import { EFFORTS } from './session.js';
+import { DONE_EFFORT, EFFORTS } from './session.js';
 
 export const STORAGE_KEY = 'gym-log';
 export const SCHEMA_VERSION = 1;
@@ -51,13 +51,19 @@ const isCount = (value) => Number.isInteger(value) && value >= 0;
 
 const isRange = (range) => isObject(range) && isCount(range.min) && isCount(range.max) && range.min <= range.max;
 
+// Per cardio l'obiettivo è facoltativo: null è ammesso oltre al range.
+const isTargetRange = (target) => {
+  if (target.type === 'cardio') return target.duration === null || isRange(target.duration);
+  return isRange(target[countKey(target.type)]);
+};
+
 const isTarget = (target) =>
   isObject(target) &&
   typeof target.name === 'string' &&
   EXERCISE_TYPES.includes(target.type) &&
   Number.isInteger(target.sets) &&
   target.sets > 0 &&
-  isRange(target[countKey(target.type)]) &&
+  isTargetRange(target) &&
   (target.load === undefined || LOAD_VALUES.includes(target.load));
 
 const isOptionalNumber = (value) => value === null || value === undefined || typeof value === 'number';
@@ -67,15 +73,36 @@ const isOptionalPositiveNumber = (value) =>
 
 const isOptionalNonNegativeInt = (value) => value === null || value === undefined || isCount(value);
 
+const isOptionalBoolean = (value) => value === undefined || typeof value === 'boolean';
+
+const isValidEffort = (value) => value === null || EFFORTS.includes(value) || value === DONE_EFFORT;
+
 const isSet = (set) =>
   isObject(set) &&
-  (set.effort === null || EFFORTS.includes(set.effort)) &&
-  ['weight', 'reps', 'duration'].every((field) => isOptionalNumber(set[field]));
+  isValidEffort(set.effort) &&
+  ['weight', 'reps', 'duration', 'distance', 'speed'].every((field) => isOptionalNumber(set[field])) &&
+  isOptionalNonNegativeInt(set.level);
 
 const isSetList = (setList, target) =>
   Array.isArray(setList) &&
   setList.length === target.sets &&
   setList.every(isSet);
+
+const TIMER_MODES = ['countdown', 'stopwatch'];
+
+// Forma di activeSession.timer (spec §3): null oppure l'oggetto con gli istanti assoluti del
+// timer in corso. Facoltativo: assente per compatibilità con i dati salvati prima di questo task.
+const isTimer = (timer) =>
+  timer === null ||
+  (isObject(timer) &&
+    typeof timer.exerciseId === 'string' &&
+    isCount(timer.setIndex) &&
+    TIMER_MODES.includes(timer.mode) &&
+    (timer.side === 1 || timer.side === 2) &&
+    (timer.runningSince === null || typeof timer.runningSince === 'string') &&
+    typeof timer.elapsedMs === 'number' &&
+    (timer.targetSeconds === null || typeof timer.targetSeconds === 'number') &&
+    (timer.switchEndsAt === null || typeof timer.switchEndsAt === 'string'));
 
 const isSession = (session) => {
   if (
@@ -85,6 +112,7 @@ const isSession = (session) => {
     typeof session.startedAt !== 'string' ||
     !isOptionalPositiveNumber(session.bodyWeight) ||
     !isOptionalNonNegativeInt(session.restBlockIndex) ||
+    !(session.timer === undefined || isTimer(session.timer)) ||
     !Array.isArray(session.blocks) ||
     !isObject(session.targets) ||
     !isObject(session.entries)
@@ -124,6 +152,7 @@ export const validateState = (state) => {
   if (state.activeSession !== null && !isSession(state.activeSession)) throw new StoreError('activeSession non valida');
   if (!isObject(state.settings) || typeof state.settings.sound !== 'boolean') throw new StoreError('settings non validi');
   if (!isOptionalPositiveNumber(state.settings.bodyWeight)) throw new StoreError('settings non validi');
+  if (!isOptionalBoolean(state.settings.sidesAuto)) throw new StoreError('settings non validi');
   if (state.lastExportAt !== null && typeof state.lastExportAt !== 'string') throw new StoreError('lastExportAt non valido');
   return state;
 };

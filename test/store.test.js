@@ -14,8 +14,29 @@ import {
   toDateStamp,
 } from '../js/store.js';
 import { startSession, updateSet } from '../js/session.js';
+import { normalizeProgram } from '../js/program.js';
 import { at, program } from './fixtures.js';
 import { emptyState, playSession } from './helpers.js';
+
+// Programma minimale con un esercizio cardio, per i test store sui campi cardio della serie.
+// Non tocca la fixture condivisa program() (usata per le rotazioni di nextWorkoutId altrove).
+const cardioProgram = (duration) => normalizeProgram({
+  version: 1,
+  defaultSets: 1,
+  defaultRest: 60,
+  workouts: [
+    {
+      id: 'D',
+      name: 'Cardio',
+      blocks: [{ exercises: [{ id: 'corsa', name: 'Corsa', type: 'cardio', sets: 1, ...(duration !== undefined ? { duration } : {}) }] }],
+    },
+  ],
+});
+
+const withCardioActive = (patchSession, duration) => {
+  const state = startSession(cardioProgram(duration), createEmptyState(), 'D', at('2026-09-27T18:00:00.000Z'));
+  return JSON.stringify({ ...state, activeSession: patchSession(state.activeSession) });
+};
 
 const memoryStorage = (initial = {}) => {
   const data = new Map(Object.entries(initial));
@@ -366,6 +387,102 @@ test('rawBackup produce il nome file grezzo e lascia il testo invariato', () => 
   const { filename, json } = rawBackup(text, now);
   assert.equal(filename, 'gym-log-grezzo-2026-09-27.json');
   assert.equal(json, text);
+});
+
+test('importState accetta e valida i campi cardio della serie (distance, level, speed)', () => {
+  const valid = withCardioActive((session) => ({
+    ...session,
+    entries: { ...session.entries, corsa: [{ duration: 1200, distance: 5.2, level: 8, speed: 12, effort: 'fatto' }] },
+  }), { min: 600, max: 1500 });
+  assert.doesNotThrow(() => importState(valid));
+
+  const badLevel = withCardioActive((session) => ({
+    ...session,
+    entries: { ...session.entries, corsa: [{ duration: 1200, distance: 5.2, level: -1, speed: 12, effort: 'fatto' }] },
+  }), { min: 600, max: 1500 });
+  assert.throws(() => importState(badLevel), isStoreError('activeSession non valida'));
+
+  const badLevelDecimal = withCardioActive((session) => ({
+    ...session,
+    entries: { ...session.entries, corsa: [{ duration: 1200, distance: 5.2, level: 8.5, speed: 12, effort: 'fatto' }] },
+  }), { min: 600, max: 1500 });
+  assert.throws(() => importState(badLevelDecimal), isStoreError('activeSession non valida'));
+
+  const badDistance = withCardioActive((session) => ({
+    ...session,
+    entries: { ...session.entries, corsa: [{ duration: 1200, distance: 'x', level: 8, speed: 12, effort: 'fatto' }] },
+  }), { min: 600, max: 1500 });
+  assert.throws(() => importState(badDistance), isStoreError('activeSession non valida'));
+
+  const badSpeed = withCardioActive((session) => ({
+    ...session,
+    entries: { ...session.entries, corsa: [{ duration: 1200, distance: 5.2, level: 8, speed: 'x', effort: 'fatto' }] },
+  }), { min: 600, max: 1500 });
+  assert.throws(() => importState(badSpeed), isStoreError('activeSession non valida'));
+});
+
+test('importState accetta un target cardio con duration null (nessun obiettivo in scheda)', () => {
+  const state = startSession(cardioProgram(), createEmptyState(), 'D', at('2026-09-27T18:00:00.000Z'));
+  assert.equal(state.activeSession.targets.corsa.duration, null);
+  assert.doesNotThrow(() => importState(JSON.stringify(state)));
+});
+
+test('importState accetta effort "fatto" in una serie', () => {
+  const p = program();
+  const state = startSession(p, createEmptyState(), 'A', at('2026-09-27T18:00:00.000Z'));
+  const withFatto = {
+    ...state,
+    activeSession: {
+      ...state.activeSession,
+      entries: {
+        ...state.activeSession.entries,
+        panca: state.activeSession.entries.panca.map((set, index) => (index === 0 ? { ...set, effort: 'fatto' } : set)),
+      },
+    },
+  };
+  assert.doesNotThrow(() => importState(JSON.stringify(withFatto)));
+});
+
+test('validateState accetta settings.sidesAuto booleano o assente, rifiuta altri valori', () => {
+  const withSidesAuto = (sidesAuto) => JSON.stringify({ ...createEmptyState(), settings: { sound: true, bodyWeight: null, sidesAuto } });
+  assert.doesNotThrow(() => importState(withSidesAuto(true)));
+  assert.doesNotThrow(() => importState(withSidesAuto(false)));
+  assert.doesNotThrow(() => importState(JSON.stringify({ ...createEmptyState(), settings: { sound: true, bodyWeight: null } })));
+  assert.throws(() => importState(withSidesAuto('true')), isStoreError('settings non validi'));
+  assert.throws(() => importState(withSidesAuto(1)), isStoreError('settings non validi'));
+});
+
+test('validateState accetta activeSession.timer nella forma spec, null o assente; rifiuta forme non valide', () => {
+  const p = program();
+  const state = startSession(p, createEmptyState(), 'A', at('2026-09-27T18:00:00.000Z'));
+  const validTimer = {
+    exerciseId: 'panca',
+    setIndex: 0,
+    mode: 'countdown',
+    side: 1,
+    runningSince: '2026-09-27T18:00:00.000Z',
+    elapsedMs: 0,
+    targetSeconds: 60,
+    switchEndsAt: null,
+  };
+  const withTimer = (timer) => JSON.stringify({ ...state, activeSession: { ...state.activeSession, timer } });
+
+  assert.doesNotThrow(() => importState(withTimer(validTimer)));
+  assert.doesNotThrow(() => importState(withTimer(null)));
+  assert.doesNotThrow(() => importState(JSON.stringify(state)));
+
+  assert.throws(() => importState(withTimer({ ...validTimer, mode: 'boh' })), isStoreError('activeSession non valida'));
+  assert.throws(() => importState(withTimer({ ...validTimer, side: 3 })), isStoreError('activeSession non valida'));
+  assert.throws(() => importState(withTimer({ ...validTimer, elapsedMs: '0' })), isStoreError('activeSession non valida'));
+  assert.throws(() => importState(withTimer({ ...validTimer, exerciseId: 5 })), isStoreError('activeSession non valida'));
+  assert.throws(() => importState(withTimer({ ...validTimer, runningSince: 5 })), isStoreError('activeSession non valida'));
+});
+
+test('backward compat: uno stato salvato prima di questo task (senza i campi nuovi) resta valido', () => {
+  const p = program();
+  const state = playSession(p, createEmptyState(), 'A', { panca: [{ weight: 60, effort: 'giusta' }] },
+    '2026-09-27T18:00:00.000Z', '2026-09-27T19:00:00.000Z');
+  assert.doesNotThrow(() => importState(JSON.stringify(state)));
 });
 
 test('importState rifiuta lastExportAt non stringa', () => {
