@@ -1,5 +1,7 @@
-export const EXERCISE_TYPES = ['weight', 'bodyweight', 'time'];
+export const EXERCISE_TYPES = ['weight', 'bodyweight', 'time', 'cardio'];
 export const LOAD_VALUES = ['total', 'per-dumbbell'];
+export const CATEGORIES = ['forza', 'stretching', 'mobilita'];
+export const PHASES = ['riscaldamento', 'defaticamento'];
 
 const DEFAULTS = { version: 1, defaultSets: 3, defaultRest: 90 };
 
@@ -17,7 +19,9 @@ const requirePositiveInt = (value, label) => {
   return value;
 };
 
-export const countKey = (type) => (type === 'time' ? 'duration' : 'reps');
+export const countKey = (type) => (type === 'time' || type === 'cardio' ? 'duration' : 'reps');
+
+const isTextArray = (value) => Array.isArray(value) && value.every((item) => typeof item === 'string' && item !== '');
 
 const normalizeRange = (value, label) => {
   const range = typeof value === 'number' ? { min: value, max: value } : value;
@@ -44,22 +48,55 @@ const normalizeExercise = (raw, defaultSets, seen) => {
     if (!LOAD_VALUES.includes(load)) throw new ProgramError(`${label}: load sconosciuto "${raw.load}"`);
   }
 
+  const sides = raw.sides ?? 1;
+  if (sides !== 1 && sides !== 2) throw new ProgramError(`${label}: sides deve essere 1 o 2`);
+
+  const category = raw.category ?? 'forza';
+  if (!CATEGORIES.includes(category)) throw new ProgramError(`${label}: category sconosciuta "${raw.category}"`);
+  if (category !== 'forza' && raw.type !== 'time' && raw.type !== 'bodyweight') {
+    throw new ProgramError(`${label}: category ${category} ammessa solo per time o bodyweight`);
+  }
+
+  if (raw.description !== undefined && typeof raw.description !== 'string') {
+    throw new ProgramError(`${label}: description non valida`);
+  }
+  if (raw.steps !== undefined && !isTextArray(raw.steps)) throw new ProgramError(`${label}: steps non valido`);
+  if (raw.tips !== undefined && !isTextArray(raw.tips)) throw new ProgramError(`${label}: tips non valido`);
+
   const previous = seen.get(raw.id);
-  if (previous && (previous.name !== raw.name || previous.type !== raw.type || previous.load !== load)) {
+  if (
+    previous &&
+    (previous.name !== raw.name ||
+      previous.type !== raw.type ||
+      previous.load !== load ||
+      previous.category !== category ||
+      previous.sides !== sides)
+  ) {
     throw new ProgramError(`id duplicato: ${raw.id}`);
   }
 
   const sets = requirePositiveInt(raw.sets ?? defaultSets, `${label}: sets`);
   const key = countKey(raw.type);
-  if (raw[key] === undefined) throw new ProgramError(`${label}: ${key} mancante`);
+  let target;
+  if (raw.type === 'cardio') {
+    target = raw.duration !== undefined ? normalizeRange(raw.duration, `${label}: duration`) : null;
+  } else {
+    if (raw[key] === undefined) throw new ProgramError(`${label}: ${key} mancante`);
+    target = normalizeRange(raw[key], `${label}: ${key}`);
+  }
 
   const exercise = {
     id: raw.id,
     name: raw.name,
     type: raw.type,
+    category,
+    sides,
     sets,
-    [key]: normalizeRange(raw[key], `${label}: ${key}`),
+    [key]: target,
     ...(raw.type === 'weight' ? { load } : {}),
+    ...(raw.description !== undefined ? { description: raw.description } : {}),
+    ...(raw.steps !== undefined ? { steps: raw.steps } : {}),
+    ...(raw.tips !== undefined ? { tips: raw.tips } : {}),
   };
   seen.set(raw.id, exercise);
   return exercise;
@@ -81,13 +118,17 @@ const normalizeWorkout = (raw, defaults, seenWorkouts, seenExercises) => {
       throw new ProgramError(`${blockLabel}: exercises vuoto`);
     }
     const rest = requirePositiveInt(block.rest ?? defaults.defaultRest, `${blockLabel}: rest`);
+    const phase = block.phase ?? null;
+    if (block.phase !== undefined && !PHASES.includes(block.phase)) {
+      throw new ProgramError(`${blockLabel}: phase sconosciuta "${block.phase}"`);
+    }
     const exercises = block.exercises.map((rawExercise) => {
       const exercise = normalizeExercise(rawExercise, defaults.defaultSets, seenExercises);
       if (inWorkout.has(exercise.id)) throw new ProgramError(`id duplicato: ${exercise.id}`);
       inWorkout.add(exercise.id);
       return exercise;
     });
-    return { rest, exercises };
+    return { rest, phase, exercises };
   });
 
   return { id: raw.id, name: raw.name, blocks };
@@ -107,7 +148,36 @@ export const normalizeProgram = (raw) => {
     normalizeWorkout(workout, { defaultSets, defaultRest }, seenWorkouts, seenExercises),
   );
 
+  propagateTexts(workouts);
+
   return { version, defaultSets, defaultRest, workouts };
+};
+
+const TEXT_FIELDS = ['description', 'steps', 'tips'];
+
+const forEachExercise = (workouts, callback) => {
+  for (const workout of workouts) {
+    for (const block of workout.blocks) {
+      for (const exercise of block.exercises) callback(exercise);
+    }
+  }
+};
+
+const propagateTexts = (workouts) => {
+  const firstTexts = new Map();
+  forEachExercise(workouts, (exercise) => {
+    const entry = firstTexts.get(exercise.id) ?? {};
+    for (const field of TEXT_FIELDS) {
+      if (entry[field] === undefined && exercise[field] !== undefined) entry[field] = exercise[field];
+    }
+    firstTexts.set(exercise.id, entry);
+  });
+  forEachExercise(workouts, (exercise) => {
+    const entry = firstTexts.get(exercise.id);
+    for (const field of TEXT_FIELDS) {
+      if (entry[field] !== undefined) exercise[field] = entry[field];
+    }
+  });
 };
 
 export const parseProgram = (text) => {

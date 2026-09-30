@@ -65,6 +65,8 @@ test('startSession al primo avvio: struttura, target copiati, precompilato vuoto
   assert.deepEqual(session.targets.panca, {
     name: 'Panca piana',
     type: 'weight',
+    category: 'forza',
+    sides: 1,
     sets: 3,
     reps: { min: 8, max: 10 },
     load: 'total',

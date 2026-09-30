@@ -29,6 +29,14 @@ export const formatDuration = (seconds) => `${Math.floor(seconds / 60)}:${String
 export const formatRange = ({ min, max }) => (min === max ? `${min}` : `${min}-${max}`);
 
 export const formatSet = (set, type) => {
+  if (type === 'cardio') {
+    const parts = [];
+    if (set.duration !== undefined && set.duration !== null) parts.push(formatDuration(set.duration));
+    if (set.distance !== undefined && set.distance !== null) parts.push(`${formatNumber(set.distance)} km`);
+    if (set.level !== undefined && set.level !== null) parts.push(`liv ${set.level}`);
+    if (set.speed !== undefined && set.speed !== null) parts.push(`${formatNumber(set.speed)} km/h`);
+    return parts.join(' · ');
+  }
   if (type === 'time') return formatDuration(set.duration ?? 0);
   const reps = set.reps ?? '–';
   if (type === 'bodyweight') return set.weight ? `+${formatNumber(set.weight)}×${reps}` : `${reps}`;

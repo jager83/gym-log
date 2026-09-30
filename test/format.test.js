@@ -48,6 +48,11 @@ test('formatSet per tipo', () => {
   assert.equal(formatSet({ weight: 0, reps: 8 }, 'bodyweight'), '8');
   assert.equal(formatSet({ weight: 5, reps: 8 }, 'bodyweight'), '+5×8');
   assert.equal(formatSet({ duration: 45 }, 'time'), '0:45');
+  assert.equal(
+    formatSet({ duration: 1500, distance: 5.2, level: 8, speed: 12 }, 'cardio'),
+    '25:00 · 5,2 km · liv 8 · 12 km/h',
+  );
+  assert.equal(formatSet({ duration: 1500 }, 'cardio'), '25:00');
 });
 
 test('escapeHtml', () => {
