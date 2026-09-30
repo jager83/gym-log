@@ -203,9 +203,9 @@ export const adviceHtml = (advice, exerciseId, firstSet) => {
 
 // "Usa": imposta il peso suggerito sulla serie 1 (le successive non fatte seguono) e toglie la riga.
 export const applyAdvice = (ctx, button) => {
-  const { exerciseId } = button.dataset;
+  const { exercise: exerciseId, value } = button.dataset;
   const row = document.querySelector(`[data-exercise="${CSS.escape(exerciseId)}"][data-set="0"]`);
-  setField(ctx, { row, exerciseId, setIndex: 0, field: 'weight', value: Number(button.dataset.value) });
+  setField(ctx, { row, exerciseId, setIndex: 0, field: 'weight', value: Number(value) });
   button.closest('.advice').remove();
 };
 
