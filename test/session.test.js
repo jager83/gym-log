@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  DONE_EFFORT,
   clampValue,
   clearRest,
   currentBlockIndex,
@@ -23,11 +24,42 @@ import {
   stepValue,
   updateSet,
 } from '../js/session.js';
+import { normalizeProgram } from '../js/program.js';
 import { at, program } from './fixtures.js';
 import { emptyState, playSession } from './helpers.js';
 
 const T0 = '2026-09-27T18:00:00.000Z';
 const T1 = '2026-09-27T19:00:00.000Z';
+
+// Programma minimale con un esercizio cardio, usato solo per i test cardio: non tocca la
+// fixture condivisa program() per non alterare le rotazioni di nextWorkoutId negli altri test.
+const cardioProgram = (duration) => normalizeProgram({
+  version: 1,
+  defaultSets: 1,
+  defaultRest: 60,
+  workouts: [
+    {
+      id: 'D',
+      name: 'Cardio',
+      blocks: [{ exercises: [{ id: 'corsa', name: 'Corsa', type: 'cardio', sets: 1, ...(duration !== undefined ? { duration } : {}) }] }],
+    },
+  ],
+});
+
+// Programma minimale con un esercizio stretching (type time, category stretching), per i test
+// sull'effort 'fatto'.
+const stretchProgram = () => normalizeProgram({
+  version: 1,
+  defaultSets: 1,
+  defaultRest: 30,
+  workouts: [
+    {
+      id: 'S',
+      name: 'Stretch',
+      blocks: [{ exercises: [{ id: 'quad', name: 'Stretch quadricipiti', type: 'time', category: 'stretching', duration: { min: 30, max: 30 } }] }],
+    },
+  ],
+});
 
 test('nextWorkoutId: primo avvio, rotazione circolare, allenamento rimosso', () => {
   const p = program();
@@ -89,6 +121,16 @@ test('startSession copia bodyWeight dalle settings, o null se assente', () => {
 test('startSession precompila il tempo dal massimo del range', () => {
   const session = startSession(program(), emptyState(), 'B', at(T0)).activeSession;
   assert.deepEqual(session.entries.plank[0], { duration: 60, effort: null });
+});
+
+test('startSession precompila cardio: duration dal max del target (o null se assente), altri campi vuoti', () => {
+  const withDuration = startSession(cardioProgram({ min: 600, max: 1500 }), emptyState(), 'D', at(T0)).activeSession;
+  assert.deepEqual(withDuration.entries.corsa[0], { duration: 1500, distance: null, level: null, speed: null, effort: null });
+  assert.equal(withDuration.targets.corsa.duration.max, 1500);
+
+  const withoutDuration = startSession(cardioProgram(), emptyState(), 'D', at(T0)).activeSession;
+  assert.deepEqual(withoutDuration.entries.corsa[0], { duration: null, distance: null, level: null, speed: null, effort: null });
+  assert.equal(withoutDuration.targets.corsa.duration, null);
 });
 
 test('startSession rifiuta una seconda sessione aperta o un allenamento sconosciuto', () => {
@@ -318,6 +360,31 @@ test('clampValue e stepValue', () => {
   assert.equal(stepValue('weight', null, 1), 0.5);
   assert.equal(stepValue('reps', 0, -1), 0);
   assert.equal(stepValue('duration', 60, 1), 65);
+});
+
+test('clampValue e stepValue: distance, level, speed', () => {
+  assert.equal(clampValue('distance', 5.678), 5.68);
+  assert.equal(clampValue('distance', -1), 0);
+  assert.equal(clampValue('level', 3.6), 4);
+  assert.equal(clampValue('level', -2), 0);
+  assert.equal(clampValue('speed', 8.34), 8.3);
+  assert.equal(stepValue('distance', 5, 1), 5.1);
+  assert.equal(stepValue('level', 3, 1), 4);
+  assert.equal(stepValue('speed', 8, -1), 7.5);
+});
+
+test('updateSet: effort "fatto" accettato solo per category diversa da forza', () => {
+  let forzaState = startSession(program(), emptyState(), 'A', at(T0));
+  forzaState = updateSet(forzaState, 'panca', 0, { effort: DONE_EFFORT }, at(T0));
+  assert.equal(forzaState.activeSession.entries.panca[0].effort, null);
+
+  let stretchState = startSession(stretchProgram(), emptyState(), 'S', at(T0));
+  stretchState = updateSet(stretchState, 'quad', 0, { effort: DONE_EFFORT }, at(T0));
+  assert.equal(stretchState.activeSession.entries.quad[0].effort, DONE_EFFORT);
+
+  // Gli EFFORTS "normali" restano accettati anche per category diversa da forza.
+  stretchState = updateSet(stretchState, 'quad', 0, { effort: 'facile' }, at(T0));
+  assert.equal(stretchState.activeSession.entries.quad[0].effort, 'facile');
 });
 
 test('currentBlockIndex segue il primo blocco incompleto', () => {

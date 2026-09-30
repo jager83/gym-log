@@ -3,7 +3,8 @@ import { isDone, round1 } from './metrics.js';
 
 export const EFFORTS = ['facile', 'giusta', 'dura'];
 export const EFFORT_LABELS = { facile: 'Facile', giusta: 'Giusta', dura: 'Dura' };
-export const STEPS = { weight: 0.5, reps: 1, duration: 5 };
+export const DONE_EFFORT = 'fatto';
+export const STEPS = { weight: 0.5, reps: 1, duration: 5, distance: 0.1, level: 1, speed: 0.5 };
 export const REST_ADJUST_SECONDS = 15;
 export const REST_LIVE_GRACE_MS = 3000;
 
@@ -54,6 +55,9 @@ export const sourceSet = (previous, setIndex) => {
 };
 
 const prefillSet = (exercise, previous, setIndex) => {
+  if (exercise.type === 'cardio') {
+    return { duration: exercise.duration?.max ?? null, distance: null, level: null, speed: null, effort: null };
+  }
   const source = sourceSet(previous, setIndex);
   const key = countKey(exercise.type);
   const set = { [key]: exercise[key].max, effort: null };
@@ -75,7 +79,7 @@ export const startSession = (program, state, workoutId, now) => {
     block.exercises.forEach((exercise) => {
       const { id, ...target } = exercise;
       const key = countKey(exercise.type);
-      targets[id] = { ...target, [key]: { ...exercise[key] } };
+      targets[id] = { ...target, [key]: exercise[key] ? { ...exercise[key] } : null };
       const previous = lastDoneSets(state.sessions, id);
       entries[id] = Array.from({ length: exercise.sets }, (_, setIndex) => prefillSet(exercise, previous, setIndex));
     });
@@ -129,16 +133,22 @@ export const shouldStartRest = (session, exerciseId, setIndex) => {
 export const clampValue = (field, value) => {
   if (value === null || value === undefined || Number.isNaN(value)) return null;
   if (field === 'weight') return Math.max(0, Math.round(value * 2) / 2);
+  if (field === 'distance') return Math.max(0, Math.round(value * 100) / 100);
+  if (field === 'speed') return Math.max(0, Math.round(value * 10) / 10);
   return Math.max(0, Math.round(value));
 };
 
 export const stepValue = (field, value, direction) => clampValue(field, (value ?? 0) + direction * STEPS[field]);
 
-const applyPatch = (set, patch) =>
+// L'effort DONE_EFFORT ('fatto') vale solo per gli esercizi con category diversa da forza
+// (stretching/mobilita): per forza restano ammessi solo gli EFFORTS (faccine).
+const isValidEffort = (value, category) => EFFORTS.includes(value) || (category !== 'forza' && value === DONE_EFFORT);
+
+const applyPatch = (set, patch, category) =>
   Object.entries(patch).reduce(
     (next, [field, value]) => ({
       ...next,
-      [field]: field === 'effort' ? (EFFORTS.includes(value) ? value : null) : clampValue(field, value),
+      [field]: field === 'effort' ? (isValidEffort(value, category) ? value : null) : clampValue(field, value),
     }),
     set,
   );
@@ -148,7 +158,8 @@ export const updateSet = (state, exerciseId, setIndex, patch, now) => {
   const current = session?.entries[exerciseId]?.[setIndex];
   if (!current) return state;
 
-  const next = applyPatch(current, patch);
+  const category = session.targets[exerciseId].category;
+  const next = applyPatch(current, patch, category);
   const sets = session.entries[exerciseId].map((set, index) => (index === setIndex ? next : set));
   const blockIndex = blockIndexOf(session, exerciseId);
 
