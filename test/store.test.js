@@ -489,3 +489,17 @@ test('importState rifiuta lastExportAt non stringa', () => {
   const text = JSON.stringify({ ...createEmptyState(), lastExportAt: 5 });
   assert.throws(() => importState(text), isStoreError('lastExportAt non valido'));
 });
+
+test('validateState accetta block.phase nota, null o assente; rifiuta valori sconosciuti', () => {
+  const withPhase = (phase) =>
+    withActive((session) => ({ ...session, blocks: session.blocks.map((block) => ({ ...block, phase })) }));
+  const withoutPhase = withActive((session) => ({
+    ...session,
+    blocks: session.blocks.map(({ phase, ...block }) => block),
+  }));
+  assert.doesNotThrow(() => importState(withPhase('riscaldamento')));
+  assert.doesNotThrow(() => importState(withPhase('defaticamento')));
+  assert.doesNotThrow(() => importState(withPhase(null)));
+  assert.doesNotThrow(() => importState(withoutPhase));
+  assert.throws(() => importState(withPhase('meta')), isStoreError('activeSession non valida'));
+});

@@ -1,4 +1,4 @@
-import { EXERCISE_TYPES, LOAD_VALUES, countKey } from './program.js';
+import { EXERCISE_TYPES, LOAD_VALUES, PHASES, countKey } from './program.js';
 import { DONE_EFFORT, EFFORTS } from './session.js';
 
 export const STORAGE_KEY = 'gym-log';
@@ -45,7 +45,8 @@ const isBlock = (block) =>
   Array.isArray(block.exerciseIds) &&
   block.exerciseIds.every((id) => typeof id === 'string') &&
   Number.isInteger(block.rest) &&
-  block.rest > 0;
+  block.rest > 0 &&
+  (block.phase === undefined || block.phase === null || PHASES.includes(block.phase));
 
 const isCount = (value) => Number.isInteger(value) && value >= 0;
 

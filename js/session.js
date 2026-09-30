@@ -75,7 +75,7 @@ export const startSession = (program, state, workoutId, now) => {
   const targets = {};
   const entries = {};
   workout.blocks.forEach((block) => {
-    blocks.push({ rest: block.rest, exerciseIds: block.exercises.map((exercise) => exercise.id) });
+    blocks.push({ rest: block.rest, phase: block.phase ?? null, exerciseIds: block.exercises.map((exercise) => exercise.id) });
     block.exercises.forEach((exercise) => {
       const { id, ...target } = exercise;
       const key = countKey(exercise.type);
@@ -228,6 +228,9 @@ export const finishSession = (state, now) => {
 };
 
 export const setSound = (state, enabled) => ({ ...state, settings: { ...state.settings, sound: enabled } });
+
+// "Lati di seguito": il lato 2 parte da solo dopo il cambio lato (assente = true, vedi timer.js).
+export const setSidesAuto = (state, enabled) => ({ ...state, settings: { ...state.settings, sidesAuto: enabled } });
 
 export const setBodyWeight = (state, value) => {
   const bodyWeight = typeof value === 'number' && Number.isFinite(value) && value > 0 ? round1(value) : null;

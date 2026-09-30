@@ -16,6 +16,7 @@ import {
   restRemainingMs,
   restStatus,
   setBodyWeight,
+  setSidesAuto,
   setSound,
   shouldStartRest,
   sourceSet,
@@ -91,8 +92,8 @@ test('startSession al primo avvio: struttura, target copiati, precompilato vuoto
   assert.equal(session.restEndsAt, null);
   assert.equal(session.restBlockIndex, null);
   assert.deepEqual(session.blocks, [
-    { rest: 120, exerciseIds: ['panca'] },
-    { rest: 90, exerciseIds: ['curl', 'trazioni'] },
+    { rest: 120, phase: null, exerciseIds: ['panca'] },
+    { rest: 90, phase: null, exerciseIds: ['curl', 'trazioni'] },
   ]);
   assert.deepEqual(session.targets.panca, {
     name: 'Panca piana',
@@ -463,6 +464,31 @@ test('finishSession e discardSession senza sessione aperta non cambiano nulla', 
 
 test('setSound', () => {
   assert.equal(setSound(emptyState(), false).settings.sound, false);
+});
+
+test('setSidesAuto salva il booleano in settings senza toccare il resto', () => {
+  const off = setSidesAuto(emptyState(), false);
+  assert.equal(off.settings.sidesAuto, false);
+  assert.equal(off.settings.sound, true);
+  assert.equal(setSidesAuto(off, true).settings.sidesAuto, true);
+});
+
+test('startSession copia la phase dei blocchi', () => {
+  const raw = {
+    workouts: [
+      {
+        id: 'W',
+        name: 'Con fasi',
+        blocks: [
+          { phase: 'riscaldamento', exercises: [{ id: 'spalle', name: 'Spalle', type: 'bodyweight', category: 'mobilita', reps: 10 }] },
+          { exercises: [{ id: 'squat', name: 'Squat', type: 'weight', reps: 8 }] },
+          { phase: 'defaticamento', exercises: [{ id: 'quad', name: 'Quadricipiti', type: 'time', category: 'stretching', sides: 2, duration: 30 }] },
+        ],
+      },
+    ],
+  };
+  const session = startSession(normalizeProgram(raw), emptyState(), 'W', at(T0)).activeSession;
+  assert.deepEqual(session.blocks.map((block) => block.phase), ['riscaldamento', null, 'defaticamento']);
 });
 
 test('setBodyWeight arrotonda a 0,1 kg, accetta null e riporta a null valori non validi', () => {
