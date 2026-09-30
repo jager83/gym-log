@@ -11,6 +11,7 @@ const SHELL = [
   'js/app.js',
   'js/chart.js',
   'js/device.js',
+  'js/focus.js',
   'js/format.js',
   'js/metrics.js',
   'js/program.js',
