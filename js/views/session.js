@@ -15,11 +15,14 @@ import {
   startRest,
 } from '../session.js';
 import { toggleEffort } from '../focus.js';
+import { adviceBySession } from '../advice.js';
 import { escapeHtml, formatDuration, formatSet } from '../format.js';
 import { faceSvg } from './faces.js';
 import { openExerciseInfo } from './info.js';
 import {
   PHASE_LABELS,
+  adviceHtml,
+  applyAdvice,
   commitInput,
   confirmFinish,
   createStepRepeat,
@@ -65,8 +68,9 @@ const isBlockComplete = (session, blockIndex) =>
 // Il blocco che ha in corso un recupero attivo, o null se nessun recupero è in corso.
 const restingBlockIndex = (session) => (session?.restEndsAt ? session.restBlockIndex : null);
 
-// Il titolo porta al focus su quel blocco; "i" apre la scheda esercizio se ci sono testi.
-const exerciseHeaderHtml = (session, blockIndex) =>
+// Il titolo porta al focus su quel blocco; "i" apre la scheda esercizio se ci sono testi; sotto il
+// target, il suggerimento di carico finché la serie 1 non è fatta.
+const exerciseHeaderHtml = (session, blockIndex, adviceById) =>
   session.blocks[blockIndex].exerciseIds
     .map((exerciseId) => {
       const target = session.targets[exerciseId];
@@ -74,7 +78,8 @@ const exerciseHeaderHtml = (session, blockIndex) =>
           <h2 class="block__title"><a class="block__link" href="#/focus/${blockIndex}">${escapeHtml(target.name)}</a></h2>
           ${infoButtonHtml(exerciseId, target)}
         </div>
-        <p class="block__target">${targetText(target)} · ${unitsText(target)}</p>`;
+        <p class="block__target">${targetText(target)} · ${unitsText(target)}</p>
+        ${adviceHtml(adviceById[exerciseId], exerciseId, session.entries[exerciseId][0])}`;
     })
     .join('');
 
@@ -94,7 +99,7 @@ const setsRowsHtml = (session, block, previousById, superset) => {
 // `manualOpen`: blocchi completati riaperti a mano con "Mostra" (mostrano poi "Chiudi").
 // `pendingCollapse`: blocchi appena completati senza un recupero attivo (l'ultimo della sessione),
 // in attesa di compattarsi da soli dopo AUTO_COLLAPSE_MS.
-const blockHtml = (session, blockIndex, manualOpen, previousById, pendingCollapse) => {
+const blockHtml = (session, blockIndex, manualOpen, previousById, pendingCollapse, adviceById) => {
   const block = session.blocks[blockIndex];
   const complete = isBlockComplete(session, blockIndex);
   const superset = block.exerciseIds.length > 1;
@@ -103,7 +108,7 @@ const blockHtml = (session, blockIndex, manualOpen, previousById, pendingCollaps
     return `
       <article class="block" data-block="${blockIndex}">
         ${blockTagsHtml(block, superset)}
-        ${exerciseHeaderHtml(session, blockIndex)}
+        ${exerciseHeaderHtml(session, blockIndex, adviceById)}
         <div class="block__sets">${setsRowsHtml(session, block, previousById, superset)}</div>
       </article>`;
   }
@@ -122,7 +127,7 @@ const blockHtml = (session, blockIndex, manualOpen, previousById, pendingCollaps
 
   const header = autoOpen
     ? '<p class="block__completed" aria-live="polite">✓ Completato</p>'
-    : exerciseHeaderHtml(session, blockIndex);
+    : exerciseHeaderHtml(session, blockIndex, adviceById);
 
   return `
     <article class="block block--completed" data-block="${blockIndex}">
@@ -133,7 +138,7 @@ const blockHtml = (session, blockIndex, manualOpen, previousById, pendingCollaps
     </article>`;
 };
 
-const sessionHtml = (session, manualOpen, previousById, pendingCollapse) => `
+const sessionHtml = (session, manualOpen, previousById, pendingCollapse, adviceById) => `
   <section class="session">
     <header class="page-header">
       <a class="back" href="#/" aria-label="Torna alla home">‹</a>
@@ -141,7 +146,7 @@ const sessionHtml = (session, manualOpen, previousById, pendingCollapse) => `
     </header>
     <a class="button button--primary session__start" href="#/focus">Inizia</a>
     <p class="legend">${EFFORTS.map((effort) => `<span>${faceSvg(effort)}${EFFORT_LABELS[effort]}</span>`).join('')}</p>
-    <div class="blocks">${session.blocks.map((_, index) => blockHtml(session, index, manualOpen, previousById, pendingCollapse)).join('')}</div>
+    <div class="blocks">${session.blocks.map((_, index) => blockHtml(session, index, manualOpen, previousById, pendingCollapse, adviceById)).join('')}</div>
     <div class="session__footer">
       <div class="session__actions">
         <button type="button" class="button" data-action="rest-start">Recupero</button>
@@ -163,18 +168,20 @@ export const renderSession = (root, ctx) => {
   const previousById = Object.fromEntries(
     Object.keys(initial.entries).map((exerciseId) => [exerciseId, lastDoneSets(ctx.getState().sessions, exerciseId)]),
   );
+  // Suggerimenti dalle sessioni finite: non cambiano mentre la sessione è aperta.
+  const adviceById = adviceBySession(ctx.getState().sessions, initial);
   const manualOpen = new Set();
   const pendingCollapse = new Map(); // blockIndex -> timeoutId, per il blocco completato senza recupero
   let closeInfo = null;
 
-  root.innerHTML = sessionHtml(initial, manualOpen, previousById, pendingCollapse);
+  root.innerHTML = sessionHtml(initial, manualOpen, previousById, pendingCollapse, adviceById);
   const restBar = root.querySelector('.rest-bar');
   const restTime = restBar.querySelector('.rest-bar__time');
   const soundButton = restBar.querySelector('[data-action="sound"]');
 
   const redrawBlock = (blockIndex) => {
     const element = root.querySelector(`.block[data-block="${blockIndex}"]`);
-    if (element) element.outerHTML = blockHtml(getSession(), blockIndex, manualOpen, previousById, pendingCollapse);
+    if (element) element.outerHTML = blockHtml(getSession(), blockIndex, manualOpen, previousById, pendingCollapse, adviceById);
   };
 
   const clearPendingCollapse = (blockIndex) => {
@@ -278,6 +285,11 @@ export const renderSession = (root, ctx) => {
         schedulePendingCollapse(blockIndex);
       }
       redrawBlock(blockIndex);
+      tick();
+      return;
+    }
+    if (action === 'use-advice') {
+      applyAdvice(ctx, target);
       tick();
       return;
     }

@@ -58,3 +58,7 @@ export const loadAdvice = (sessions, exerciseId, target) => {
   const value = clampValue('weight', top ? last + step : Math.max(0, last - step));
   return { kind, value, text: `${loadLead(kind, value, isLoad)} · l'ultima volta ${top ? topDetail : lowDetail}` };
 };
+
+// Suggerimento (o null) per ogni esercizio della sessione aperta, dalle sessioni finite.
+export const adviceBySession = (sessions, session) =>
+  Object.fromEntries(Object.entries(session.targets).map(([exerciseId, target]) => [exerciseId, loadAdvice(sessions, exerciseId, target)]));

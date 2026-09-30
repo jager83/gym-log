@@ -1,7 +1,7 @@
 // Controlli condivisi tra la vista lista (session.js) e la vista focus (focus.js): stepper −/+,
 // faccine (o "Fatto"), pulsante "i", testi del target, pressione prolungata, conferma "Termina".
 import { countKey } from '../program.js';
-import { setOutcome } from '../metrics.js';
+import { isDone, setOutcome } from '../metrics.js';
 import { DONE_EFFORT, EFFORTS, EFFORT_LABELS, finishSession, hasDoneSets, stepValue, updateSet } from '../session.js';
 import { escapeHtml, formatDuration, formatNumber, formatRange, parseNumberInput } from '../format.js';
 import { faceSvg } from './faces.js';
@@ -169,13 +169,44 @@ const refreshFollowingWeights = (ctx, exerciseId, setIndex) => {
 
 const currentValue = (ctx, exerciseId, setIndex, field) => ctx.getState().activeSession.entries[exerciseId][setIndex][field];
 
+// Salva un valore su un campo e aggiorna sul posto il numero (se la serie è in vista), l'esito e
+// i pesi che seguono, senza ridisegnare.
+const setField = (ctx, { row, exerciseId, setIndex, field, value }) => {
+  ctx.commit(updateSet(ctx.getState(), exerciseId, setIndex, { [field]: value }, new Date()));
+  const input = row?.querySelector(`.stepper__input[data-field="${field}"]`);
+  if (input) input.value = formatFieldValue(field, currentValue(ctx, exerciseId, setIndex, field));
+  if (row) refreshOutcome(row, ctx.getState().activeSession, exerciseId, setIndex);
+  if (field === 'weight') refreshFollowingWeights(ctx, exerciseId, setIndex);
+};
+
 // Un passo −/+ su un campo: salva e aggiorna il numero sul posto, senza ridisegnare.
 export const stepSet = (ctx, { row, exerciseId, setIndex, field, dir }) => {
   const current = currentValue(ctx, exerciseId, setIndex, field);
-  ctx.commit(updateSet(ctx.getState(), exerciseId, setIndex, { [field]: stepValue(field, current, dir) }, new Date()));
-  row.querySelector(`.stepper__input[data-field="${field}"]`).value = formatFieldValue(field, currentValue(ctx, exerciseId, setIndex, field));
-  refreshOutcome(row, ctx.getState().activeSession, exerciseId, setIndex);
-  if (field === 'weight') refreshFollowingWeights(ctx, exerciseId, setIndex);
+  setField(ctx, { row, exerciseId, setIndex, field, value: stepValue(field, current, dir) });
+};
+
+// --- Suggerimento di carico (advice.js) -------------------------------------------------------
+
+const ADVICE_USABLE = ['up', 'down'];
+
+// Riga del suggerimento, solo finché la serie 1 non è fatta e il peso suggerito non è già impostato.
+export const adviceHtml = (advice, exerciseId, firstSet) => {
+  if (!advice || isDone(firstSet)) return '';
+  const usable = ADVICE_USABLE.includes(advice.kind);
+  if (usable && firstSet.weight === advice.value) return '';
+  const button = usable
+    ? `<button type="button" class="button advice__use" data-action="use-advice" data-exercise="${escapeHtml(exerciseId)}"
+        data-value="${advice.value}" aria-label="Usa il peso suggerito ${formatNumber(advice.value)} kg">Usa</button>`
+    : '';
+  return `<div class="advice"><p class="advice__text">${escapeHtml(advice.text)}</p>${button}</div>`;
+};
+
+// "Usa": imposta il peso suggerito sulla serie 1 (le successive non fatte seguono) e toglie la riga.
+export const applyAdvice = (ctx, button) => {
+  const { exerciseId } = button.dataset;
+  const row = document.querySelector(`[data-exercise="${CSS.escape(exerciseId)}"][data-set="0"]`);
+  setField(ctx, { row, exerciseId, setIndex: 0, field: 'weight', value: Number(button.dataset.value) });
+  button.closest('.advice').remove();
 };
 
 export const commitInput = (ctx, input) => {

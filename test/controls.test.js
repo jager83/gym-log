@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  adviceHtml,
   focusTargetText,
   formatFieldValue,
   hasExerciseTexts,
@@ -71,4 +72,23 @@ test('setFields e unitsText: niente zavorra per bodyweight di stretching/mobilit
   assert.equal(unitsText({ ...catCow, sides: 2 }), 'rip per lato');
   const { category, ...oldPushUp } = pushUp;
   assert.deepEqual(setFields(oldPushUp).map(([field]) => field), ['weight', 'reps']);
+});
+
+test('adviceHtml: riga con "Usa" per up/down, solo testo per up-time', () => {
+  const up = { kind: 'up', value: 62.5, text: "Prova 62,5 kg · l'ultima volta 10 rip su tutte le serie" };
+  const html = adviceHtml(up, 'panca', { weight: 60, reps: 10, effort: null });
+  assert.match(html, /Prova 62,5 kg · l&#39;ultima volta 10 rip su tutte le serie/);
+  assert.match(html, /data-action="use-advice" data-exercise="panca"/);
+  assert.match(html, /data-value="62.5"/);
+  assert.match(html, /aria-label="Usa il peso suggerito 62,5 kg"/);
+  const time = adviceHtml({ kind: 'up-time', value: 5, text: 'Prova 5 s in più' }, 'plank', { duration: 30, effort: null });
+  assert.match(time, /Prova 5 s in più/);
+  assert.doesNotMatch(time, /use-advice/);
+});
+
+test('adviceHtml: niente riga senza suggerimento, con la serie 1 fatta o col peso già impostato', () => {
+  const up = { kind: 'up', value: 62.5, text: 'Prova 62,5 kg' };
+  assert.equal(adviceHtml(null, 'panca', { weight: 60, reps: 10, effort: null }), '');
+  assert.equal(adviceHtml(up, 'panca', { weight: 60, reps: 10, effort: 'giusta' }), '');
+  assert.equal(adviceHtml(up, 'panca', { weight: 62.5, reps: 10, effort: null }), '');
 });

@@ -22,8 +22,11 @@ import {
   timerStatus,
 } from '../timer.js';
 import { escapeHtml, formatDuration, formatElapsed } from '../format.js';
+import { adviceBySession } from '../advice.js';
 import {
   PHASE_LABELS,
+  adviceHtml,
+  applyAdvice,
   commitInput,
   confirmFinish,
   createStepRepeat,
@@ -129,7 +132,7 @@ const controlsHtml = (session, settings, exerciseId, setIndex, name, now) => {
   return `<div class="focus-card__fields">${fieldsHtml(target, set, name, number)}</div>`;
 };
 
-const cardHtml = (session, settings, { exerciseId, setIndex }, now) => {
+const cardHtml = (session, settings, { exerciseId, setIndex }, now, adviceById) => {
   const target = session.targets[exerciseId];
   const set = session.entries[exerciseId][setIndex];
   const name = escapeHtml(target.name);
@@ -140,6 +143,7 @@ const cardHtml = (session, settings, { exerciseId, setIndex }, now) => {
         ${infoButtonHtml(exerciseId, target)}
       </div>
       <p class="focus-card__target">${focusTargetText(target, setIndex)}</p>
+      ${setIndex === 0 ? adviceHtml(adviceById[exerciseId], exerciseId, set) : ''}
       ${controlsHtml(session, settings, exerciseId, setIndex, name, now)}
       <div class="focus-card__efforts">${effortsHtml(target, set, name, setIndex + 1)}</div>
     </article>`;
@@ -158,7 +162,7 @@ const navHtml = ({ slot, maxSlot, total }) => `
     <button type="button" class="focus__arrow" data-action="next" aria-label="Blocco successivo" ${slot >= maxSlot ? 'disabled' : ''}>›</button>
   </nav>`;
 
-const blockScreenHtml = (session, settings, position, slots, now) => {
+const blockScreenHtml = (session, settings, position, slots, now, adviceById) => {
   const block = session.blocks[position.blockIndex];
   const tags = [
     block.phase ? `<span class="focus__phase">${PHASE_LABELS[block.phase]}</span>` : '',
@@ -170,7 +174,7 @@ const blockScreenHtml = (session, settings, position, slots, now) => {
       ${barHtml(navHtml(slots))}
       <h1 class="visually-hidden">${escapeHtml(session.workoutName)}</h1>
       ${tags ? `<div class="focus__tags">${tags}</div>` : ''}
-      ${position.items.map((item) => cardHtml(session, settings, item, now)).join('')}
+      ${position.items.map((item) => cardHtml(session, settings, item, now, adviceById)).join('')}
     </section>`;
 };
 
@@ -225,6 +229,8 @@ const focusSelector = (element) => {
 export const renderFocus = (root, ctx, initialBlock) => {
   const getSession = () => ctx.getState().activeSession;
   const getSettings = () => ctx.getState().settings;
+  // Suggerimenti dalle sessioni finite: non cambiano mentre la sessione è aperta.
+  const adviceById = adviceBySession(ctx.getState().sessions, getSession());
 
   // Override manuale (frecce o titolo dalla lista): indice di blocco, o blocks.length per il
   // riepilogo; null = posizione derivata. Resta finché non si segna una serie.
@@ -287,7 +293,7 @@ export const renderFocus = (root, ctx, initialBlock) => {
     const settings = getSettings();
     if (screen.kind === 'rest') root.innerHTML = restScreenHtml(session, settings);
     else if (screen.kind === 'summary') root.innerHTML = summaryScreenHtml(session, screen.slots, now);
-    else root.innerHTML = blockScreenHtml(session, settings, screen.position, screen.slots, now);
+    else root.innerHTML = blockScreenHtml(session, settings, screen.position, screen.slots, now, adviceById);
 
     const place = screen.kind === 'block' ? `${screen.position.blockIndex}:${screen.position.round}` : screen.kind;
     if (place !== lastPlace) window.scrollTo(0, 0);
@@ -371,6 +377,11 @@ export const renderFocus = (root, ctx, initialBlock) => {
     }
     if (action === 'finish') {
       confirmFinish(ctx, now);
+      return;
+    }
+    if (action === 'use-advice') {
+      applyAdvice(ctx, target);
+      refresh();
       return;
     }
 

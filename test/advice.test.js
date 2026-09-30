@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { loadAdvice } from '../js/advice.js';
+import { adviceBySession, loadAdvice } from '../js/advice.js';
 
 // Sessione terminata minimale: solo ciò che legge loadAdvice (entries, via lastDoneSets).
 const sessionWith = (exerciseId, sets, targets = {}) => ({
@@ -176,4 +176,13 @@ test('time non forza: nessun suggerimento', () => {
 test('il valore suggerito è arrotondato al mezzo chilo', () => {
   const sessions = [sessionWith('panca', weightSets(60.3, [10, 10, 10]))];
   assert.equal(loadAdvice(sessions, 'panca', weightTarget).value, 63);
+});
+
+test('adviceBySession: un suggerimento (o null) per ogni esercizio della sessione', () => {
+  const sessions = [sessionWith('panca', weightSets(60, [10, 10, 10]))];
+  const active = { targets: { panca: weightTarget, plank: timeTarget } };
+  const result = adviceBySession(sessions, active);
+  assert.deepEqual(Object.keys(result), ['panca', 'plank']);
+  assert.equal(result.panca.value, 62.5);
+  assert.equal(result.plank, null);
 });
