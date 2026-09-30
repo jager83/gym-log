@@ -174,6 +174,42 @@ test('exerciseHistory: metric riflette come è stato calcolato value', () => {
   assert.equal(history[1].value, epley(85, 8));
 });
 
+const assistedTarget = { name: 'Trazioni assistite', type: 'weight', load: 'total', assisted: true, sets: 1, reps: { min: 8, max: 10 } };
+
+const assistedSession = (id, endedAt, assistance, bodyWeight) => ({
+  id,
+  workoutId: 'B',
+  endedAt,
+  ...(bodyWeight === undefined ? {} : { bodyWeight }),
+  targets: { trazioni: assistedTarget },
+  entries: { trazioni: [{ weight: assistance, reps: 10, effort: 'giusta' }] },
+});
+
+test('assisted con peso corporeo: 1RM sul carico effettivo peso corporeo − assistenza', () => {
+  const history = exerciseHistory([
+    assistedSession('a1', '2026-09-20T19:00:00.000Z', 30, 80),
+    assistedSession('a2', '2026-09-22T19:00:00.000Z', 25, 80),
+  ], 'trazioni');
+  assert.deepEqual(history.map((item) => item.metric), ['1rm', '1rm']);
+  assert.deepEqual(history.map((item) => item.value), [epley(50, 10), epley(55, 10)]);
+  assert.ok(history[1].value > history[0].value, 'meno assistenza deve dare un 1RM più alto');
+  assert.equal(sessionMetric([{ weight: 90, reps: 10, effort: 'giusta' }], 'weight', 80, true), 0);
+  assert.equal(chartSeries(history).label, METRIC_LABELS.assistedLoad);
+});
+
+test('assisted senza peso corporeo: il grafico mostra l\'assistenza, etichettata come tale', () => {
+  const history = exerciseHistory([
+    assistedSession('a1', '2026-09-20T19:00:00.000Z', 30),
+    assistedSession('a2', '2026-09-22T19:00:00.000Z', 25, 80),
+  ], 'trazioni');
+  assert.equal(history[0].metric, 'assistance');
+  assert.equal(history[0].value, 30);
+  assert.equal(METRIC_LABELS.assistance, 'Assistenza (kg)');
+  // Con almeno una voce a 1RM si usano solo quelle, come per il bodyweight.
+  assert.deepEqual(chartSeries(history), { label: METRIC_LABELS.assistedLoad, points: [{ date: '2026-09-22T19:00:00.000Z', value: epley(55, 10) }] });
+  assert.deepEqual(chartSeries(history.slice(0, 1)), { label: 'Assistenza (kg)', points: [{ date: '2026-09-20T19:00:00.000Z', value: 30 }] });
+});
+
 test('exerciseHistory: metric duration per gli esercizi a tempo', () => {
   const timeSessions = [
     {

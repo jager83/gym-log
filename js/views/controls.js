@@ -196,7 +196,6 @@ export const stepSet = (ctx, { row, exerciseId, setIndex, field, dir }) => {
 
 // --- Suggerimento di carico (advice.js) -------------------------------------------------------
 
-
 // Riga del suggerimento, solo finché la serie 1 non è fatta e il peso suggerito non è già impostato.
 export const adviceHtml = (advice, exerciseId, firstSet) => {
   if (!advice || isDone(firstSet)) return '';

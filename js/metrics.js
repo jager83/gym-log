@@ -4,6 +4,8 @@ export const METRIC_LABELS = {
   weight: '1RM stimato (kg)',
   bodyweight: 'Ripetizioni massime',
   bodyweightLoad: '1RM stimato peso corporeo + zavorra (kg)',
+  assistedLoad: '1RM stimato peso corporeo − assistenza (kg)',
+  assistance: 'Assistenza (kg)',
   time: 'Durata massima (s)',
   cardioDistance: 'Distanza (km)',
   cardioDuration: 'Durata (min)',
@@ -25,9 +27,19 @@ export const setOutcome = (set, type, target) => {
   return 'ok';
 };
 
-const usesBodyWeightLoad = (type, bodyWeight) => type === 'bodyweight' && typeof bodyWeight === 'number' && bodyWeight > 0;
+const usesBodyWeightLoad = (type, bodyWeight) => type === 'bodyweight' && hasBodyWeight(bodyWeight);
 
-const setMetric = (set, type, bodyWeight) => {
+const hasBodyWeight = (bodyWeight) => typeof bodyWeight === 'number' && bodyWeight > 0;
+
+// Assistito: il peso registrato sono i kg di assistenza. Con il peso corporeo il carico effettivo
+// è peso corporeo − assistenza; senza, la metrica è l'assistenza stessa (più bassa è meglio).
+const assistedMetric = (set, bodyWeight) => {
+  if (!hasBodyWeight(bodyWeight)) return typeof set.weight === 'number' ? set.weight : null;
+  return typeof set.reps === 'number' ? epley(Math.max(0, bodyWeight - (set.weight ?? 0)), set.reps) : null;
+};
+
+const setMetric = (set, type, bodyWeight, assisted) => {
+  if (type === 'weight' && assisted) return assistedMetric(set, bodyWeight);
   if (type === 'weight') {
     return typeof set.weight === 'number' && set.weight > 0 && typeof set.reps === 'number'
       ? epley(set.weight, set.reps)
@@ -40,18 +52,20 @@ const setMetric = (set, type, bodyWeight) => {
   return typeof value === 'number' ? value : null;
 };
 
-export const sessionMetric = (sets, type, bodyWeight = null) => {
+export const sessionMetric = (sets, type, bodyWeight = null, assisted = false) => {
   const values = sets
     .filter(isDone)
-    .map((set) => setMetric(set, type, bodyWeight))
+    .map((set) => setMetric(set, type, bodyWeight, assisted))
     .filter((value) => value !== null);
   return values.length ? Math.max(...values) : null;
 };
 
 // Metrica che ha prodotto `value`: '1rm' per weight, o per bodyweight quando bodyWeight è impostato;
-// 'reps' per bodyweight senza bodyWeight; 'duration' per time.
-const metricKind = (type, bodyWeight) => {
+// 'reps' per bodyweight senza bodyWeight; 'assistance' per weight assistito senza bodyWeight;
+// 'duration' per time.
+const metricKind = (type, bodyWeight, assisted) => {
   if (type === 'time') return 'duration';
+  if (type === 'weight' && assisted && !hasBodyWeight(bodyWeight)) return 'assistance';
   if (type === 'weight' || usesBodyWeightLoad(type, bodyWeight)) return '1rm';
   return 'reps';
 };
@@ -96,8 +110,9 @@ export const exerciseHistory = (sessions, exerciseId) =>
         category,
         target: target[countKey(target.type)],
         sets: sets.filter(isDone),
-        value: sessionMetric(sets, target.type, bodyWeight),
-        metric: metricKind(target.type, bodyWeight),
+        ...(target.assisted === true ? { assisted: true } : {}),
+        value: sessionMetric(sets, target.type, bodyWeight, target.assisted === true),
+        metric: metricKind(target.type, bodyWeight, target.assisted === true),
       };
     })
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -105,7 +120,8 @@ export const exerciseHistory = (sessions, exerciseId) =>
 // Serie del grafico storico: per bodyweight, se lo storico contiene almeno una voce con 1RM
 // (peso corporeo + zavorra), usa solo quelle con la relativa etichetta; altrimenti le ripetizioni.
 // Per cardio, se almeno una voce ha la distanza usa solo quelle con la distanza; altrimenti la
-// durata (minuti). Per gli esercizi con category diversa da forza (stretching/mobilita) nessun
+// durata (minuti). Per weight assistito, 1RM sul carico effettivo (peso corporeo − assistenza) se
+// almeno una voce ce l'ha, altrimenti l'assistenza. Per gli esercizi con category diversa da forza (stretching/mobilita) nessun
 // grafico. Per gli altri tipi, l'etichetta corrente. Solo punti con value non null; null se
 // nessuno resta.
 export const chartSeries = (history) => {
@@ -118,6 +134,12 @@ export const chartSeries = (history) => {
     const hasLoad = history.some((item) => item.metric === '1rm');
     label = hasLoad ? METRIC_LABELS.bodyweightLoad : METRIC_LABELS.bodyweight;
     entries = history.filter((item) => item.metric === (hasLoad ? '1rm' : 'reps'));
+  }
+  // Assistito: 1RM sul carico effettivo se almeno una voce ce l'ha, altrimenti l'assistenza.
+  if (type === 'weight' && history.some((item) => item.assisted)) {
+    const hasLoad = history.some((item) => item.metric === '1rm');
+    label = hasLoad ? METRIC_LABELS.assistedLoad : METRIC_LABELS.assistance;
+    entries = history.filter((item) => item.metric === (hasLoad ? '1rm' : 'assistance'));
   }
   if (type === 'cardio') {
     const hasDistance = history.some((item) => item.metric === 'distance');
