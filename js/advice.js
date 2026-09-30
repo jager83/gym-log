@@ -32,6 +32,11 @@ export const loadAdvice = (sessions, exerciseId, target) => {
   if (target.type === 'time') return { kind: 'up-time', value: TIME_STEP, text: `Prova ${TIME_STEP} s in più` };
 
   const last = maxWeightOf(done);
+  // Assistenza: salire di carico vuol dire togliere assistenza; a 0 non c'è più nulla da togliere.
+  if (target.assisted) {
+    if (last === 0) return null;
+    return { kind: 'up', value: clampValue('weight', Math.max(0, last - WEIGHT_STEP)), text: `Prova con ${kg(WEIGHT_STEP)} di assistenza in meno` };
+  }
   const isLoad = target.type === 'bodyweight';
   if (isLoad && last === 0) return { kind: 'up', value: FIRST_LOAD, text: `Prova con ${kg(FIRST_LOAD)} di zavorra` };
 

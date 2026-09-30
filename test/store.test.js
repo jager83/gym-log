@@ -540,6 +540,11 @@ test('importState accetta un target MAX (max null) e rifiuta min null', () => {
   );
 });
 
+test('importState accetta assisted booleano sul target e rifiuta altri valori', () => {
+  assert.doesNotThrow(() => importState(withPanca((target) => ({ ...target, assisted: true }))));
+  assert.throws(() => importState(withPanca((target) => ({ ...target, assisted: 'si' }))), isStoreError('activeSession non valida'));
+});
+
 test('importState rifiuta un blocco senza esercizi', () => {
   const text = withActive((session) => ({ ...session, blocks: [...session.blocks, { rest: 60, phase: null, exerciseIds: [] }] }));
   assert.throws(() => importState(text), isStoreError('activeSession non valida'));

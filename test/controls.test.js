@@ -36,6 +36,12 @@ test('esercizi MAX: "MAX" nella lista e nel focus', () => {
   assert.equal(outcomeOf({ weight: 0, reps: 40, effort: 'facile' }, pushUp), null);
 });
 
+test('assisted: unità e campo peso come assistenza', () => {
+  const pullUp = { ...weight, name: 'Trazioni assistite', assisted: true };
+  assert.equal(unitsText(pullUp), 'assistenza kg × rip');
+  assert.deepEqual(setFields(pullUp), [['weight', 'assistenza'], ['reps', 'ripetizioni']]);
+});
+
 test('focusTargetText: "Serie n di m" con obiettivo, unità e per lato', () => {
   assert.equal(focusTargetText(weight, 1), 'Serie 2 di 3 · 8-10 rip');
   assert.equal(focusTargetText(plank, 0), 'Serie 1 di 2 · 30 s per lato');

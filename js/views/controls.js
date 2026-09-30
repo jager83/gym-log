@@ -55,6 +55,7 @@ export const targetText = (target) => {
 const isUnloadedBodyweight = (target) => target.type === 'bodyweight' && categoryOf(target) !== 'forza';
 
 const baseUnits = (target) => {
+  if (target.type === 'weight' && target.assisted) return 'assistenza kg × rip';
   if (target.type === 'weight' && target.load === 'per-dumbbell') return 'kg a manubrio × rip';
   if (isUnloadedBodyweight(target)) return 'rip';
   return UNITS[target.type];
@@ -99,13 +100,17 @@ export const stepperHtml = (field, value, outcome, name, setNumber, fieldLabel =
     </div>`;
 };
 
+const weightLabelOf = (target) => {
+  if (target.assisted) return 'assistenza';
+  return target.load === 'per-dumbbell' ? 'peso a manubrio' : FIELD_LABELS.weight;
+};
+
 // Campi di una serie, nell'ordine mostrato: [campo, etichetta accessibile].
 export const setFields = (target) => {
   if (target.type === 'time') return [['duration', FIELD_LABELS.duration]];
   if (target.type === 'cardio') return ['duration', 'distance', 'level', 'speed'].map((field) => [field, FIELD_LABELS[field]]);
   if (isUnloadedBodyweight(target)) return [['reps', FIELD_LABELS.reps]];
-  const weightLabel = target.load === 'per-dumbbell' ? 'peso a manubrio' : FIELD_LABELS.weight;
-  return [['weight', weightLabel], ['reps', FIELD_LABELS.reps]];
+  return [['weight', weightLabelOf(target)], ['reps', FIELD_LABELS.reps]];
 };
 
 // `name` già escapato. L'esito (colore del numero) vale solo per il campo di conteggio.

@@ -64,6 +64,7 @@ const isTargetRange = (target) => {
 const isOptionalTargetCopy = (target) =>
   (target.category === undefined || CATEGORIES.includes(target.category)) &&
   (target.sides === undefined || target.sides === 1 || target.sides === 2) &&
+  isOptionalBoolean(target.assisted) &&
   (target.description === undefined || typeof target.description === 'string') &&
   (target.steps === undefined || isTextArray(target.steps)) &&
   (target.tips === undefined || isTextArray(target.tips));

@@ -142,6 +142,18 @@ test('esercizi MAX: nessun suggerimento', () => {
   assert.equal(loadAdvice([sessionWith('plank', [{ duration: 90, effort: 'giusta' }])], 'plank', plankMax), null);
 });
 
+test('assisted oltre il massimo: 2,5 kg di assistenza in meno, minimo 0', () => {
+  const assisted = { ...weightTarget, name: 'Trazioni assistite', assisted: true };
+  assert.deepEqual(loadAdvice([sessionWith('trazioni', weightSets(30, [11, 11, 11]))], 'trazioni', assisted), {
+    kind: 'up',
+    value: 27.5,
+    text: 'Prova con 2,5 kg di assistenza in meno',
+  });
+  assert.equal(loadAdvice([sessionWith('trazioni', weightSets(2, [11, 11, 11]))], 'trazioni', assisted).value, 0);
+  assert.equal(loadAdvice([sessionWith('trazioni', weightSets(0, [11, 11, 11]))], 'trazioni', assisted), null);
+  assert.equal(loadAdvice([sessionWith('trazioni', weightSets(30, [10, 10, 10]))], 'trazioni', assisted), null);
+});
+
 test('il valore suggerito è arrotondato al mezzo chilo', () => {
   const sessions = [sessionWith('panca', weightSets(60.3, [11, 11, 11]))];
   assert.equal(loadAdvice(sessions, 'panca', weightTarget).value, 63);

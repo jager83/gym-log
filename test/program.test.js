@@ -121,6 +121,17 @@ test('reps o duration "max": range { min: 1, max: null }', () => {
   assert.deepEqual(findExercise(p, 'plank-max').duration, { min: 1, max: null });
 });
 
+test('assisted: facoltativo, solo per weight, uguale sullo stesso id', () => {
+  const raw = rawProgram();
+  raw.workouts[2].blocks[0].exercises[0].assisted = true;
+  const p = normalizeProgram(raw);
+  assert.equal(findExercise(p, 'squat').assisted, true);
+  assert.equal(Object.hasOwn(findExercise(p, 'panca'), 'assisted'), false);
+  expectError((r) => { r.workouts[0].blocks[1].exercises[1].assisted = true; }, 'esercizio trazioni: assisted ammesso solo per type weight');
+  expectError((r) => { r.workouts[2].blocks[0].exercises[0].assisted = 'si'; }, 'esercizio squat: assisted non valido');
+  expectError((r) => { r.workouts[0].blocks[0].exercises[0].assisted = true; }, 'id duplicato: panca');
+});
+
 test('validazione della scheda', () => {
   expectError((r) => { r.workouts = []; }, 'workouts vuoto');
   expectError((r) => { r.defaultRest = 0; }, 'defaultRest deve essere intero > 0');

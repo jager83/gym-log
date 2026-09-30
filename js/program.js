@@ -59,6 +59,13 @@ const normalizeExercise = (raw, defaultSets, seen) => {
     if (!LOAD_VALUES.includes(load)) throw new ProgramError(`${label}: load sconosciuto "${raw.load}"`);
   }
 
+  // assisted: il peso registrato sono i kg di assistenza (es. trazioni alla macchina).
+  if (raw.assisted !== undefined && raw.type !== 'weight') {
+    throw new ProgramError(`${label}: assisted ammesso solo per type weight`);
+  }
+  if (raw.assisted !== undefined && typeof raw.assisted !== 'boolean') throw new ProgramError(`${label}: assisted non valido`);
+  const assisted = raw.assisted === true;
+
   const sides = raw.sides ?? 1;
   if (sides !== 1 && sides !== 2) throw new ProgramError(`${label}: sides deve essere 1 o 2`);
 
@@ -81,7 +88,8 @@ const normalizeExercise = (raw, defaultSets, seen) => {
       previous.type !== raw.type ||
       previous.load !== load ||
       previous.category !== category ||
-      previous.sides !== sides)
+      previous.sides !== sides ||
+      (previous.assisted === true) !== assisted)
   ) {
     throw new ProgramError(`id duplicato: ${raw.id}`);
   }
@@ -105,6 +113,7 @@ const normalizeExercise = (raw, defaultSets, seen) => {
     sets,
     [key]: target,
     ...(raw.type === 'weight' ? { load } : {}),
+    ...(assisted ? { assisted } : {}),
     ...(raw.description !== undefined ? { description: raw.description } : {}),
     ...(raw.steps !== undefined ? { steps: raw.steps } : {}),
     ...(raw.tips !== undefined ? { tips: raw.tips } : {}),
