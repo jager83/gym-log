@@ -21,7 +21,7 @@ const requirePositiveInt = (value, label) => {
 
 export const countKey = (type) => (type === 'time' || type === 'cardio' ? 'duration' : 'reps');
 
-const isTextArray = (value) => Array.isArray(value) && value.every((item) => typeof item === 'string' && item !== '');
+export const isTextArray = (value) => Array.isArray(value) && value.every((item) => typeof item === 'string' && item !== '');
 
 const normalizeRange = (value, label) => {
   const range = typeof value === 'number' ? { min: value, max: value } : value;

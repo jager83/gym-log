@@ -1,4 +1,4 @@
-import { EXERCISE_TYPES, LOAD_VALUES, PHASES, countKey } from './program.js';
+import { CATEGORIES, EXERCISE_TYPES, LOAD_VALUES, PHASES, countKey, isTextArray } from './program.js';
 import { DONE_EFFORT, EFFORTS } from './session.js';
 
 export const STORAGE_KEY = 'gym-log';
@@ -43,6 +43,7 @@ const isObject = (value) => Boolean(value) && typeof value === 'object';
 const isBlock = (block) =>
   isObject(block) &&
   Array.isArray(block.exerciseIds) &&
+  block.exerciseIds.length > 0 &&
   block.exerciseIds.every((id) => typeof id === 'string') &&
   Number.isInteger(block.rest) &&
   block.rest > 0 &&
@@ -58,6 +59,14 @@ const isTargetRange = (target) => {
   return isRange(target[countKey(target.type)]);
 };
 
+// Campi copiati dalla scheda (spec §3): facoltativi, assenti nei backup precedenti.
+const isOptionalTargetCopy = (target) =>
+  (target.category === undefined || CATEGORIES.includes(target.category)) &&
+  (target.sides === undefined || target.sides === 1 || target.sides === 2) &&
+  (target.description === undefined || typeof target.description === 'string') &&
+  (target.steps === undefined || isTextArray(target.steps)) &&
+  (target.tips === undefined || isTextArray(target.tips));
+
 const isTarget = (target) =>
   isObject(target) &&
   typeof target.name === 'string' &&
@@ -65,7 +74,8 @@ const isTarget = (target) =>
   Number.isInteger(target.sets) &&
   target.sets > 0 &&
   isTargetRange(target) &&
-  (target.load === undefined || LOAD_VALUES.includes(target.load));
+  (target.load === undefined || LOAD_VALUES.includes(target.load)) &&
+  isOptionalTargetCopy(target);
 
 const isOptionalNumber = (value) => value === null || value === undefined || typeof value === 'number';
 
@@ -93,7 +103,13 @@ const TIMER_MODES = ['countdown', 'stopwatch'];
 
 // Forma di activeSession.timer (spec §3): null oppure l'oggetto con gli istanti assoluti del
 // timer in corso. Facoltativo: assente per compatibilità con i dati salvati prima di questo task.
-const isTimer = (timer) =>
+// L'esercizio e la serie devono esistere nella sessione (targets validati prima).
+const isTimerSetOf = (timer, session) =>
+  Object.hasOwn(session.targets, timer.exerciseId) &&
+  Object.hasOwn(session.entries, timer.exerciseId) &&
+  timer.setIndex < session.targets[timer.exerciseId].sets;
+
+const isTimer = (timer, session) =>
   timer === null ||
   (isObject(timer) &&
     typeof timer.exerciseId === 'string' &&
@@ -103,7 +119,8 @@ const isTimer = (timer) =>
     (timer.runningSince === null || typeof timer.runningSince === 'string') &&
     typeof timer.elapsedMs === 'number' &&
     (timer.targetSeconds === null || typeof timer.targetSeconds === 'number') &&
-    (timer.switchEndsAt === null || typeof timer.switchEndsAt === 'string'));
+    (timer.switchEndsAt === null || typeof timer.switchEndsAt === 'string') &&
+    isTimerSetOf(timer, session));
 
 const isSession = (session) => {
   if (
@@ -113,7 +130,6 @@ const isSession = (session) => {
     typeof session.startedAt !== 'string' ||
     !isOptionalPositiveNumber(session.bodyWeight) ||
     !isOptionalNonNegativeInt(session.restBlockIndex) ||
-    !(session.timer === undefined || isTimer(session.timer)) ||
     !Array.isArray(session.blocks) ||
     !isObject(session.targets) ||
     !isObject(session.entries)
@@ -132,6 +148,8 @@ const isSession = (session) => {
     ([id, setList]) => Object.hasOwn(session.targets, id) && isSetList(setList, session.targets[id]),
   );
   if (!entriesMatchTargets) return false;
+
+  if (!(session.timer === undefined || isTimer(session.timer, session))) return false;
 
   // Validate that all exerciseIds in blocks have corresponding targets and entries
   const blockExerciseIds = new Set();

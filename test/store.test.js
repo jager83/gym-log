@@ -503,3 +503,66 @@ test('validateState accetta block.phase nota, null o assente; rifiuta valori sco
   assert.doesNotThrow(() => importState(withoutPhase));
   assert.throws(() => importState(withPhase('meta')), isStoreError('activeSession non valida'));
 });
+
+test('importState valida category, sides e testi copiati nei targets; tutti facoltativi', () => {
+  const strip = ({ category, sides, description, steps, tips, ...target }) => target;
+  assert.doesNotThrow(() => importState(withPanca(strip)));
+  assert.doesNotThrow(() => importState(withPanca((target) => ({ ...target, category: 'stretching', sides: 2 }))));
+  assert.doesNotThrow(() =>
+    importState(withPanca((target) => ({ ...target, description: 'Testo', steps: ['Uno', 'Due'], tips: [] }))),
+  );
+  const invalid = [
+    { category: 'yoga' },
+    { category: null },
+    { sides: 3 },
+    { sides: '2' },
+    { description: 5 },
+    { steps: 'uno' },
+    { steps: ['uno', 3] },
+    { tips: [null] },
+  ];
+  invalid.forEach((patch) => {
+    assert.throws(() => importState(withPanca((target) => ({ ...target, ...patch }))), isStoreError('activeSession non valida'));
+  });
+});
+
+test('importState rifiuta un blocco senza esercizi', () => {
+  const text = withActive((session) => ({ ...session, blocks: [...session.blocks, { rest: 60, phase: null, exerciseIds: [] }] }));
+  assert.throws(() => importState(text), isStoreError('activeSession non valida'));
+});
+
+test('importState rifiuta un timer su un esercizio o una serie inesistente nella sessione', () => {
+  const timer = {
+    exerciseId: 'panca',
+    setIndex: 0,
+    mode: 'stopwatch',
+    side: 1,
+    runningSince: null,
+    elapsedMs: 0,
+    targetSeconds: null,
+    switchEndsAt: null,
+  };
+  const withTimer = (patch) => withActive((session) => ({ ...session, timer: { ...timer, ...patch } }));
+  assert.doesNotThrow(() => importState(withTimer({})));
+  assert.throws(() => importState(withTimer({ exerciseId: 'fantasma' })), isStoreError('activeSession non valida'));
+  assert.throws(() => importState(withTimer({ exerciseId: 'toString' })), isStoreError('activeSession non valida'));
+  assert.throws(() => importState(withTimer({ setIndex: 99 })), isStoreError('activeSession non valida'));
+});
+
+test('backward compat: backup vecchio senza category, sides, testi, phase e timer resta valido', () => {
+  const p = program();
+  const played = playSession(p, createEmptyState(), 'A', { panca: [{ weight: 60, effort: 'giusta' }] },
+    '2026-09-27T18:00:00.000Z', '2026-09-27T19:00:00.000Z');
+  const oldTarget = ({ category, sides, description, steps, tips, ...target }) => target;
+  const oldSession = ({ timer, ...session }) => ({
+    ...session,
+    blocks: session.blocks.map(({ phase, ...block }) => block),
+    targets: Object.fromEntries(Object.entries(session.targets).map(([id, target]) => [id, oldTarget(target)])),
+  });
+  const started = startSession(p, played, 'A', at('2026-09-28T18:00:00.000Z'));
+  const { sidesAuto, ...oldSettings } = started.settings;
+  const old = { ...started, settings: oldSettings, sessions: started.sessions.map(oldSession), activeSession: oldSession(started.activeSession) };
+  assert.equal('category' in old.sessions[0].targets.panca, false);
+  assert.equal('timer' in old.activeSession, false);
+  assert.doesNotThrow(() => importState(JSON.stringify(old)));
+});
