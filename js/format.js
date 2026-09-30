@@ -26,6 +26,13 @@ export const parseNumberInput = (text) => {
 
 export const formatDuration = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 
+// Durata trascorsa arrotondata al minuto per difetto: "52 min", "1 h 05 min".
+export const formatElapsed = (seconds) => {
+  const minutes = Math.max(0, Math.floor(seconds / 60));
+  if (minutes < 60) return `${minutes} min`;
+  return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')} min`;
+};
+
 export const formatRange = ({ min, max }) => (min === max ? `${min}` : `${min}-${max}`);
 
 export const formatSet = (set, type) => {

@@ -1,5 +1,6 @@
 import { isDone } from './metrics.js';
-import { interleaveSets } from './session.js';
+import { interleaveSets, updateSet } from './session.js';
+import { startTimer, stopTimer, timerStatus } from './timer.js';
 
 const itemsOfRound = (order, round) => order.filter((item) => item.setIndex === round);
 
@@ -46,4 +47,47 @@ export const nextPreview = (session) => {
   const { exerciseId, setIndex } = position.items[0];
   const target = session.targets[exerciseId];
   return { exerciseId, name: target.name, setIndex, sets: target.sets };
+};
+
+const isTimerOn = (session, exerciseId, setIndex) =>
+  session.timer?.exerciseId === exerciseId && session.timer?.setIndex === setIndex;
+
+// Tap su una faccina (o "Fatto"): stessa fatica = la toglie, altrimenti la imposta. Se il timer è
+// sulla stessa serie lo ferma prima (secondi effettivi registrati): segnare la fatica chiude la
+// serie. Per stretching/mobilita stopTimer la segna già "fatto": il tap non la riapre.
+export const toggleEffort = (state, exerciseId, setIndex, effort, now) => {
+  const session = state.activeSession;
+  if (!session?.entries[exerciseId]?.[setIndex]) return state;
+  const timed = isTimerOn(session, exerciseId, setIndex);
+  const base = timed ? stopTimer(state, now) : state;
+  const current = base.activeSession.entries[exerciseId][setIndex].effort;
+  if (timed && current === effort) return base;
+  return updateSet(base, exerciseId, setIndex, { effort: current === effort ? null : effort }, now);
+};
+
+// Timer fermi che startTimer sostituirebbe perdendo il tempo accumulato: cronometro in pausa,
+// lato 1 concluso in attesa del lato 2.
+const REPLACEABLE_STATUSES = ['paused', 'side-done-live', 'side-done-stale'];
+
+// Avvia il timer di una serie. Un timer fermo su un'altra serie viene prima chiuso con stopTimer,
+// così il suo tempo resta registrato; uno in corso (o in cambio lato) blocca l'avvio: lo state
+// torna invariato (stesso riferimento), come per ogni avvio rifiutato da startTimer.
+export const startTimerOn = (state, exerciseId, setIndex, now) => {
+  const session = state.activeSession;
+  if (!session) return state;
+  const other = session.timer && !isTimerOn(session, exerciseId, setIndex);
+  if (!other) return startTimer(state, exerciseId, setIndex, now);
+  if (!REPLACEABLE_STATUSES.includes(timerStatus(session, now))) return state;
+  const started = startTimer(stopTimer(state, now), exerciseId, setIndex, now);
+  return started.activeSession.timer ? started : state;
+};
+
+// Riepilogo di fine sessione: esercizi con almeno una serie fatta, serie fatte, secondi dall'inizio.
+export const sessionSummary = (session, now) => {
+  const setLists = Object.values(session.entries);
+  return {
+    exercises: setLists.filter((sets) => sets.some(isDone)).length,
+    sets: setLists.reduce((total, sets) => total + sets.filter(isDone).length, 0),
+    seconds: Math.max(0, Math.floor((now.getTime() - Date.parse(session.startedAt)) / 1000)),
+  };
 };

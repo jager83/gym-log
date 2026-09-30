@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   escapeHtml,
   formatDuration,
+  formatElapsed,
   formatNumber,
   formatRange,
   formatSet,
@@ -58,4 +59,13 @@ test('formatSet per tipo', () => {
 test('escapeHtml', () => {
   assert.equal(escapeHtml(`<a href="x">'&'</a>`), '&lt;a href=&quot;x&quot;&gt;&#39;&amp;&#39;&lt;/a&gt;');
   assert.equal(escapeHtml(5), '5');
+});
+
+test('formatElapsed: minuti interi, ore oltre i 60 minuti', () => {
+  assert.equal(formatElapsed(0), '0 min');
+  assert.equal(formatElapsed(59), '0 min');
+  assert.equal(formatElapsed(52 * 60 + 30), '52 min');
+  assert.equal(formatElapsed(3600), '1 h 00 min');
+  assert.equal(formatElapsed(3600 + 5 * 60), '1 h 05 min');
+  assert.equal(formatElapsed(-10), '0 min');
 });
