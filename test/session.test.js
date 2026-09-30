@@ -345,6 +345,28 @@ test('updateSet applica il clamp e accetta null', () => {
   assert.equal(state.activeSession.entries.panca[0].effort, null);
 });
 
+test('updateSet: il peso cambiato segue sulle serie successive non fatte con lo stesso peso', () => {
+  let state = startSession(program(), emptyState(), 'A', at(T0));
+  state = updateSet(state, 'panca', 0, { weight: 60 }, at(T0));
+  assert.deepEqual(state.activeSession.entries.panca.map((set) => set.weight), [60, 60, 60]);
+
+  state = updateSet(state, 'panca', 1, { weight: 65 }, at(T0));
+  assert.deepEqual(state.activeSession.entries.panca.map((set) => set.weight), [60, 65, 65]);
+
+  // Una serie già fatta o con un peso suo non viene toccata.
+  state = updateSet(state, 'panca', 1, { effort: 'giusta' }, at(T0));
+  state = updateSet(state, 'panca', 2, { weight: 70 }, at(T0));
+  state = updateSet(state, 'panca', 0, { weight: 62.5 }, at(T0));
+  assert.deepEqual(state.activeSession.entries.panca.map((set) => set.weight), [62.5, 65, 70]);
+});
+
+test('updateSet: la zavorra segue come il peso, le ripetizioni no', () => {
+  let state = startSession(program(), emptyState(), 'A', at(T0));
+  state = updateSet(state, 'trazioni', 0, { weight: 5, reps: 6 }, at(T0));
+  assert.deepEqual(state.activeSession.entries.trazioni.map((set) => set.weight), [5, 5, 5, 5]);
+  assert.deepEqual(state.activeSession.entries.trazioni.map((set) => set.reps), [6, 8, 8, 8]);
+});
+
 test('updateSet non modifica lo stato per esercizio o serie inesistenti', () => {
   const state = startSession(program(), emptyState(), 'A', at(T0));
   assert.equal(updateSet(state, 'nope', 0, { weight: 10 }, at(T0)), state);

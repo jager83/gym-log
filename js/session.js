@@ -154,6 +154,17 @@ const applyPatch = (set, patch, category) =>
     set,
   );
 
+// Il peso cambiato su una serie segue sulle successive non ancora fatte che avevano lo stesso peso:
+// imposti la prima serie e le altre si allineano, un peso scelto a parte resta com'è.
+const followWeight = (sets, setIndex, current, next) => {
+  const changesWeight = 'weight' in current && next.weight !== current.weight;
+  return sets.map((set, index) => {
+    if (index === setIndex) return next;
+    if (!changesWeight || index < setIndex || isDone(set) || set.weight !== current.weight) return set;
+    return { ...set, weight: next.weight };
+  });
+};
+
 export const updateSet = (state, exerciseId, setIndex, patch, now) => {
   const session = state.activeSession;
   const current = session?.entries[exerciseId]?.[setIndex];
@@ -161,7 +172,7 @@ export const updateSet = (state, exerciseId, setIndex, patch, now) => {
 
   const category = session.targets[exerciseId].category ?? 'forza';
   const next = applyPatch(current, patch, category);
-  const sets = session.entries[exerciseId].map((set, index) => (index === setIndex ? next : set));
+  const sets = followWeight(session.entries[exerciseId], setIndex, current, next);
   const blockIndex = blockIndexOf(session, exerciseId);
 
   // Un recupero attivo si chiude prima di applicare la patch: se la serie modificata appartiene

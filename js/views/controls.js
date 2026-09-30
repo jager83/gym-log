@@ -155,6 +155,18 @@ export const refreshOutcome = (row, session, exerciseId, setIndex) => {
   if (className) input.classList.add(className);
 };
 
+// Il peso cambiato segue sulle serie successive (updateSet): aggiorna sul posto i loro campi visibili,
+// tranne quello in cui si sta scrivendo.
+const refreshFollowingWeights = (ctx, exerciseId, setIndex) => {
+  const sets = ctx.getState().activeSession.entries[exerciseId];
+  document.querySelectorAll(`[data-exercise="${CSS.escape(exerciseId)}"][data-set]`).forEach((row) => {
+    const index = Number(row.dataset.set);
+    const input = row.querySelector('.stepper__input[data-field="weight"]');
+    if (index <= setIndex || !input || input === document.activeElement) return;
+    input.value = formatFieldValue('weight', sets[index].weight);
+  });
+};
+
 const currentValue = (ctx, exerciseId, setIndex, field) => ctx.getState().activeSession.entries[exerciseId][setIndex][field];
 
 // Un passo −/+ su un campo: salva e aggiorna il numero sul posto, senza ridisegnare.
@@ -163,6 +175,7 @@ export const stepSet = (ctx, { row, exerciseId, setIndex, field, dir }) => {
   ctx.commit(updateSet(ctx.getState(), exerciseId, setIndex, { [field]: stepValue(field, current, dir) }, new Date()));
   row.querySelector(`.stepper__input[data-field="${field}"]`).value = formatFieldValue(field, currentValue(ctx, exerciseId, setIndex, field));
   refreshOutcome(row, ctx.getState().activeSession, exerciseId, setIndex);
+  if (field === 'weight') refreshFollowingWeights(ctx, exerciseId, setIndex);
 };
 
 export const commitInput = (ctx, input) => {
@@ -171,6 +184,7 @@ export const commitInput = (ctx, input) => {
     updateSet(ctx.getState(), exerciseId, setIndex, { [input.dataset.field]: parseNumberInput(input.value) }, new Date()),
   );
   refreshOutcome(row, ctx.getState().activeSession, exerciseId, setIndex);
+  if (input.dataset.field === 'weight') refreshFollowingWeights(ctx, exerciseId, setIndex);
 };
 
 // Su blur mostra il valore normalizzato senza ridisegnare.
