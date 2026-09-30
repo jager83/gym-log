@@ -9,7 +9,8 @@ const cardioFree = { ...cardio, duration: null };
 
 test('targetText: righe della lista per tipo, per lato e cardio senza obiettivo', () => {
   assert.equal(targetText(weight), '3 × 8-10');
-  assert.equal(targetText(plank), '2 × 30 · per lato');
+  assert.equal(targetText(plank), '2 × 30');
+  assert.equal(unitsText(plank), 'secondi per lato');
   assert.equal(targetText(cardio), '1 × 20:00-30:00');
   assert.equal(targetText(cardioFree), '1 serie');
   assert.equal(unitsText(cardio), 's · km · liv · km/h');

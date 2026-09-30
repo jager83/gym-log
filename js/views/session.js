@@ -17,12 +17,15 @@ import {
 import { toggleEffort } from '../focus.js';
 import { escapeHtml, formatDuration, formatSet } from '../format.js';
 import { faceSvg } from './faces.js';
+import { openExerciseInfo } from './info.js';
 import {
+  PHASE_LABELS,
   commitInput,
   confirmFinish,
   createStepRepeat,
   effortsHtml,
   fieldsHtml,
+  infoButtonHtml,
   normalizeInput,
   setTargetOf,
   stepSet,
@@ -62,14 +65,21 @@ const isBlockComplete = (session, blockIndex) =>
 // Il blocco che ha in corso un recupero attivo, o null se nessun recupero è in corso.
 const restingBlockIndex = (session) => (session?.restEndsAt ? session.restBlockIndex : null);
 
-const exerciseHeaderHtml = (session, block) =>
-  block.exerciseIds
+// Il titolo porta al focus su quel blocco; "i" apre la scheda esercizio se ci sono testi.
+const exerciseHeaderHtml = (session, blockIndex) =>
+  session.blocks[blockIndex].exerciseIds
     .map((exerciseId) => {
       const target = session.targets[exerciseId];
-      return `<h2 class="block__title">${escapeHtml(target.name)}</h2>
+      return `<div class="block__head">
+          <h2 class="block__title"><a class="block__link" href="#/focus/${blockIndex}">${escapeHtml(target.name)}</a></h2>
+          ${infoButtonHtml(exerciseId, target)}
+        </div>
         <p class="block__target">${targetText(target)} · ${unitsText(target)}</p>`;
     })
     .join('');
+
+const blockTagsHtml = (block, superset) =>
+  `${block.phase ? `<p class="block__phase">${PHASE_LABELS[block.phase]}</p>` : ''}${superset ? '<p class="block__tag">Superset</p>' : ''}`;
 
 const setsRowsHtml = (session, block, previousById, superset) => {
   const order = interleaveSets(block, session.targets);
@@ -92,8 +102,8 @@ const blockHtml = (session, blockIndex, manualOpen, previousById, pendingCollaps
   if (!complete) {
     return `
       <article class="block" data-block="${blockIndex}">
-        ${superset ? '<p class="block__tag">Superset</p>' : ''}
-        ${exerciseHeaderHtml(session, block)}
+        ${blockTagsHtml(block, superset)}
+        ${exerciseHeaderHtml(session, blockIndex)}
         <div class="block__sets">${setsRowsHtml(session, block, previousById, superset)}</div>
       </article>`;
   }
@@ -112,11 +122,11 @@ const blockHtml = (session, blockIndex, manualOpen, previousById, pendingCollaps
 
   const header = autoOpen
     ? '<p class="block__completed" aria-live="polite">✓ Completato</p>'
-    : exerciseHeaderHtml(session, block);
+    : exerciseHeaderHtml(session, blockIndex);
 
   return `
     <article class="block block--completed" data-block="${blockIndex}">
-      ${superset ? '<p class="block__tag">Superset</p>' : ''}
+      ${blockTagsHtml(block, superset)}
       ${header}
       ${autoOpen ? '' : '<button type="button" class="link" data-action="toggle-block" aria-expanded="true">Chiudi</button>'}
       <div class="block__sets">${setsRowsHtml(session, block, previousById, superset)}</div>
@@ -129,6 +139,7 @@ const sessionHtml = (session, manualOpen, previousById, pendingCollapse) => `
       <a class="back" href="#/" aria-label="Torna alla home">‹</a>
       <h1>${escapeHtml(session.workoutName)}</h1>
     </header>
+    <a class="button button--primary session__start" href="#/focus">Inizia</a>
     <p class="legend">${EFFORTS.map((effort) => `<span>${faceSvg(effort)}${EFFORT_LABELS[effort]}</span>`).join('')}</p>
     <div class="blocks">${session.blocks.map((_, index) => blockHtml(session, index, manualOpen, previousById, pendingCollapse)).join('')}</div>
     <div class="session__footer">
@@ -154,6 +165,7 @@ export const renderSession = (root, ctx) => {
   );
   const manualOpen = new Set();
   const pendingCollapse = new Map(); // blockIndex -> timeoutId, per il blocco completato senza recupero
+  let closeInfo = null;
 
   root.innerHTML = sessionHtml(initial, manualOpen, previousById, pendingCollapse);
   const restBar = root.querySelector('.rest-bar');
@@ -207,6 +219,9 @@ export const renderSession = (root, ctx) => {
 
   // Blocco in recupero all'ultimo tick, per accorgersi in tick() quando smette di esserlo.
   let prevRestingBlock = restingBlockIndex(getSession());
+  // Timer all'ultimo tick: quando il watcher lo chiude (durata registrata, stretching "Fatto")
+  // si ridisegna il blocco della sua serie.
+  let prevTimer = getSession().timer ?? null;
 
   const tick = () => {
     const session = getSession();
@@ -217,6 +232,13 @@ export const renderSession = (root, ctx) => {
     const currentRestingBlock = restingBlockIndex(session);
     if (session && prevRestingBlock !== null && prevRestingBlock !== currentRestingBlock) redrawBlock(prevRestingBlock);
     prevRestingBlock = currentRestingBlock;
+
+    const currentTimer = session?.timer ?? null;
+    if (session && prevTimer && !currentTimer) {
+      const blockIndex = session.blocks.findIndex((block) => block.exerciseIds.includes(prevTimer.exerciseId));
+      if (blockIndex !== -1) redrawBlock(blockIndex);
+    }
+    prevTimer = currentTimer;
 
     if (!session || restStatus(session, now) !== 'running') {
       restBar.hidden = true;
@@ -257,6 +279,11 @@ export const renderSession = (root, ctx) => {
       }
       redrawBlock(blockIndex);
       tick();
+      return;
+    }
+    if (action === 'info') {
+      closeInfo?.();
+      closeInfo = openExerciseInfo(getSession().targets[target.dataset.exercise]);
       return;
     }
     if (action === 'toggle-block') {
@@ -332,6 +359,7 @@ export const renderSession = (root, ctx) => {
   return () => {
     clearInterval(timer);
     detachRepeat();
+    closeInfo?.();
     pendingCollapse.forEach((timeoutId) => clearTimeout(timeoutId));
     pendingCollapse.clear();
     root.removeEventListener('click', onClick);

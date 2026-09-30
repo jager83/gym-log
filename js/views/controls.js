@@ -40,13 +40,14 @@ const durationRange = ({ min, max }) => (min === max ? formatDuration(min) : `${
 // Riga della lista: "3 × 8-10 · kg × rip"; cardio "1 × 20:00-30:00" (o "1 serie" senza obiettivo).
 export const targetText = (target) => {
   const range = target[countKey(target.type)];
-  const perSide = isPerSide(target) ? ' · per lato' : '';
-  if (target.type === 'cardio') return `${range ? `${target.sets} × ${durationRange(range)}` : `${target.sets} serie`}${perSide}`;
-  return `${target.sets} × ${formatRange(range)}${perSide}`;
+  if (target.type === 'cardio') return range ? `${target.sets} × ${durationRange(range)}` : `${target.sets} serie`;
+  return `${target.sets} × ${formatRange(range)}`;
 };
 
-export const unitsText = (target) =>
-  target.type === 'weight' && target.load === 'per-dumbbell' ? 'kg a manubrio × rip' : UNITS[target.type];
+export const unitsText = (target) => {
+  const units = target.type === 'weight' && target.load === 'per-dumbbell' ? 'kg a manubrio × rip' : UNITS[target.type];
+  return isPerSide(target) ? `${units} per lato` : units;
+};
 
 // Riga del focus: "Serie 2 di 3 · 8-10 rip", "Serie 1 di 2 · 30 s per lato", "Serie 1 di 1 · 25:00".
 export const focusTargetText = (target, setIndex) => {
