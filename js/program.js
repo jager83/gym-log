@@ -14,6 +14,11 @@ export class ProgramError extends Error {
 
 const isPositiveInt = (value) => Number.isInteger(value) && value > 0;
 
+const requireNonNegativeInt = (value, label) => {
+  if (!Number.isInteger(value) || value < 0) throw new ProgramError(`${label} deve essere intero >= 0`);
+  return value;
+};
+
 const requirePositiveInt = (value, label) => {
   if (!isPositiveInt(value)) throw new ProgramError(`${label} deve essere intero > 0`);
   return value;
@@ -117,7 +122,8 @@ const normalizeWorkout = (raw, defaults, seenWorkouts, seenExercises) => {
     if (!block || !Array.isArray(block.exercises) || block.exercises.length === 0) {
       throw new ProgramError(`${blockLabel}: exercises vuoto`);
     }
-    const rest = requirePositiveInt(block.rest ?? defaults.defaultRest, `${blockLabel}: rest`);
+    // rest 0: nessun recupero dopo le serie del blocco (es. riscaldamento).
+    const rest = requireNonNegativeInt(block.rest ?? defaults.defaultRest, `${blockLabel}: rest`);
     const phase = block.phase ?? null;
     if (block.phase !== undefined && !PHASES.includes(block.phase)) {
       throw new ProgramError(`${blockLabel}: phase sconosciuta "${block.phase}"`);

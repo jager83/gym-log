@@ -246,6 +246,35 @@ test('shouldStartRest: blocco singolo e superset', () => {
   assert.equal(shouldStartRest(session, 'nope', 0), false);
 });
 
+// Scheda con un blocco di riscaldamento senza recupero (rest 0) seguito da un blocco di forza.
+const noRestProgram = () => normalizeProgram({
+  version: 1,
+  workouts: [{
+    id: 'A',
+    name: 'Giorno 1',
+    blocks: [
+      { phase: 'riscaldamento', rest: 0, exercises: [{ id: 'giri', name: 'Giri', type: 'bodyweight', category: 'mobilita', sets: 2, reps: 10 }] },
+      { rest: 60, exercises: [{ id: 'panca', name: 'Panca piana', type: 'weight', reps: { min: 8, max: 10 } }] },
+    ],
+  }],
+});
+
+test('rest 0: nessun recupero, né a fine giro né a fine blocco', () => {
+  let state = startSession(noRestProgram(), emptyState(), 'A', at(T0));
+  assert.equal(shouldStartRest(state.activeSession, 'giri', 0), false);
+  assert.equal(shouldStartRest(state.activeSession, 'giri', 1), false);
+  state = updateSet(state, 'giri', 0, { effort: DONE_EFFORT }, at(T0));
+  state = updateSet(state, 'giri', 1, { effort: DONE_EFFORT }, at(T0));
+  assert.equal(state.activeSession.restEndsAt, null);
+  assert.equal(state.activeSession.restBlockIndex, null);
+  assert.equal(shouldStartRest(state.activeSession, 'panca', 0), true);
+});
+
+test('startRest con 0 secondi non avvia il recupero', () => {
+  const state = startSession(noRestProgram(), emptyState(), 'A', at(T0));
+  assert.equal(startRest(state, 0, at(T0), 0), state);
+});
+
 test('shouldStartRest: ultima serie di un blocco singolo non finale è true (C1)', () => {
   const session = startSession(program(), emptyState(), 'B', at(T0)).activeSession;
   // Allenamento B: blocco 0 = panca (4 serie, non finale), blocco 1 (ultimo, 3 serie di default) = plank.

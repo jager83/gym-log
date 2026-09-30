@@ -118,12 +118,14 @@ export const interleaveSets = (block, targets) => {
 const blockIndexOf = (session, exerciseId) => session.blocks.findIndex((block) => block.exerciseIds.includes(exerciseId));
 
 // Vero alla fine di ogni giro del blocco (blocco singolo: ogni serie; superset: l'ultimo
-// esercizio del giro), inclusa l'ultima serie del blocco. Falso solo per l'ultima serie
-// dell'ultimo blocco della sessione (fine allenamento) e per esercizi/serie inesistenti.
+// esercizio del giro), inclusa l'ultima serie del blocco. Falso per l'ultima serie
+// dell'ultimo blocco della sessione (fine allenamento), per i blocchi con rest 0 (nessun
+// recupero) e per esercizi/serie inesistenti.
 export const shouldStartRest = (session, exerciseId, setIndex) => {
   const blockIndex = blockIndexOf(session, exerciseId);
   if (blockIndex === -1) return false;
   const block = session.blocks[blockIndex];
+  if (block.rest === 0) return false;
   const order = interleaveSets(block, session.targets);
   const position = order.findIndex((item) => item.exerciseId === exerciseId && item.setIndex === setIndex);
   if (position === -1) return false;
@@ -201,8 +203,9 @@ export const currentBlockIndex = (session) => {
   return index === -1 ? session.blocks.length - 1 : index;
 };
 
+// Un recupero di 0 secondi (blocco con rest 0) non parte: lo state resta invariato.
 export const startRest = (state, seconds, now, blockIndex) =>
-  withSession(state, { restEndsAt: isoAfter(now.getTime(), seconds), restBlockIndex: blockIndex });
+  seconds > 0 ? withSession(state, { restEndsAt: isoAfter(now.getTime(), seconds), restBlockIndex: blockIndex }) : state;
 
 // Mantiene restBlockIndex: si sta solo allungando il recupero in corso, il blocco non cambia.
 export const extendRest = (state, seconds) => {

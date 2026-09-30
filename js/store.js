@@ -45,8 +45,7 @@ const isBlock = (block) =>
   Array.isArray(block.exerciseIds) &&
   block.exerciseIds.length > 0 &&
   block.exerciseIds.every((id) => typeof id === 'string') &&
-  Number.isInteger(block.rest) &&
-  block.rest > 0 &&
+  isCount(block.rest) &&
   (block.phase === undefined || block.phase === null || PHASES.includes(block.phase));
 
 const isCount = (value) => Number.isInteger(value) && value >= 0;

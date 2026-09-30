@@ -526,6 +526,12 @@ test('importState valida category, sides e testi copiati nei targets; tutti faco
   });
 });
 
+test('importState accetta un blocco con rest 0 e rifiuta rest negativo', () => {
+  const withRest = (rest) => withActive((session) => ({ ...session, blocks: session.blocks.map((block) => ({ ...block, rest })) }));
+  assert.doesNotThrow(() => importState(withRest(0)));
+  assert.throws(() => importState(withRest(-1)), isStoreError('activeSession non valida'));
+});
+
 test('importState rifiuta un blocco senza esercizi', () => {
   const text = withActive((session) => ({ ...session, blocks: [...session.blocks, { rest: 60, phase: null, exerciseIds: [] }] }));
   assert.throws(() => importState(text), isStoreError('activeSession non valida'));

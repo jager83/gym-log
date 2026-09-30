@@ -104,6 +104,12 @@ const expectError = (mutate, message) => {
   );
 };
 
+test('rest 0 di blocco è ammesso (nessun recupero)', () => {
+  const raw = rawProgram();
+  raw.workouts[2].blocks[0].rest = 0;
+  assert.equal(findWorkout(normalizeProgram(raw), 'C').blocks[0].rest, 0);
+});
+
 test('validazione della scheda', () => {
   expectError((r) => { r.workouts = []; }, 'workouts vuoto');
   expectError((r) => { r.defaultRest = 0; }, 'defaultRest deve essere intero > 0');
@@ -111,7 +117,8 @@ test('validazione della scheda', () => {
   expectError((r) => { delete r.workouts[2].name; }, 'allenamento C: name mancante');
   expectError((r) => { r.workouts[2].blocks = []; }, 'allenamento C: blocks vuoto');
   expectError((r) => { r.workouts[2].blocks[0].exercises = []; }, 'allenamento C, blocco 1: exercises vuoto');
-  expectError((r) => { r.workouts[2].blocks[0].rest = -1; }, 'allenamento C, blocco 1: rest deve essere intero > 0');
+  expectError((r) => { r.workouts[2].blocks[0].rest = -1; }, 'allenamento C, blocco 1: rest deve essere intero >= 0');
+  expectError((r) => { r.workouts[2].blocks[0].rest = 1.5; }, 'allenamento C, blocco 1: rest deve essere intero >= 0');
   expectError((r) => { delete r.workouts[2].blocks[0].exercises[0].id; }, 'esercizio senza id');
   expectError((r) => { delete r.workouts[2].blocks[0].exercises[0].name; }, 'esercizio squat: name mancante');
   expectError((r) => { r.workouts[2].blocks[0].exercises[0].type = 'unicorn'; }, 'esercizio squat: type sconosciuto "unicorn"');
