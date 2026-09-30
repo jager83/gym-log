@@ -12,7 +12,7 @@ import {
   timerRemainingMs,
   timerStatus,
 } from '../js/timer.js';
-import { discardSession, finishSession, startRest, startSession, updateSet } from '../js/session.js';
+import { discardSession, finishSession, setSidesAuto, startRest, startSession, updateSet } from '../js/session.js';
 import { validateState } from '../js/store.js';
 import { normalizeProgram } from '../js/program.js';
 import { emptyState } from './helpers.js';
@@ -185,6 +185,37 @@ test('countdown per lato con sidesAuto off: attende, il lato 2 non parte mai da 
   assert.equal(state.activeSession.timer.runningSince, iso(100));
   assert.equal(state.activeSession.timer.elapsedMs, 0);
   assert.equal(startNextSide(state, atS(101)), state);
+});
+
+test('spegnere "Lati di seguito" durante il cambio lato: il lato 2 non parte da solo, nessun avviso', () => {
+  let state = withSettings(startTimer(session0(), 'quad', 0, atS(0)), SIDES_ON);
+  state = advanceTimer(state, atS(30), state.settings).state;
+  assert.equal(timerStatus(state.activeSession, atS(31)), 'switching');
+
+  state = setSidesAuto(state, false);
+  assert.equal(state.settings.sidesAuto, false);
+  assert.equal(state.activeSession.timer.switchEndsAt, null);
+  assert.equal(timerStatus(state.activeSession, atS(32)), 'side-done-stale');
+
+  const later = advanceTimer(state, atS(3600), state.settings);
+  assert.equal(later.state, state);
+  assert.equal(later.alert, false);
+  assert.equal(later.state.activeSession.timer.side, 1);
+
+  // Riaccenderlo mentre si attende non avvia il lato 2 (regola del Task 3).
+  const back = setSidesAuto(state, true);
+  const afterBack = advanceTimer(back, atS(7200), back.settings);
+  assert.equal(afterBack.state.activeSession.timer.side, 1);
+  assert.equal(afterBack.state.activeSession.timer.runningSince, null);
+  assert.equal(afterBack.alert, false);
+
+  assert.equal(startNextSide(state, atS(40)).activeSession.timer.side, 2);
+});
+
+test('setSidesAuto senza timer in cambio lato non tocca il timer', () => {
+  const running = startTimer(session0(), 'plank', 0, atS(0));
+  assert.equal(setSidesAuto(running, false).activeSession.timer, running.activeSession.timer);
+  assert.equal(setSidesAuto(session0(), false).activeSession.timer, null);
 });
 
 test('sidesAuto assente vale true', () => {

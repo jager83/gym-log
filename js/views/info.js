@@ -11,7 +11,7 @@ const listHtml = (tag, title, items) =>
 
 const infoHtml = (target) => `
   <div class="info__body">
-    <h2 class="info__title">${escapeHtml(target.name)}</h2>
+    <h2 class="info__title" tabindex="-1">${escapeHtml(target.name)}</h2>
     ${target.description ? `<p class="info__text">${escapeHtml(target.description)}</p>` : ''}
     ${listHtml('ol', 'Esecuzione', target.steps)}
     ${listHtml('ul', 'Consigli', target.tips)}
@@ -35,6 +35,8 @@ export const openExerciseInfo = (target) => {
 
   document.body.append(dialog);
   dialog.showModal();
+  // Il focus va sul titolo, non su "Chiudi" in fondo: con testi lunghi la scheda parte dall'inizio.
+  dialog.querySelector('.info__title').focus();
   return () => {
     if (dialog.open) dialog.close();
     dialog.remove();

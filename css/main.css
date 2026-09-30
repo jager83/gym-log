@@ -1472,6 +1472,10 @@ input:focus-visible {
   line-height: 1.1;
 }
 
+.info__title:focus {
+  outline: none;
+}
+
 .info__heading {
   margin: 6px 0 0;
   color: var(--ink-3);

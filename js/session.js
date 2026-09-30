@@ -230,7 +230,14 @@ export const finishSession = (state, now) => {
 export const setSound = (state, enabled) => ({ ...state, settings: { ...state.settings, sound: enabled } });
 
 // "Lati di seguito": il lato 2 parte da solo dopo il cambio lato (assente = true, vedi timer.js).
-export const setSidesAuto = (state, enabled) => ({ ...state, settings: { ...state.settings, sidesAuto: enabled } });
+// Spegnerlo durante un cambio lato già programmato lo annulla: il timer attende "Avvia lato 2"
+// (side-done-stale). Riaccenderlo mentre si attende non riprogramma il cambio lato.
+export const setSidesAuto = (state, enabled) => {
+  const next = { ...state, settings: { ...state.settings, sidesAuto: enabled } };
+  const timer = state.activeSession?.timer;
+  if (enabled || !timer?.switchEndsAt) return next;
+  return withSession(next, { timer: { ...timer, switchEndsAt: null } });
+};
 
 export const setBodyWeight = (state, value) => {
   const bodyWeight = typeof value === 'number' && Number.isFinite(value) && value > 0 ? round1(value) : null;

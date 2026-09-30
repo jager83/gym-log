@@ -49,7 +49,7 @@ export const nextPreview = (session) => {
   return { exerciseId, name: target.name, setIndex, sets: target.sets };
 };
 
-const isTimerOn = (session, exerciseId, setIndex) =>
+export const isTimerOn = (session, exerciseId, setIndex) =>
   session.timer?.exerciseId === exerciseId && session.timer?.setIndex === setIndex;
 
 // Tap su una faccina (o "Fatto"): stessa fatica = la toglie, altrimenti la imposta. Se il timer è

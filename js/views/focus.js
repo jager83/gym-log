@@ -2,7 +2,7 @@
 // pieno, riepilogo finale. La vista non avvisa mai (vibrazione/suono): le transizioni automatiche
 // di timer e recupero le applica il watcher di app.js; qui si ridisegna quando lo stato cambia.
 import { isDone } from '../metrics.js';
-import { blockPosition, focusPosition, nextPreview, sessionSummary, startTimerOn, toggleEffort } from '../focus.js';
+import { blockPosition, focusPosition, isTimerOn, nextPreview, sessionSummary, startTimerOn, toggleEffort } from '../focus.js';
 import {
   REST_ADJUST_SECONDS,
   clearRest,
@@ -46,9 +46,6 @@ const sidesAutoOf = (settings) => settings.sidesAuto ?? true;
 
 const doneCount = (session) =>
   Object.values(session.entries).reduce((total, sets) => total + sets.filter(isDone).length, 0);
-
-const isTimerOn = (session, exerciseId, setIndex) =>
-  session.timer?.exerciseId === exerciseId && session.timer?.setIndex === setIndex;
 
 // Stato del timer ridotto a ciò che cambia i pulsanti: i '-live'/'-stale' sono uguali a schermo;
 // 'finished-*' dura al più un giro del watcher, che poi chiude il timer.
