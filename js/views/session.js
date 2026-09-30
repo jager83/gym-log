@@ -1,5 +1,4 @@
-import { countKey } from '../program.js';
-import { isDone, setOutcome } from '../metrics.js';
+import { isDone } from '../metrics.js';
 import {
   EFFORTS,
   EFFORT_LABELS,
@@ -8,51 +7,36 @@ import {
   currentBlockIndex,
   discardSession,
   extendRest,
-  finishSession,
-  hasDoneSets,
   interleaveSets,
   lastDoneSets,
   restRemainingMs,
   restStatus,
   setSound,
   startRest,
-  stepValue,
-  updateSet,
 } from '../session.js';
-import { escapeHtml, formatDuration, formatNumber, formatRange, formatSet, parseNumberInput } from '../format.js';
+import { toggleEffort } from '../focus.js';
+import { escapeHtml, formatDuration, formatSet } from '../format.js';
 import { faceSvg } from './faces.js';
+import {
+  commitInput,
+  confirmFinish,
+  createStepRepeat,
+  effortsHtml,
+  fieldsHtml,
+  normalizeInput,
+  setTargetOf,
+  stepSet,
+  targetText,
+  unitsText,
+} from './controls.js';
 
-const REPEAT_DELAY_MS = 400;
-const REPEAT_INTERVAL_MS = 90;
 const TICK_MS = 250;
 const ENDING_MS = 10000;
 const AUTO_COLLAPSE_MS = 1500;
 
-const FIELD_LABELS = { weight: 'peso', reps: 'ripetizioni', duration: 'durata' };
-const UNITS = { weight: 'kg × rip', bodyweight: 'zavorra kg × rip', time: 'secondi' };
-
-const outcomeClass = (outcome) => (outcome === 'fallita' || outcome === 'carico-basso' ? `is-${outcome}` : '');
-
-const targetText = (target) => `${target.sets} × ${formatRange(target[countKey(target.type)])}`;
-
-const unitsText = (target) => (target.type === 'weight' && target.load === 'per-dumbbell' ? 'kg a manubrio × rip' : UNITS[target.type]);
-
-const stepperHtml = (field, value, outcome, name, setNumber, fieldLabel = FIELD_LABELS[field]) => {
-  const label = `${fieldLabel} ${name} serie ${setNumber}`;
-  return `
-    <div class="stepper">
-      <button type="button" class="stepper__btn" data-action="step" data-field="${field}" data-dir="-1" aria-label="Diminuisci ${label}">−</button>
-      <input class="stepper__input ${outcomeClass(outcome)}" type="text" inputmode="${field === 'weight' ? 'decimal' : 'numeric'}"
-        autocomplete="off" value="${formatNumber(value)}" data-field="${field}" aria-label="${label}">
-      <button type="button" class="stepper__btn" data-action="step" data-field="${field}" data-dir="1" aria-label="Aumenta ${label}">+</button>
-    </div>`;
-};
-
 const setHtml = (session, exerciseId, setIndex, previous, showName) => {
   const target = session.targets[exerciseId];
-  const key = countKey(target.type);
   const set = session.entries[exerciseId][setIndex];
-  const outcome = setOutcome(set, target.type, target[key]);
   const prev = previous?.[setIndex] && isDone(previous[setIndex]) ? previous[setIndex] : null;
   const prevText = prev ? formatSet(prev, target.type) : '';
   const number = setIndex + 1;
@@ -61,18 +45,12 @@ const setHtml = (session, exerciseId, setIndex, previous, showName) => {
     <div class="set" data-exercise="${escapeHtml(exerciseId)}" data-set="${setIndex}">
       ${showName ? `<p class="set__name">${name}</p>` : ''}
       <div class="set__fields">
-        ${target.type === 'time' ? '' : stepperHtml('weight', set.weight, null, name, number, target.load === 'per-dumbbell' ? 'peso a manubrio' : FIELD_LABELS.weight)}
-        ${stepperHtml(key, set[key], outcome, name, number)}
+        ${fieldsHtml(target, set, name, number)}
       </div>
       <div class="set__meta">
         <span class="set__index">${number}</span>
         <span class="set__prev">${prev && prevText !== formatSet(set, target.type) ? `prec. ${escapeHtml(prevText)}` : ''}</span>
-        <div class="efforts" role="group" aria-label="Fatica ${name} serie ${number}">
-          ${EFFORTS.map(
-            (effort) => `<button type="button" class="effort effort--${effort}" data-action="effort" data-effort="${effort}"
-              aria-pressed="${set.effort === effort}" aria-label="${EFFORT_LABELS[effort]}">${faceSvg(effort)}</button>`,
-          ).join('')}
-        </div>
+        ${effortsHtml(target, set, name, number)}
       </div>
     </div>`;
 };
@@ -176,8 +154,6 @@ export const renderSession = (root, ctx) => {
   );
   const manualOpen = new Set();
   const pendingCollapse = new Map(); // blockIndex -> timeoutId, per il blocco completato senza recupero
-  let repeat = null;
-  let suppressClick = false;
 
   root.innerHTML = sessionHtml(initial, manualOpen, previousById, pendingCollapse);
   const restBar = root.querySelector('.rest-bar');
@@ -209,10 +185,6 @@ export const renderSession = (root, ctx) => {
     );
   };
   const blockIndexOf = (element) => Number(element.closest('.block').dataset.block);
-  const setTargetOf = (element) => {
-    const row = element.closest('.set');
-    return { row, exerciseId: row.dataset.exercise, setIndex: Number(row.dataset.set) };
-  };
 
   const drawSound = () => {
     const on = ctx.getState().settings.sound;
@@ -220,46 +192,21 @@ export const renderSession = (root, ctx) => {
     soundButton.setAttribute('aria-pressed', String(on));
   };
 
-  const refreshOutcome = (row, exerciseId, setIndex) => {
-    const session = getSession();
-    const target = session.targets[exerciseId];
-    const key = countKey(target.type);
-    const input = row.querySelector(`.stepper__input[data-field="${key}"]`);
-    input.classList.remove('is-fallita', 'is-carico-basso');
-    const className = outcomeClass(setOutcome(session.entries[exerciseId][setIndex], target.type, target[key]));
-    if (className) input.classList.add(className);
-  };
-
-  const applyStep = ({ row, exerciseId, setIndex, field, dir }) => {
-    const current = getSession().entries[exerciseId][setIndex][field];
-    ctx.commit(updateSet(ctx.getState(), exerciseId, setIndex, { [field]: stepValue(field, current, dir) }, new Date()));
-    row.querySelector(`.stepper__input[data-field="${field}"]`).value = formatNumber(
-      getSession().entries[exerciseId][setIndex][field],
-    );
-    refreshOutcome(row, exerciseId, setIndex);
+  const applyStep = (info) => {
+    stepSet(ctx, info);
     // Un peso/ripetizioni/durata toccati in un altro blocco possono chiudere un recupero altrove (C3).
     tick();
   };
 
-  const stepInfo = (button) => ({ ...setTargetOf(button), field: button.dataset.field, dir: Number(button.dataset.dir) });
+  // Dopo una ripetizione rapida il blocco si ridisegna (come dopo ogni modifica strutturale).
+  const repeat = createStepRepeat({
+    stepInfo: (button) => ({ ...setTargetOf(button), blockIndex: blockIndexOf(button), field: button.dataset.field, dir: Number(button.dataset.dir) }),
+    applyStep,
+    onRepeatEnd: ({ blockIndex }) => redrawBlock(blockIndex),
+  });
 
   // Blocco in recupero all'ultimo tick, per accorgersi in tick() quando smette di esserlo.
   let prevRestingBlock = restingBlockIndex(getSession());
-
-  // Restituisce il blocco da ridisegnare se la ripetizione rapida è partita, altrimenti null.
-  const cancelRepeat = () => {
-    if (!repeat) return null;
-    clearTimeout(repeat.timeout);
-    clearInterval(repeat.interval);
-    const { blockIndex, fired } = repeat;
-    repeat = null;
-    return fired ? blockIndex : null;
-  };
-  const stopRepeat = () => {
-    const blockIndex = cancelRepeat();
-    if (blockIndex !== null) redrawBlock(blockIndex);
-    return blockIndex !== null;
-  };
 
   const tick = () => {
     const session = getSession();
@@ -281,31 +228,6 @@ export const renderSession = (root, ctx) => {
     restBar.hidden = false;
   };
 
-  // Il primo passo avviene sul click, così uno scroll che parte da −/+ (pointercancel) non cambia il valore.
-  // pointerdown arma solo la pressione prolungata.
-  const onPointerDown = (event) => {
-    const button = event.target.closest('[data-action="step"]');
-    if (!button) return;
-    cancelRepeat();
-    suppressClick = false;
-    const info = stepInfo(button);
-    repeat = {
-      blockIndex: blockIndexOf(button),
-      fired: false,
-      interval: null,
-      timeout: setTimeout(() => {
-        repeat.fired = true;
-        applyStep(info);
-        repeat.interval = setInterval(() => applyStep(info), REPEAT_INTERVAL_MS);
-      }, REPEAT_DELAY_MS),
-    };
-  };
-
-  // Dopo una pressione prolungata il click che segue il rilascio non deve aggiungere un passo.
-  const onPointerUp = () => {
-    if (stopRepeat()) suppressClick = true;
-  };
-
   const onClick = (event) => {
     const target = event.target.closest('[data-action]');
     if (!target) return;
@@ -313,20 +235,15 @@ export const renderSession = (root, ctx) => {
     const now = new Date();
 
     if (action === 'step') {
-      // Il click da tastiera (detail 0) non segue mai una pressione prolungata.
-      const suppressed = suppressClick && event.detail !== 0;
-      suppressClick = false;
-      if (!suppressed) applyStep(stepInfo(target));
+      if (repeat.takeClick(event)) applyStep({ ...setTargetOf(target), field: target.dataset.field, dir: Number(target.dataset.dir) });
       return;
     }
     if (action === 'effort') {
       const { exerciseId, setIndex } = setTargetOf(target);
-      const current = getSession().entries[exerciseId][setIndex].effort;
-      const effort = current === target.dataset.effort ? null : target.dataset.effort;
       const blockIndex = blockIndexOf(target);
       const wasComplete = isBlockComplete(getSession(), blockIndex);
 
-      ctx.commit(updateSet(ctx.getState(), exerciseId, setIndex, { effort }, now));
+      ctx.commit(toggleEffort(ctx.getState(), exerciseId, setIndex, target.dataset.effort, now));
 
       const session = getSession();
       const isComplete = isBlockComplete(session, blockIndex);
@@ -373,12 +290,7 @@ export const renderSession = (root, ctx) => {
       return;
     }
     if (action === 'finish') {
-      const message = hasDoneSets(getSession())
-        ? 'Terminare l\'allenamento? Non potrai più modificarlo.'
-        : 'Nessuna serie fatta: la sessione verrà scartata. Continuare?';
-      if (!window.confirm(message)) return;
-      ctx.commit(finishSession(ctx.getState(), now));
-      ctx.navigate('#/');
+      confirmFinish(ctx, now);
       return;
     }
     if (action === 'discard') {
@@ -391,11 +303,7 @@ export const renderSession = (root, ctx) => {
   const onInput = (event) => {
     const input = event.target.closest('.stepper__input');
     if (!input) return;
-    const { row, exerciseId, setIndex } = setTargetOf(input);
-    ctx.commit(
-      updateSet(ctx.getState(), exerciseId, setIndex, { [input.dataset.field]: parseNumberInput(input.value) }, new Date()),
-    );
-    refreshOutcome(row, exerciseId, setIndex);
+    commitInput(ctx, input);
     // Un peso/ripetizioni/durata toccati in un altro blocco possono chiudere un recupero altrove (C3).
     tick();
   };
@@ -405,8 +313,7 @@ export const renderSession = (root, ctx) => {
   const onChange = (event) => {
     const input = event.target.closest('.stepper__input');
     if (!input) return;
-    const { exerciseId, setIndex } = setTargetOf(input);
-    input.value = formatNumber(getSession().entries[exerciseId][setIndex][input.dataset.field]);
+    normalizeInput(ctx, input);
   };
 
   const onKeyDown = (event) => {
@@ -416,25 +323,20 @@ export const renderSession = (root, ctx) => {
   drawSound();
   tick();
   const timer = setInterval(tick, TICK_MS);
-  root.addEventListener('pointerdown', onPointerDown);
+  const detachRepeat = repeat.attach(root);
   root.addEventListener('click', onClick);
   root.addEventListener('input', onInput);
   root.addEventListener('change', onChange);
   root.addEventListener('keydown', onKeyDown);
-  window.addEventListener('pointerup', onPointerUp);
-  window.addEventListener('pointercancel', stopRepeat);
 
   return () => {
     clearInterval(timer);
-    cancelRepeat();
+    detachRepeat();
     pendingCollapse.forEach((timeoutId) => clearTimeout(timeoutId));
     pendingCollapse.clear();
-    root.removeEventListener('pointerdown', onPointerDown);
     root.removeEventListener('click', onClick);
     root.removeEventListener('input', onInput);
     root.removeEventListener('change', onChange);
     root.removeEventListener('keydown', onKeyDown);
-    window.removeEventListener('pointerup', onPointerUp);
-    window.removeEventListener('pointercancel', stopRepeat);
   };
 };

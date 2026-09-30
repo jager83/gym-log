@@ -18,6 +18,7 @@ const SHELL = [
   'js/session.js',
   'js/store.js',
   'js/timer.js',
+  'js/views/controls.js',
   'js/views/faces.js',
   'js/views/history.js',
   'js/views/home.js',
