@@ -305,16 +305,22 @@ test('loadProgram', async () => {
   await assert.rejects(loadProgram(offline), { message: 'Serve la connessione al primo avvio' });
 });
 
-test('data/program.json spedito è valido e copre riscaldamento, defaticamento, cardio e sides:2', () => {
+test('data/program.json spedito: scheda reale, riscaldamento senza recupero, cardio, sides:2, MAX e assistenza', () => {
   const raw = JSON.parse(readFileSync(new URL('../data/program.json', import.meta.url), 'utf8'));
   const shipped = normalizeProgram(raw);
   const blocks = allBlocks(shipped);
   const exercises = allExercises(shipped);
 
-  assert.ok(blocks.some((block) => block.phase === 'riscaldamento'), 'manca un blocco riscaldamento');
-  assert.ok(blocks.some((block) => block.phase === 'defaticamento'), 'manca un blocco defaticamento');
+  assert.deepEqual(shipped.workouts.map((workout) => `${workout.id} ${workout.name}`), ['A Giorno 1', 'B Giorno 2', 'C Giorno 3']);
+  const warmups = blocks.filter((block) => block.phase === 'riscaldamento');
+  assert.ok(warmups.length > 0, 'manca un blocco riscaldamento');
+  assert.ok(warmups.every((block) => block.rest === 0), 'il riscaldamento non ha recupero');
   assert.ok(exercises.some((exercise) => exercise.type === 'cardio'), 'manca un esercizio cardio');
   assert.ok(exercises.some((exercise) => exercise.sides === 2), 'manca un esercizio a due lati');
+  assert.deepEqual(findExercise(shipped, 'piegamenti').reps, { min: 1, max: null });
+  assert.deepEqual(findExercise(shipped, 'plank').duration, { min: 1, max: null });
+  assert.equal(findExercise(shipped, 'trazioni-assistite').assisted, true);
+  assert.equal(findExercise(shipped, 'riscaldamento-cardio').duration.max, 300);
   exercises.forEach((exercise) => {
     assert.ok(typeof exercise.description === 'string' && exercise.description !== '', `${exercise.id}: description mancante`);
     assert.ok(Array.isArray(exercise.steps) && exercise.steps.length > 0, `${exercise.id}: steps mancanti`);

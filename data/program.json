@@ -5,86 +5,138 @@
   "workouts": [
     {
       "id": "A",
-      "name": "Allenamento A",
+      "name": "Giorno 1",
       "blocks": [
-        { "phase": "riscaldamento", "rest": 30, "exercises": [
-          { "id": "mobilita-spalle", "name": "Mobilità spalle", "type": "bodyweight", "category": "mobilita", "sets": 1, "reps": { "min": 10, "max": 15 },
-            "description": "Mobilità articolare per scaldare le spalle prima dell'allenamento.",
-            "steps": ["In piedi, esegui rotazioni ampie delle braccia in avanti", "Dopo alcune ripetizioni inverti il senso di rotazione", "Mantieni il core attivo durante il movimento"],
-            "tips": ["Movimento ampio ma controllato", "Nessun dolore, solo una lieve tensione"] },
-          { "id": "stretching-pettorali", "name": "Stretching pettorali", "type": "time", "category": "stretching", "sides": 2, "sets": 1, "duration": { "min": 20, "max": 30 },
-            "description": "Allungamento del grande pettorale a corpo libero, un lato alla volta.",
-            "steps": ["Appoggia l'avambraccio a uno stipite o a una superficie verticale", "Ruota il busto dal lato opposto fino a sentire lo stiramento", "Mantieni la posizione senza rimbalzare"],
-            "tips": ["Respira lentamente durante l'allungamento", "Fermati se senti dolore, non solo tensione"] }
+        { "phase": "riscaldamento", "rest": 0, "exercises": [
+          { "id": "riscaldamento-cardio", "name": "Camminata o cyclette", "type": "cardio", "sets": 1, "duration": 300,
+            "description": "Bassa intensità: camminata veloce su tappeto o pedalata. Minimo 5 minuti.",
+            "steps": ["Scegli tappeto o cyclette", "Parti piano e porta il ritmo a una camminata veloce o a una pedalata leggera", "Mantieni un ritmo costante per almeno 5 minuti"],
+            "tips": ["Devi riuscire a parlare senza affanno", "Serve a scaldarti, non a stancarti"] }
+        ]},
+        { "phase": "riscaldamento", "rest": 0, "exercises": [
+          { "id": "mobilita-anca-1", "name": "Mobilità anca 1", "type": "time", "category": "mobilita", "sides": 2, "sets": 2, "duration": 30,
+            "description": "Dalla posizione seduta a gambe piegate, piegati in avanti verso il ginocchio.",
+            "steps": ["Siediti a terra con le gambe piegate", "Piegati in avanti con il busto verso il ginocchio", "Mantieni la posizione, poi cambia lato"],
+            "tips": ["Schiena lunga, non curvarla per arrivare più in basso", "Respira lentamente durante la tenuta"] }
+        ]},
+        { "phase": "riscaldamento", "rest": 0, "exercises": [
+          { "id": "mobilita-anca-2", "name": "Mobilità anca 2", "type": "time", "category": "mobilita", "sides": 2, "sets": 2, "duration": 30,
+            "description": "Secondo esercizio di mobilità per l'anca, un lato alla volta.",
+            "steps": ["Mettiti nella posizione indicata dal trainer", "Porta l'anca in allungamento senza forzare", "Mantieni la posizione, poi cambia lato"],
+            "tips": ["Movimento controllato, senza rimbalzi", "Tensione leggera, mai dolore"] }
+        ]},
+        { "rest": 60, "exercises": [
+          { "id": "goblet-squat-alzata", "name": "Goblet squat con alzata", "type": "weight", "load": "total", "reps": { "min": 10, "max": 12 },
+            "description": "Goblet squat, poi alzata del carico sopra la testa.",
+            "steps": ["Tieni il carico al petto con entrambe le mani, piedi alla larghezza delle spalle", "Scendi in squat con il busto dritto", "Risali e, in piedi, spingi il carico sopra la testa", "Riporta il carico al petto e ripeti"],
+            "tips": ["Fai almeno 2 serie di avvicinamento prima del carico di lavoro", "Ginocchia in linea con le punte dei piedi", "Espira in spinta, inspira in discesa"] },
+          { "id": "alzate-laterali", "name": "Alzate laterali", "type": "weight", "load": "per-dumbbell", "reps": { "min": 8, "max": 10 },
+            "description": "Alzate laterali con manubri per le spalle.",
+            "steps": ["In piedi, un manubrio per mano lungo i fianchi", "Solleva le braccia di lato fino all'altezza delle spalle", "Scendi lentamente"],
+            "tips": ["Gomiti leggermente piegati", "Non slanciare con il busto", "1-2 s in spinta, almeno 3-4 s in discesa"] }
+        ]},
+        { "rest": 60, "exercises": [
+          { "id": "affondo-statico", "name": "Affondo statico con sand bag", "type": "weight", "load": "total", "sides": 2, "reps": { "min": 8, "max": 10 },
+            "description": "Controlla l'affondo in discesa senza tuffarti sul ginocchio.",
+            "steps": ["Tieni la sand bag e mettiti in posizione di affondo, un piede avanti", "Scendi piegando entrambe le ginocchia", "Risali spingendo sulla gamba davanti", "Finite le ripetizioni, cambia lato"],
+            "tips": ["Fai almeno 2 serie di avvicinamento prima del carico di lavoro", "Busto dritto, peso sul piede davanti", "1-2 s in spinta, almeno 3-4 s in discesa"] },
+          { "id": "piegamenti", "name": "Piegamenti sulle braccia", "type": "bodyweight", "reps": "max",
+            "description": "Piegamenti a corpo libero: quante più ripetizioni possibili.",
+            "steps": ["Mani a terra poco più larghe delle spalle, corpo in linea", "Scendi con il petto verso terra", "Spingi fino a distendere le braccia"],
+            "tips": ["Addome e glutei contratti, fianchi allineati", "Fermati quando la tecnica peggiora"] }
         ]},
         { "rest": 120, "exercises": [
-          { "id": "panca-piana", "name": "Panca piana", "type": "weight", "reps": { "min": 8, "max": 10 },
-            "description": "Esercizio base per pettorali, spalle e tricipiti con bilanciere su panca piana.",
-            "steps": ["Sdraiati sulla panca con i piedi appoggiati a terra", "Impugna il bilanciere poco più largo delle spalle", "Abbassa il bilanciere al petto controllando il movimento", "Spingi verso l'alto fino a distendere le braccia"],
-            "tips": ["Scapole retratte e ferme sulla panca", "Non far rimbalzare il bilanciere sul petto"] }
-        ]},
-        { "exercises": [
-          { "id": "curl-bilanciere", "name": "Curl bilanciere", "type": "weight", "reps": { "min": 10, "max": 12 },
-            "description": "Isolamento dei bicipiti con bilanciere in piedi.",
-            "steps": ["Impugna il bilanciere con presa supina", "Tieni i gomiti vicini al busto", "Solleva il bilanciere flettendo i gomiti", "Scendi controllando fino a distendere le braccia"],
-            "tips": ["Evita di dondolare con la schiena", "Discesa lenta e controllata"] },
-          { "id": "french-press", "name": "French press", "type": "weight", "reps": { "min": 10, "max": 12 },
-            "description": "Esercizio per tricipiti con bilanciere, gomiti fissi verso l'alto.",
-            "steps": ["Sdraiati sulla panca con il bilanciere sopra il petto", "Piega i gomiti portando il bilanciere verso la fronte", "Distendi le braccia tornando alla posizione iniziale"],
-            "tips": ["Gomiti puntati al soffitto, non allargarli", "Controlla la discesa per proteggere i gomiti"] }
+          { "id": "chest-press", "name": "Chest press", "type": "weight", "load": "total", "reps": { "min": 8, "max": 10 },
+            "description": "Scendi controllando il carico e con i gomiti bassi.",
+            "steps": ["Regola il sedile: impugnature all'altezza del petto", "Spingi in avanti fino a distendere le braccia", "Torna indietro controllando il carico"],
+            "tips": ["Fai almeno 2 serie di avvicinamento prima del carico di lavoro", "1-2 s in spinta, almeno 3-4 s in discesa", "Espira in spinta, inspira in discesa"] }
         ]}
       ]
     },
     {
       "id": "B",
-      "name": "Allenamento B",
+      "name": "Giorno 2",
       "blocks": [
+        { "phase": "riscaldamento", "rest": 0, "exercises": [
+          { "id": "riscaldamento-cardio", "name": "Camminata o cyclette", "type": "cardio", "sets": 1, "duration": 300 }
+        ]},
+        { "phase": "riscaldamento", "rest": 0, "exercises": [
+          { "id": "mobilita-spalla-extra", "name": "Extra rotazioni con elastico", "type": "bodyweight", "category": "mobilita", "sides": 2, "sets": 2, "reps": 12,
+            "description": "Rotazioni esterne della spalla con elastico, un braccio alla volta.",
+            "steps": ["Gomito piegato a 90° e aderente al fianco, elastico in mano", "Ruota l'avambraccio verso l'esterno", "Torna lentamente, poi cambia lato"],
+            "tips": ["Il gomito non si stacca dal fianco", "Elastico leggero, movimento lento"] }
+        ]},
+        { "phase": "riscaldamento", "rest": 0, "exercises": [
+          { "id": "mobilita-spalla-intra", "name": "Intra rotazioni con elastico", "type": "bodyweight", "category": "mobilita", "sides": 2, "sets": 2, "reps": 12,
+            "description": "Rotazioni interne della spalla con elastico, un braccio alla volta.",
+            "steps": ["Gomito piegato a 90° e aderente al fianco, elastico in mano", "Ruota l'avambraccio verso l'interno, davanti all'addome", "Torna lentamente, poi cambia lato"],
+            "tips": ["Il gomito non si stacca dal fianco", "Spalla bassa e rilassata"] }
+        ]},
+        { "rest": 60, "exercises": [
+          { "id": "trazioni-assistite", "name": "Trazioni assistite presa neutra", "type": "weight", "load": "total", "assisted": true, "reps": { "min": 8, "max": 10 },
+            "description": "Sali portando in su lo sterno, non le spalle in avanti.",
+            "steps": ["Imposta l'assistenza e impugna le maniglie a presa neutra", "Tira portando lo sterno verso le maniglie", "Scendi controllando fino a distendere le braccia"],
+            "tips": ["Il peso registrato sono i kg di assistenza: meno assistenza, più carico", "1-2 s in spinta, almeno 3-4 s in discesa", "Scapole basse prima di tirare"] },
+          { "id": "curl-manubri", "name": "Curl bicipiti con manubri", "type": "weight", "load": "per-dumbbell", "reps": { "min": 8, "max": 10 },
+            "description": "Curl per i bicipiti con un manubrio per mano.",
+            "steps": ["In piedi, manubri lungo i fianchi con presa supina", "Solleva i manubri piegando i gomiti", "Scendi lentamente fino a distendere le braccia"],
+            "tips": ["Gomiti fermi vicino al busto", "Non dondolare con la schiena", "Espira in spinta, inspira in discesa"] }
+        ]},
         { "rest": 120, "exercises": [
-          { "id": "squat", "name": "Squat", "type": "weight", "reps": { "min": 8, "max": 10 },
-            "description": "Esercizio fondamentale per quadricipiti, glutei e core con bilanciere sulle spalle.",
-            "steps": ["Posiziona il bilanciere sui trapezi", "Piega le ginocchia scendendo con i fianchi indietro", "Scendi finché le cosce sono parallele al suolo", "Risali spingendo con i talloni"],
-            "tips": ["Ginocchia in linea con le punte dei piedi", "Schiena dritta per tutto il movimento"] }
+          { "id": "pulley-triangolo", "name": "Pulley con triangolo", "type": "weight", "load": "total", "reps": { "min": 8, "max": 10 },
+            "description": "Schiena dritta e spalle basse.",
+            "steps": ["Seduto, piedi sulle pedane e triangolo in mano", "Tira il triangolo verso l'addome", "Torna avanti controllando il carico"],
+            "tips": ["Fai almeno 2 serie di avvicinamento prima del carico di lavoro", "Non dondolare con il busto", "1-2 s in spinta, almeno 3-4 s in discesa"] }
         ]},
-        { "exercises": [
-          { "id": "plank", "name": "Plank", "type": "time", "duration": { "min": 45, "max": 60 },
-            "description": "Esercizio isometrico per il core, in appoggio su avambracci e punte dei piedi.",
-            "steps": ["Appoggia avambracci e gomiti a terra sotto le spalle", "Distendi le gambe con le punte dei piedi a terra", "Mantieni il corpo allineato dalla testa ai talloni"],
-            "tips": ["Contrai addominali e glutei", "Non far cadere i fianchi verso il basso"] },
-          { "id": "plank-laterale", "name": "Plank laterale", "type": "time", "sides": 2, "sets": 2, "duration": { "min": 20, "max": 30 },
-            "description": "Variante del plank in appoggio laterale, per obliqui e stabilizzatori del bacino.",
-            "steps": ["Appoggiati su un avambraccio con il corpo di lato", "Solleva i fianchi allineando il corpo in una linea retta", "Mantieni la posizione per il tempo previsto"],
-            "tips": ["Non far ruotare il bacino in avanti o indietro", "Spalla dell'appoggio lontana dall'orecchio"] }
-        ]},
-        { "exercises": [
-          { "id": "cyclette", "name": "Cyclette", "type": "cardio", "sets": 1, "duration": { "min": 600, "max": 900 },
-            "description": "Cardio a bassa intensità a fine allenamento, per il defaticamento cardiovascolare.",
-            "steps": ["Imposta una resistenza leggera-moderata", "Mantieni un ritmo di pedalata costante", "Respira in modo regolare per tutta la durata"],
-            "tips": ["Sella regolata all'altezza del fianco a gamba tesa", "Rallenta gradualmente negli ultimi minuti"] }
+        { "rest": 120, "exercises": [
+          { "id": "landmine-spinte", "name": "Spinte landmine in ginocchio", "type": "weight", "load": "total", "sides": 2, "reps": { "min": 8, "max": 10 },
+            "description": "Braccio singolo, in ginocchio. Attiva bene l'addome.",
+            "steps": ["In ginocchio, impugna l'estremità del bilanciere con una mano all'altezza della spalla", "Spingi in alto e in avanti fino a distendere il braccio", "Torna controllando, poi cambia lato"],
+            "tips": ["Addome contratto, non inarcare la schiena", "Espira in spinta, inspira in discesa"] },
+          { "id": "plank", "name": "Plank", "type": "time", "duration": "max",
+            "description": "Tenuta isometrica sugli avambracci: resisti il più a lungo possibile.",
+            "steps": ["Avambracci a terra sotto le spalle, gambe distese", "Corpo in linea dalla testa ai talloni", "Tieni la posizione finché la tecnica regge"],
+            "tips": ["Addome e glutei contratti", "Non far cadere i fianchi"] }
         ]}
       ]
     },
     {
       "id": "C",
-      "name": "Allenamento C",
+      "name": "Giorno 3",
       "blocks": [
-        { "exercises": [
-          { "id": "trazioni", "name": "Trazioni", "type": "bodyweight", "sets": 4, "reps": { "min": 6, "max": 8 },
-            "description": "Esercizio a corpo libero per dorsali e bicipiti alla sbarra.",
-            "steps": ["Impugna la sbarra con presa prona poco più larga delle spalle", "Tira il corpo verso l'alto fino a portare il mento sopra la sbarra", "Scendi controllando fino a distendere le braccia"],
-            "tips": ["Evita di usare lo slancio delle gambe", "Scapole basse prima di iniziare la trazione"] }
+        { "rest": 0, "exercises": [
+          { "id": "spinning", "name": "Pedalata su spinning", "type": "cardio", "sets": 1, "duration": 900,
+            "description": "Media intensità, minimo 15 minuti.",
+            "steps": ["Regola sella e manubrio", "Pedala a media intensità con resistenza moderata", "Mantieni il ritmo per almeno 15 minuti"],
+            "tips": ["Respiro sostenuto ma controllato", "Sella all'altezza del fianco"] }
         ]},
-        { "exercises": [
-          { "id": "panca-piana", "name": "Panca piana", "type": "weight", "reps": { "min": 10, "max": 12 } }
+        { "rest": 60, "exercises": [
+          { "id": "hyperextension", "name": "Hyperextension", "type": "bodyweight", "reps": { "min": 10, "max": 12 },
+            "description": "Scendi lentamente e non strattonare mentre sali.",
+            "steps": ["Regola l'appoggio all'altezza del bacino", "Scendi con il busto lentamente", "Risali fino ad allineare busto e gambe"],
+            "tips": ["Non iperestendere la schiena in alto", "Movimento lento e senza slancio"] }
         ]},
-        { "phase": "defaticamento", "rest": 30, "exercises": [
-          { "id": "stretching-quadricipiti", "name": "Stretching quadricipiti", "type": "time", "category": "stretching", "sides": 2, "sets": 1, "duration": { "min": 20, "max": 30 },
-            "description": "Allungamento del quadricipite in piedi, in appoggio per l'equilibrio.",
-            "steps": ["In piedi, afferra la caviglia e porta il tallone verso il gluteo", "Tieni le ginocchia vicine e il bacino in leggera retroversione", "Mantieni la posizione senza tirare con forza"],
-            "tips": ["Appoggiati a un muro o a una sedia se serve equilibrio", "Ginocchio d'appoggio leggermente flesso"] },
-          { "id": "stretching-ischiocrurali", "name": "Stretching ischiocrurali", "type": "time", "category": "stretching", "sides": 1, "sets": 1, "duration": { "min": 25, "max": 35 },
-            "description": "Allungamento dei muscoli posteriori della coscia da seduti.",
-            "steps": ["Siediti con le gambe distese in avanti", "Piega il busto in avanti mantenendo la schiena lunga", "Avvicina le mani verso le caviglie senza forzare"],
-            "tips": ["Non inarcare la schiena, piega dai fianchi", "Mantieni una respirazione fluida"] }
+        { "rest": 120, "exercises": [
+          { "id": "rematore-tbar", "name": "Rematore T-bar", "type": "weight", "load": "total", "reps": { "min": 8, "max": 10 },
+            "description": "Schiena attiva, resta piegato sulle ginocchia.",
+            "steps": ["Piegati in avanti con le ginocchia flesse e la schiena dritta", "Tira le maniglie verso l'addome", "Scendi controllando il carico"],
+            "tips": ["Fai almeno 2 serie di avvicinamento prima del carico di lavoro", "1-2 s in spinta, almeno 3-4 s in discesa", "Espira in spinta, inspira in discesa"] }
+        ]},
+        { "rest": 120, "exercises": [
+          { "id": "croci-pec-fly", "name": "Croci alla pec fly machine", "type": "weight", "load": "total", "reps": { "min": 8, "max": 10 },
+            "description": "Chiudi bene frontalmente e apri controllando il carico.",
+            "steps": ["Regola il sedile: braccia all'altezza del petto", "Chiudi le braccia davanti al petto", "Apri lentamente controllando il carico"],
+            "tips": ["Fai almeno 2 serie di avvicinamento prima del carico di lavoro", "Gomiti leggermente piegati", "1-2 s in spinta, almeno 3-4 s in discesa"] }
+        ]},
+        { "rest": 120, "exercises": [
+          { "id": "pushdown-fune", "name": "Push down con fune", "type": "weight", "load": "total", "reps": { "min": 8, "max": 10 },
+            "description": "Non coinvolgere le spalle e controlla bene i carichi.",
+            "steps": ["Impugna la fune al cavo alto, gomiti vicini al busto", "Spingi verso il basso fino a distendere le braccia", "Risali controllando il carico"],
+            "tips": ["Solo i gomiti si muovono", "Espira in spinta, inspira in discesa"] },
+          { "id": "hammer-curl", "name": "Hammer curl con manubri", "type": "weight", "load": "per-dumbbell", "reps": { "min": 8, "max": 10 },
+            "description": "Non coinvolgere le spalle e controlla bene i carichi.",
+            "steps": ["In piedi, manubri lungo i fianchi con presa neutra", "Solleva i manubri piegando i gomiti", "Scendi lentamente"],
+            "tips": ["Gomiti fermi vicino al busto", "1-2 s in spinta, almeno 3-4 s in discesa"] }
         ]}
       ]
     }
