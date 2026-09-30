@@ -47,8 +47,17 @@ export const targetText = (target) => {
   return `${target.sets} × ${formatRange(range)}`;
 };
 
+// Stretching/mobilità a ripetizioni: a corpo libero, senza zavorra.
+const isUnloadedBodyweight = (target) => target.type === 'bodyweight' && categoryOf(target) !== 'forza';
+
+const baseUnits = (target) => {
+  if (target.type === 'weight' && target.load === 'per-dumbbell') return 'kg a manubrio × rip';
+  if (isUnloadedBodyweight(target)) return 'rip';
+  return UNITS[target.type];
+};
+
 export const unitsText = (target) => {
-  const units = target.type === 'weight' && target.load === 'per-dumbbell' ? 'kg a manubrio × rip' : UNITS[target.type];
+  const units = baseUnits(target);
   return isPerSide(target) ? `${units} per lato` : units;
 };
 
@@ -90,6 +99,7 @@ export const stepperHtml = (field, value, outcome, name, setNumber, fieldLabel =
 export const setFields = (target) => {
   if (target.type === 'time') return [['duration', FIELD_LABELS.duration]];
   if (target.type === 'cardio') return ['duration', 'distance', 'level', 'speed'].map((field) => [field, FIELD_LABELS[field]]);
+  if (isUnloadedBodyweight(target)) return [['reps', FIELD_LABELS.reps]];
   const weightLabel = target.load === 'per-dumbbell' ? 'peso a manubrio' : FIELD_LABELS.weight;
   return [['weight', weightLabel], ['reps', FIELD_LABELS.reps]];
 };

@@ -59,3 +59,16 @@ test('formatFieldValue: distanza a 2 decimali, gli altri campi a 1', () => {
   assert.equal(formatFieldValue('reps', 8), '8');
   assert.equal(formatFieldValue('distance', null), '');
 });
+
+test('setFields e unitsText: niente zavorra per bodyweight di stretching/mobilità', () => {
+  const pushUp = { name: 'Piegamenti', type: 'bodyweight', category: 'forza', sides: 1, sets: 3, reps: { min: 8, max: 12 } };
+  const catCow = { ...pushUp, name: 'Gatto-mucca', category: 'mobilita', reps: { min: 10, max: 10 } };
+  assert.deepEqual(setFields(pushUp).map(([field]) => field), ['weight', 'reps']);
+  assert.equal(unitsText(pushUp), 'zavorra kg × rip');
+  assert.deepEqual(setFields(catCow).map(([field]) => field), ['reps']);
+  assert.deepEqual(setFields({ ...catCow, category: 'stretching', sides: 2 }).map(([field]) => field), ['reps']);
+  assert.equal(unitsText(catCow), 'rip');
+  assert.equal(unitsText({ ...catCow, sides: 2 }), 'rip per lato');
+  const { category, ...oldPushUp } = pushUp;
+  assert.deepEqual(setFields(oldPushUp).map(([field]) => field), ['weight', 'reps']);
+});
