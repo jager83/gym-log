@@ -54,6 +54,16 @@ test('formatSet per tipo', () => {
     '25:00 · 5,2 km · liv 8 · 12 km/h',
   );
   assert.equal(formatSet({ duration: 1500 }, 'cardio'), '25:00');
+  assert.equal(formatSet({ duration: 1500, distance: 5.25 }, 'cardio'), '25:00 · 5,25 km');
+  assert.equal(formatSet({ speed: 12.5, distance: 5 }, 'cardio'), '5 km · 12,5 km/h');
+});
+
+test('formatNumber: decimali massimi configurabili (default 1)', () => {
+  assert.equal(formatNumber(5.25), '5,3');
+  assert.equal(formatNumber(5.25, 2), '5,25');
+  assert.equal(formatNumber(5.2, 2), '5,2');
+  assert.equal(formatNumber(5, 2), '5');
+  assert.equal(formatNumber(null, 2), '');
 });
 
 test('escapeHtml', () => {

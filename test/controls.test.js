@@ -1,6 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { focusTargetText, hasExerciseTexts, outcomeOf, setFields, targetText, unitsText } from '../js/views/controls.js';
+import {
+  focusTargetText,
+  formatFieldValue,
+  hasExerciseTexts,
+  outcomeOf,
+  setFields,
+  targetText,
+  unitsText,
+} from '../js/views/controls.js';
 
 const weight = { name: 'Panca', type: 'weight', category: 'forza', sides: 1, sets: 3, reps: { min: 8, max: 10 }, load: 'total' };
 const plank = { name: 'Plank', type: 'time', category: 'forza', sides: 2, sets: 2, duration: { min: 30, max: 30 } };
@@ -42,4 +50,12 @@ test('setFields: campi per tipo, nell\'ordine mostrato', () => {
 test('outcomeOf: cardio senza esito anche senza obiettivo; gli altri come setOutcome', () => {
   assert.equal(outcomeOf({ duration: 900, effort: 'giusta' }, cardioFree), null);
   assert.equal(outcomeOf({ weight: 50, reps: 6, effort: 'dura' }, weight), 'fallita');
+});
+
+test('formatFieldValue: distanza a 2 decimali, gli altri campi a 1', () => {
+  assert.equal(formatFieldValue('distance', 5.25), '5,25');
+  assert.equal(formatFieldValue('speed', 12.5), '12,5');
+  assert.equal(formatFieldValue('weight', 62.5), '62,5');
+  assert.equal(formatFieldValue('reps', 8), '8');
+  assert.equal(formatFieldValue('distance', null), '');
 });

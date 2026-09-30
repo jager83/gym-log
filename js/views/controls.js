@@ -20,6 +20,9 @@ export const FIELD_LABELS = {
 
 const DECIMAL_FIELDS = ['weight', 'distance', 'speed'];
 
+// La distanza si salva a 2 decimali (clampValue), gli altri campi al massimo a 1.
+export const formatFieldValue = (field, value) => formatNumber(value, field === 'distance' ? 2 : 1);
+
 const UNITS = {
   weight: 'kg × rip',
   bodyweight: 'zavorra kg × rip',
@@ -78,7 +81,7 @@ export const stepperHtml = (field, value, outcome, name, setNumber, fieldLabel =
     <div class="stepper">
       <button type="button" class="stepper__btn" data-action="step" data-field="${field}" data-dir="-1" aria-label="Diminuisci ${label}">−</button>
       <input class="stepper__input ${outcomeClass(outcome)}" type="text" inputmode="${DECIMAL_FIELDS.includes(field) ? 'decimal' : 'numeric'}"
-        autocomplete="off" value="${formatNumber(value)}" data-field="${field}" aria-label="${label}">
+        autocomplete="off" value="${formatFieldValue(field, value)}" data-field="${field}" aria-label="${label}">
       <button type="button" class="stepper__btn" data-action="step" data-field="${field}" data-dir="1" aria-label="Aumenta ${label}">+</button>
     </div>`;
 };
@@ -148,7 +151,7 @@ const currentValue = (ctx, exerciseId, setIndex, field) => ctx.getState().active
 export const stepSet = (ctx, { row, exerciseId, setIndex, field, dir }) => {
   const current = currentValue(ctx, exerciseId, setIndex, field);
   ctx.commit(updateSet(ctx.getState(), exerciseId, setIndex, { [field]: stepValue(field, current, dir) }, new Date()));
-  row.querySelector(`.stepper__input[data-field="${field}"]`).value = formatNumber(currentValue(ctx, exerciseId, setIndex, field));
+  row.querySelector(`.stepper__input[data-field="${field}"]`).value = formatFieldValue(field, currentValue(ctx, exerciseId, setIndex, field));
   refreshOutcome(row, ctx.getState().activeSession, exerciseId, setIndex);
 };
 
@@ -163,7 +166,8 @@ export const commitInput = (ctx, input) => {
 // Su blur mostra il valore normalizzato senza ridisegnare.
 export const normalizeInput = (ctx, input) => {
   const { exerciseId, setIndex } = setTargetOf(input);
-  input.value = formatNumber(currentValue(ctx, exerciseId, setIndex, input.dataset.field));
+  const { field } = input.dataset;
+  input.value = formatFieldValue(field, currentValue(ctx, exerciseId, setIndex, field));
 };
 
 // Pressione prolungata su −/+. Il primo passo avviene sul click, così uno scroll che parte da −/+

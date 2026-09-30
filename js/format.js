@@ -1,7 +1,11 @@
-const numberFormat = new Intl.NumberFormat('it-IT', {
-  maximumFractionDigits: 1,
-  useGrouping: false,
-});
+// Un formattatore it-IT per numero massimo di decimali, creato alla prima richiesta.
+const numberFormats = new Map();
+const numberFormatOf = (digits) => {
+  if (!numberFormats.has(digits)) {
+    numberFormats.set(digits, new Intl.NumberFormat('it-IT', { maximumFractionDigits: digits, useGrouping: false }));
+  }
+  return numberFormats.get(digits);
+};
 const dayFormat = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric' });
 const dateFormat = new Intl.DateTimeFormat('it-IT', {
   weekday: 'short',
@@ -15,7 +19,8 @@ const HTML_ENTITIES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "
 
 export const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => HTML_ENTITIES[char]);
 
-export const formatNumber = (value) => (value === null || value === undefined ? '' : numberFormat.format(value));
+export const formatNumber = (value, digits = 1) =>
+  value === null || value === undefined ? '' : numberFormatOf(digits).format(value);
 
 export const parseNumberInput = (text) => {
   const normalized = String(text).trim().replace(',', '.');
@@ -39,7 +44,7 @@ export const formatSet = (set, type) => {
   if (type === 'cardio') {
     const parts = [];
     if (set.duration !== undefined && set.duration !== null) parts.push(formatDuration(set.duration));
-    if (set.distance !== undefined && set.distance !== null) parts.push(`${formatNumber(set.distance)} km`);
+    if (set.distance !== undefined && set.distance !== null) parts.push(`${formatNumber(set.distance, 2)} km`);
     if (set.level !== undefined && set.level !== null) parts.push(`liv ${set.level}`);
     if (set.speed !== undefined && set.speed !== null) parts.push(`${formatNumber(set.speed)} km/h`);
     return parts.join(' · ');
