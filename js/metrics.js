@@ -5,6 +5,8 @@ export const METRIC_LABELS = {
   bodyweight: 'Ripetizioni massime',
   bodyweightLoad: '1RM stimato peso corporeo + zavorra (kg)',
   time: 'Durata massima (s)',
+  cardioDistance: 'Distanza (km)',
+  cardioDuration: 'Durata (min)',
 };
 
 export const isDone = (set) => set.effort !== null && set.effort !== undefined;
@@ -53,6 +55,16 @@ const metricKind = (type, bodyWeight) => {
   return 'reps';
 };
 
+// Metrica di una sessione per un esercizio cardio: distanza massima delle serie fatte se almeno
+// una ne ha una; altrimenti durata massima, convertita in minuti (round1).
+const cardioMetric = (sets) => {
+  const doneSets = sets.filter(isDone);
+  const distances = doneSets.map((set) => set.distance).filter((value) => typeof value === 'number');
+  if (distances.length) return { metric: 'distance', value: Math.max(...distances) };
+  const durations = doneSets.map((set) => set.duration).filter((value) => typeof value === 'number');
+  return { metric: 'duration', value: durations.length ? round1(Math.max(...durations) / 60) : null };
+};
+
 export const exerciseHistory = (sessions, exerciseId) =>
   sessions
     .filter((session) => session.entries[exerciseId]?.some(isDone))
@@ -60,11 +72,27 @@ export const exerciseHistory = (sessions, exerciseId) =>
       const target = session.targets[exerciseId];
       const sets = session.entries[exerciseId];
       const bodyWeight = session.bodyWeight ?? null;
+      const category = target.category ?? 'forza';
+      if (target.type === 'cardio') {
+        const { metric, value } = cardioMetric(sets);
+        return {
+          sessionId: session.id,
+          date: session.endedAt,
+          name: target.name,
+          type: target.type,
+          category,
+          target: target.duration,
+          sets: sets.filter(isDone),
+          value,
+          metric,
+        };
+      }
       return {
         sessionId: session.id,
         date: session.endedAt,
         name: target.name,
         type: target.type,
+        category,
         target: target[countKey(target.type)],
         sets: sets.filter(isDone),
         value: sessionMetric(sets, target.type, bodyWeight),
@@ -75,16 +103,25 @@ export const exerciseHistory = (sessions, exerciseId) =>
 
 // Serie del grafico storico: per bodyweight, se lo storico contiene almeno una voce con 1RM
 // (peso corporeo + zavorra), usa solo quelle con la relativa etichetta; altrimenti le ripetizioni.
-// Per gli altri tipi, l'etichetta corrente. Solo punti con value non null; null se nessuno resta.
+// Per cardio, se almeno una voce ha la distanza usa solo quelle con la distanza; altrimenti la
+// durata (minuti). Per gli esercizi con category diversa da forza (stretching/mobilita) nessun
+// grafico. Per gli altri tipi, l'etichetta corrente. Solo punti con value non null; null se
+// nessuno resta.
 export const chartSeries = (history) => {
   if (!history.length) return null;
-  const { type } = history[0];
+  const { type, category } = history[0];
+  if ((category ?? 'forza') !== 'forza') return null;
   let label = METRIC_LABELS[type];
   let entries = history;
   if (type === 'bodyweight') {
     const hasLoad = history.some((item) => item.metric === '1rm');
     label = hasLoad ? METRIC_LABELS.bodyweightLoad : METRIC_LABELS.bodyweight;
     entries = history.filter((item) => item.metric === (hasLoad ? '1rm' : 'reps'));
+  }
+  if (type === 'cardio') {
+    const hasDistance = history.some((item) => item.metric === 'distance');
+    label = hasDistance ? METRIC_LABELS.cardioDistance : METRIC_LABELS.cardioDuration;
+    entries = history.filter((item) => item.metric === (hasDistance ? 'distance' : 'duration'));
   }
   const points = entries.filter((item) => item.value !== null).map((item) => ({ date: item.date, value: item.value }));
   return points.length ? { label, points } : null;

@@ -183,6 +183,84 @@ test('exerciseHistory: metric duration per gli esercizi a tempo', () => {
   assert.equal(history[0].value, 50);
 });
 
+test('METRIC_LABELS include le etichette cardio', () => {
+  assert.equal(METRIC_LABELS.cardioDistance, 'Distanza (km)');
+  assert.equal(METRIC_LABELS.cardioDuration, 'Durata (min)');
+});
+
+const cardioTarget = { name: 'Corsa', type: 'cardio', category: 'forza', sets: 1, duration: { min: 600, max: 1500 } };
+
+test('exerciseHistory: cardio sceglie la distanza se presente, altrimenti la durata in minuti; category riportata', () => {
+  const cardioSessions = [
+    {
+      id: 'c1',
+      workoutId: 'D',
+      endedAt: '2026-09-20T19:00:00.000Z',
+      targets: { corsa: cardioTarget },
+      entries: { corsa: [{ duration: 1200, distance: null, level: null, speed: null, effort: 'fatto' }] },
+    },
+    {
+      id: 'c2',
+      workoutId: 'D',
+      endedAt: '2026-09-22T19:00:00.000Z',
+      targets: { corsa: cardioTarget },
+      entries: { corsa: [{ duration: 1500, distance: 5.2, level: 8, speed: 12, effort: 'fatto' }] },
+    },
+  ];
+  const history = exerciseHistory(cardioSessions, 'corsa');
+  assert.equal(history[0].category, 'forza');
+  assert.equal(history[0].metric, 'duration');
+  assert.equal(history[0].value, 20);
+  assert.equal(history[1].metric, 'distance');
+  assert.equal(history[1].value, 5.2);
+});
+
+test('exerciseHistory: category assente sul target (dati vecchi) viene riportata come forza', () => {
+  const { category, ...targetWithoutCategory } = cardioTarget;
+  const sessions2 = [
+    {
+      id: 'c1',
+      workoutId: 'D',
+      endedAt: '2026-09-20T19:00:00.000Z',
+      targets: { corsa: targetWithoutCategory },
+      entries: { corsa: [{ duration: 1200, effort: 'fatto' }] },
+    },
+  ];
+  assert.equal(exerciseHistory(sessions2, 'corsa')[0].category, 'forza');
+});
+
+test('chartSeries: cardio usa la distanza se almeno una voce ce l\'ha', () => {
+  const history = [
+    { type: 'cardio', category: 'forza', metric: 'duration', date: '2026-09-20T19:00:00.000Z', value: 20 },
+    { type: 'cardio', category: 'forza', metric: 'distance', date: '2026-09-22T19:00:00.000Z', value: 5.2 },
+  ];
+  assert.deepEqual(chartSeries(history), {
+    label: METRIC_LABELS.cardioDistance,
+    points: [{ date: '2026-09-22T19:00:00.000Z', value: 5.2 }],
+  });
+});
+
+test('chartSeries: cardio senza distanza in nessuna voce usa la durata in minuti', () => {
+  const history = [
+    { type: 'cardio', category: 'forza', metric: 'duration', date: '2026-09-20T19:00:00.000Z', value: 20 },
+    { type: 'cardio', category: 'forza', metric: 'duration', date: '2026-09-22T19:00:00.000Z', value: 25 },
+  ];
+  assert.deepEqual(chartSeries(history), {
+    label: METRIC_LABELS.cardioDuration,
+    points: [
+      { date: '2026-09-20T19:00:00.000Z', value: 20 },
+      { date: '2026-09-22T19:00:00.000Z', value: 25 },
+    ],
+  });
+});
+
+test('chartSeries: null per gli esercizi con category diversa da forza (stretching/mobilita)', () => {
+  const history = [{ type: 'time', category: 'stretching', metric: 'duration', date: '2026-09-20T19:00:00.000Z', value: 30 }];
+  assert.equal(chartSeries(history), null);
+  const historyMobilita = [{ type: 'bodyweight', category: 'mobilita', metric: 'reps', date: '2026-09-20T19:00:00.000Z', value: 8 }];
+  assert.equal(chartSeries(historyMobilita), null);
+});
+
 test('retiredExercises elenca gli esercizi con storico non più in scheda', () => {
   assert.deepEqual(retiredExercises(program(), sessions), [{ id: 'stacco', name: 'Stacco' }]);
 });
