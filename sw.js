@@ -22,6 +22,7 @@ const SHELL = [
   'js/views/faces.js',
   'js/views/history.js',
   'js/views/home.js',
+  'js/views/info.js',
   'js/views/session.js',
   'icons/icon-192.png',
   'icons/icon-512.png',
