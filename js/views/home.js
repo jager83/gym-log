@@ -1,21 +1,12 @@
-import { discardSession, lastDoneByWorkout, nextWorkoutId, setBodyWeight, startSession } from '../session.js';
-import { isDone } from '../metrics.js';
+import { discardSession, lastDoneByWorkout, nextWorkoutId, setBodyWeight } from '../session.js';
 import { exportState, importState, isBackupDue } from '../store.js';
 import { escapeHtml, formatDay, formatNumber, formatTime, parseNumberInput } from '../format.js';
 import { downloadText } from '../device.js';
 import { alertDialog, confirmDialog } from './modal.js';
+import { discardMessage } from './workout-switch.js';
 
 const bodyWeightSummary = (bodyWeight) =>
   bodyWeight === null ? 'Peso corporeo: non impostato' : `Peso corporeo: ${formatNumber(bodyWeight)} kg`;
-
-const doneSetsCount = (session) => Object.values(session.entries).flat().filter(isDone).length;
-
-// Messaggio di scarto: avvisa quante serie segnate andranno perse.
-const discardMessage = (session) => {
-  const count = doneSetsCount(session);
-  if (count === 0) return 'I dati inseriti andranno persi.';
-  return `Hai ${count} ${count === 1 ? 'serie segnata' : 'serie segnate'} in ${session.workoutName}: andranno perse.`;
-};
 
 const homeHtml = (program, state, backupDue) => {
   const active = state.activeSession;
@@ -82,18 +73,6 @@ export const renderHome = (root, ctx) => {
     root.innerHTML = homeHtml(ctx.program, state, isBackupDue(state, new Date()) || ctx.persistDenied);
   };
 
-  const startWorkout = (workoutId) => {
-    const buttons = root.querySelectorAll('[data-action="start"], [data-action="resume"]');
-    buttons.forEach((button) => { button.disabled = true; });
-    try {
-      ctx.commit(startSession(ctx.program, ctx.getState(), workoutId, new Date()));
-      ctx.navigate('#/session');
-    } catch (error) {
-      buttons.forEach((button) => { button.disabled = false; });
-      alertDialog({ title: 'Errore', message: error.message });
-    }
-  };
-
   const confirmDiscardActive = async () => {
     const active = ctx.getState().activeSession;
     if (!active) return;
@@ -106,19 +85,6 @@ export const renderHome = (root, ctx) => {
     if (!confirmed) return;
     ctx.commit(discardSession(ctx.getState()));
     draw();
-  };
-
-  const switchWorkout = async (active, workoutId) => {
-    const nextName = ctx.program.workouts.find((item) => item.id === workoutId)?.name ?? workoutId;
-    const confirmed = await confirmDialog({
-      title: `Iniziare ${nextName}?`,
-      message: `Hai ${active.workoutName} in corso: verrà scartato. ${discardMessage(active)}`,
-      confirmLabel: 'Scarta e inizia',
-      danger: true,
-    });
-    if (!confirmed) return;
-    ctx.commit(discardSession(ctx.getState()));
-    startWorkout(workoutId);
   };
 
   const onClick = (event) => {
@@ -139,11 +105,7 @@ export const renderHome = (root, ctx) => {
         ctx.navigate('#/focus');
         return;
       }
-      if (active) {
-        switchWorkout(active, workout);
-        return;
-      }
-      startWorkout(workout);
+      ctx.navigate(`#/workout/${encodeURIComponent(workout)}`);
       return;
     }
     if (action === 'export') {

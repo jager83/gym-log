@@ -71,12 +71,15 @@ const restingBlockIndex = (session) => (session?.restEndsAt ? session.restBlockI
 
 // Il titolo porta al focus su quel blocco; "i" apre la scheda esercizio se ci sono testi; sotto il
 // target, il suggerimento di carico finché la serie 1 non è fatta.
-const exerciseHeaderHtml = (session, blockIndex, adviceById) =>
+// `linkable`: false nell'anteprima allenamento (nessuna sessione attiva, niente link al focus).
+export const exerciseHeaderHtml = (session, blockIndex, adviceById, linkable = true) =>
   session.blocks[blockIndex].exerciseIds
     .map((exerciseId) => {
       const target = session.targets[exerciseId];
+      const name = escapeHtml(target.name);
+      const title = linkable ? `<a class="block__link" href="#/focus/${blockIndex}">${name}</a>` : name;
       return `<div class="block__head">
-          <h2 class="block__title"><a class="block__link" href="#/focus/${blockIndex}">${escapeHtml(target.name)}</a></h2>
+          <h2 class="block__title">${title}</h2>
           ${infoButtonHtml(exerciseId, target)}
         </div>
         <p class="block__target">${targetText(target)} · ${unitsText(target)}</p>
@@ -84,7 +87,7 @@ const exerciseHeaderHtml = (session, blockIndex, adviceById) =>
     })
     .join('');
 
-const blockTagsHtml = (block, superset) =>
+export const blockTagsHtml = (block, superset) =>
   `${block.phase ? `<p class="block__phase">${PHASE_LABELS[block.phase]}</p>` : ''}${superset ? '<p class="block__tag">Superset</p>' : ''}`;
 
 const setsRowsHtml = (session, block, previousById, superset) => {

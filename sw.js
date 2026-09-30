@@ -1,6 +1,6 @@
 // Incrementa CACHE_VERSION a ogni deploy (codice o scheda): la nuova versione
 // si scarica in background e si attiva alla successiva riapertura dell'app.
-const CACHE_VERSION = 'gym-log-v9';
+const CACHE_VERSION = 'gym-log-v10';
 
 const SHELL = [
   './',
@@ -26,7 +26,9 @@ const SHELL = [
   'js/views/home.js',
   'js/views/info.js',
   'js/views/modal.js',
+  'js/views/preview.js',
   'js/views/session.js',
+  'js/views/workout-switch.js',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',
