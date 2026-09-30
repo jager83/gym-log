@@ -1531,6 +1531,34 @@ input:focus-visible {
   margin-top: 8px;
 }
 
+/* Modale (conferme e avvisi: stessa base della scheda esercizio, .info) */
+.modal {
+  max-width: 420px;
+}
+
+.modal__message {
+  color: var(--ink-2);
+  line-height: 1.4;
+}
+
+.modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.modal__actions .button {
+  flex: 1 1 auto;
+}
+
+.button--danger {
+  border-color: var(--bad);
+  background: var(--bad);
+  color: #ffffff;
+}
+
 /* Tablet */
 @media (min-width: 769px) {
   .app {

@@ -5,6 +5,7 @@ import { isDone, setOutcome } from '../metrics.js';
 import { DONE_EFFORT, EFFORTS, EFFORT_LABELS, finishSession, hasDoneSets, stepValue, updateSet } from '../session.js';
 import { escapeHtml, formatDuration, formatNumber, formatRange, parseNumberInput } from '../format.js';
 import { faceSvg } from './faces.js';
+import { confirmDialog } from './modal.js';
 
 const REPEAT_DELAY_MS = 400;
 const REPEAT_INTERVAL_MS = 90;
@@ -299,11 +300,12 @@ export const createStepRepeat = ({ stepInfo, applyStep, onRepeatEnd = () => {} }
 };
 
 // "Termina": chiede sempre conferma; senza serie fatte la sessione viene scartata.
-export const confirmFinish = (ctx, now) => {
+export const confirmFinish = async (ctx, now) => {
   const message = hasDoneSets(ctx.getState().activeSession)
     ? 'Terminare l\'allenamento? Non potrai più modificarlo.'
     : 'Nessuna serie fatta: la sessione verrà scartata. Continuare?';
-  if (!window.confirm(message)) return;
+  const confirmed = await confirmDialog({ title: 'Termina allenamento', message, confirmLabel: 'Termina' });
+  if (!confirmed || !ctx.getState().activeSession) return;
   ctx.commit(finishSession(ctx.getState(), now));
   ctx.navigate('#/');
 };

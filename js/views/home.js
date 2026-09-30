@@ -3,6 +3,7 @@ import { lastDoneByWorkout, nextWorkoutId, setBodyWeight, startSession } from '.
 import { exportState, importState, isBackupDue } from '../store.js';
 import { escapeHtml, formatDay, formatNumber, formatTime, parseNumberInput } from '../format.js';
 import { downloadText } from '../device.js';
+import { alertDialog, confirmDialog } from './modal.js';
 
 const bodyWeightSummary = (bodyWeight) =>
   bodyWeight === null ? 'Peso corporeo: non impostato' : `Peso corporeo: ${formatNumber(bodyWeight)} kg`;
@@ -89,7 +90,7 @@ export const renderHome = (root, ctx) => {
         ctx.navigate('#/session');
       } catch (error) {
         buttons.forEach((button) => { button.disabled = false; });
-        ctx.notify(error.message);
+        alertDialog({ title: 'Errore', message: error.message });
       }
       return;
     }
@@ -113,12 +114,13 @@ export const renderHome = (root, ctx) => {
     if (input.dataset.action !== 'import' || !input.files[0]) return;
     try {
       const imported = importState(await input.files[0].text());
-      if (!window.confirm('Sostituire tutti i dati attuali con il backup?')) return;
+      const confirmed = await confirmDialog({ title: 'Importa backup', message: 'Sostituire tutti i dati attuali con il backup?' });
+      if (!confirmed) return;
       ctx.commit(imported);
       draw();
       ctx.notify('Backup importato');
     } catch (error) {
-      ctx.notify(error.message);
+      alertDialog({ title: 'Errore', message: error.message });
     } finally {
       input.value = '';
     }

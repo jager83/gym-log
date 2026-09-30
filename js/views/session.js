@@ -19,6 +19,7 @@ import { adviceBySession } from '../advice.js';
 import { escapeHtml, formatDuration, formatSet } from '../format.js';
 import { faceSvg } from './faces.js';
 import { openExerciseInfo } from './info.js';
+import { confirmDialog } from './modal.js';
 import {
   PHASE_LABELS,
   adviceHtml,
@@ -257,6 +258,18 @@ export const renderSession = (root, ctx) => {
     restBar.hidden = false;
   };
 
+  const confirmDiscard = async () => {
+    const confirmed = await confirmDialog({
+      title: 'Scarta sessione',
+      message: 'Scartare la sessione? I dati inseriti andranno persi.',
+      confirmLabel: 'Scarta',
+      danger: true,
+    });
+    if (!confirmed || !getSession()) return;
+    ctx.commit(discardSession(ctx.getState()));
+    ctx.navigate('#/');
+  };
+
   const onClick = (event) => {
     const target = event.target.closest('[data-action]');
     if (!target) return;
@@ -332,11 +345,7 @@ export const renderSession = (root, ctx) => {
       confirmFinish(ctx, now);
       return;
     }
-    if (action === 'discard') {
-      if (!window.confirm('Scartare la sessione? I dati inseriti andranno persi.')) return;
-      ctx.commit(discardSession(ctx.getState()));
-      ctx.navigate('#/');
-    }
+    if (action === 'discard') confirmDiscard();
   };
 
   const onInput = (event) => {
