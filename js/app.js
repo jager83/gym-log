@@ -5,6 +5,7 @@ import { advanceTimer } from './timer.js';
 import { beep, downloadText, keepScreenOn, unlockAudio, vibrate } from './device.js';
 import { renderHome } from './views/home.js';
 import { renderSession } from './views/session.js';
+import { renderFocus } from './views/focus.js';
 import { renderHistory } from './views/history.js';
 
 const NOTICE_MS = 4000;
@@ -98,11 +99,12 @@ const startRouter = (root, ctx) => {
   const route = () => {
     cleanup?.();
     const [, view, param] = (window.location.hash || '#/').split('/');
-    if (view === 'session' && !ctx.getState().activeSession) {
+    if ((view === 'session' || view === 'focus') && !ctx.getState().activeSession) {
       ctx.navigate('#/');
       return;
     }
     if (view === 'session') cleanup = renderSession(root, ctx);
+    else if (view === 'focus') cleanup = renderFocus(root, ctx, param ? Number(param) : null);
     else if (view === 'history') cleanup = renderHistory(root, ctx, param ? decodeURIComponent(param) : null);
     else cleanup = renderHome(root, ctx);
     window.scrollTo(0, 0);

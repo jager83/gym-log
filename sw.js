@@ -20,6 +20,7 @@ const SHELL = [
   'js/timer.js',
   'js/views/controls.js',
   'js/views/faces.js',
+  'js/views/focus.js',
   'js/views/history.js',
   'js/views/home.js',
   'js/views/info.js',

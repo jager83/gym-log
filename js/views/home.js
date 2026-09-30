@@ -74,7 +74,7 @@ export const renderHome = (root, ctx) => {
     if (!target) return;
     const { action, workout } = target.dataset;
     if (action === 'resume') {
-      ctx.navigate('#/session');
+      ctx.navigate('#/focus');
       return;
     }
     if (action === 'start') {
