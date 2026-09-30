@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   CATEGORIES,
   EXERCISE_TYPES,
@@ -13,6 +14,11 @@ import {
   parseProgram,
 } from '../js/program.js';
 import { program, rawProgram } from './fixtures.js';
+
+const allExercises = (shippedProgram) =>
+  shippedProgram.workouts.flatMap((workout) => workout.blocks.flatMap((block) => block.exercises));
+
+const allBlocks = (shippedProgram) => shippedProgram.workouts.flatMap((workout) => workout.blocks);
 
 test('normalizza numeri singoli in range e applica i default', () => {
   const p = program();
@@ -268,4 +274,21 @@ test('loadProgram', async () => {
 
   const offline = async () => { throw new TypeError('Failed to fetch'); };
   await assert.rejects(loadProgram(offline), { message: 'Serve la connessione al primo avvio' });
+});
+
+test('data/program.json spedito è valido e copre riscaldamento, defaticamento, cardio e sides:2', () => {
+  const raw = JSON.parse(readFileSync(new URL('../data/program.json', import.meta.url), 'utf8'));
+  const shipped = normalizeProgram(raw);
+  const blocks = allBlocks(shipped);
+  const exercises = allExercises(shipped);
+
+  assert.ok(blocks.some((block) => block.phase === 'riscaldamento'), 'manca un blocco riscaldamento');
+  assert.ok(blocks.some((block) => block.phase === 'defaticamento'), 'manca un blocco defaticamento');
+  assert.ok(exercises.some((exercise) => exercise.type === 'cardio'), 'manca un esercizio cardio');
+  assert.ok(exercises.some((exercise) => exercise.sides === 2), 'manca un esercizio a due lati');
+  exercises.forEach((exercise) => {
+    assert.ok(typeof exercise.description === 'string' && exercise.description !== '', `${exercise.id}: description mancante`);
+    assert.ok(Array.isArray(exercise.steps) && exercise.steps.length > 0, `${exercise.id}: steps mancanti`);
+    assert.ok(Array.isArray(exercise.tips) && exercise.tips.length > 0, `${exercise.id}: tips mancanti`);
+  });
 });

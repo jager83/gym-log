@@ -7,12 +7,31 @@
       "id": "A",
       "name": "Allenamento A",
       "blocks": [
+        { "phase": "riscaldamento", "rest": 30, "exercises": [
+          { "id": "mobilita-spalle", "name": "Mobilità spalle", "type": "bodyweight", "category": "mobilita", "sets": 1, "reps": { "min": 10, "max": 15 },
+            "description": "Mobilità articolare per scaldare le spalle prima dell'allenamento.",
+            "steps": ["In piedi, esegui rotazioni ampie delle braccia in avanti", "Dopo alcune ripetizioni inverti il senso di rotazione", "Mantieni il core attivo durante il movimento"],
+            "tips": ["Movimento ampio ma controllato", "Nessun dolore, solo una lieve tensione"] },
+          { "id": "stretching-pettorali", "name": "Stretching pettorali", "type": "time", "category": "stretching", "sides": 2, "sets": 1, "duration": { "min": 20, "max": 30 },
+            "description": "Allungamento del grande pettorale a corpo libero, un lato alla volta.",
+            "steps": ["Appoggia l'avambraccio a uno stipite o a una superficie verticale", "Ruota il busto dal lato opposto fino a sentire lo stiramento", "Mantieni la posizione senza rimbalzare"],
+            "tips": ["Respira lentamente durante l'allungamento", "Fermati se senti dolore, non solo tensione"] }
+        ]},
         { "rest": 120, "exercises": [
-          { "id": "panca-piana", "name": "Panca piana", "type": "weight", "reps": { "min": 8, "max": 10 } }
+          { "id": "panca-piana", "name": "Panca piana", "type": "weight", "reps": { "min": 8, "max": 10 },
+            "description": "Esercizio base per pettorali, spalle e tricipiti con bilanciere su panca piana.",
+            "steps": ["Sdraiati sulla panca con i piedi appoggiati a terra", "Impugna il bilanciere poco più largo delle spalle", "Abbassa il bilanciere al petto controllando il movimento", "Spingi verso l'alto fino a distendere le braccia"],
+            "tips": ["Scapole retratte e ferme sulla panca", "Non far rimbalzare il bilanciere sul petto"] }
         ]},
         { "exercises": [
-          { "id": "curl-bilanciere", "name": "Curl bilanciere", "type": "weight", "reps": { "min": 10, "max": 12 } },
-          { "id": "french-press", "name": "French press", "type": "weight", "reps": { "min": 10, "max": 12 } }
+          { "id": "curl-bilanciere", "name": "Curl bilanciere", "type": "weight", "reps": { "min": 10, "max": 12 },
+            "description": "Isolamento dei bicipiti con bilanciere in piedi.",
+            "steps": ["Impugna il bilanciere con presa supina", "Tieni i gomiti vicini al busto", "Solleva il bilanciere flettendo i gomiti", "Scendi controllando fino a distendere le braccia"],
+            "tips": ["Evita di dondolare con la schiena", "Discesa lenta e controllata"] },
+          { "id": "french-press", "name": "French press", "type": "weight", "reps": { "min": 10, "max": 12 },
+            "description": "Esercizio per tricipiti con bilanciere, gomiti fissi verso l'alto.",
+            "steps": ["Sdraiati sulla panca con il bilanciere sopra il petto", "Piega i gomiti portando il bilanciere verso la fronte", "Distendi le braccia tornando alla posizione iniziale"],
+            "tips": ["Gomiti puntati al soffitto, non allargarli", "Controlla la discesa per proteggere i gomiti"] }
         ]}
       ]
     },
@@ -21,10 +40,26 @@
       "name": "Allenamento B",
       "blocks": [
         { "rest": 120, "exercises": [
-          { "id": "squat", "name": "Squat", "type": "weight", "reps": { "min": 8, "max": 10 } }
+          { "id": "squat", "name": "Squat", "type": "weight", "reps": { "min": 8, "max": 10 },
+            "description": "Esercizio fondamentale per quadricipiti, glutei e core con bilanciere sulle spalle.",
+            "steps": ["Posiziona il bilanciere sui trapezi", "Piega le ginocchia scendendo con i fianchi indietro", "Scendi finché le cosce sono parallele al suolo", "Risali spingendo con i talloni"],
+            "tips": ["Ginocchia in linea con le punte dei piedi", "Schiena dritta per tutto il movimento"] }
         ]},
         { "exercises": [
-          { "id": "plank", "name": "Plank", "type": "time", "duration": { "min": 45, "max": 60 } }
+          { "id": "plank", "name": "Plank", "type": "time", "duration": { "min": 45, "max": 60 },
+            "description": "Esercizio isometrico per il core, in appoggio su avambracci e punte dei piedi.",
+            "steps": ["Appoggia avambracci e gomiti a terra sotto le spalle", "Distendi le gambe con le punte dei piedi a terra", "Mantieni il corpo allineato dalla testa ai talloni"],
+            "tips": ["Contrai addominali e glutei", "Non far cadere i fianchi verso il basso"] },
+          { "id": "plank-laterale", "name": "Plank laterale", "type": "time", "sides": 2, "sets": 2, "duration": { "min": 20, "max": 30 },
+            "description": "Variante del plank in appoggio laterale, per obliqui e stabilizzatori del bacino.",
+            "steps": ["Appoggiati su un avambraccio con il corpo di lato", "Solleva i fianchi allineando il corpo in una linea retta", "Mantieni la posizione per il tempo previsto"],
+            "tips": ["Non far ruotare il bacino in avanti o indietro", "Spalla dell'appoggio lontana dall'orecchio"] }
+        ]},
+        { "exercises": [
+          { "id": "cyclette", "name": "Cyclette", "type": "cardio", "sets": 1, "duration": { "min": 600, "max": 900 },
+            "description": "Cardio a bassa intensità a fine allenamento, per il defaticamento cardiovascolare.",
+            "steps": ["Imposta una resistenza leggera-moderata", "Mantieni un ritmo di pedalata costante", "Respira in modo regolare per tutta la durata"],
+            "tips": ["Sella regolata all'altezza del fianco a gamba tesa", "Rallenta gradualmente negli ultimi minuti"] }
         ]}
       ]
     },
@@ -33,10 +68,23 @@
       "name": "Allenamento C",
       "blocks": [
         { "exercises": [
-          { "id": "trazioni", "name": "Trazioni", "type": "bodyweight", "sets": 4, "reps": { "min": 6, "max": 8 } }
+          { "id": "trazioni", "name": "Trazioni", "type": "bodyweight", "sets": 4, "reps": { "min": 6, "max": 8 },
+            "description": "Esercizio a corpo libero per dorsali e bicipiti alla sbarra.",
+            "steps": ["Impugna la sbarra con presa prona poco più larga delle spalle", "Tira il corpo verso l'alto fino a portare il mento sopra la sbarra", "Scendi controllando fino a distendere le braccia"],
+            "tips": ["Evita di usare lo slancio delle gambe", "Scapole basse prima di iniziare la trazione"] }
         ]},
         { "exercises": [
           { "id": "panca-piana", "name": "Panca piana", "type": "weight", "reps": { "min": 10, "max": 12 } }
+        ]},
+        { "phase": "defaticamento", "rest": 30, "exercises": [
+          { "id": "stretching-quadricipiti", "name": "Stretching quadricipiti", "type": "time", "category": "stretching", "sides": 2, "sets": 1, "duration": { "min": 20, "max": 30 },
+            "description": "Allungamento del quadricipite in piedi, in appoggio per l'equilibrio.",
+            "steps": ["In piedi, afferra la caviglia e porta il tallone verso il gluteo", "Tieni le ginocchia vicine e il bacino in leggera retroversione", "Mantieni la posizione senza tirare con forza"],
+            "tips": ["Appoggiati a un muro o a una sedia se serve equilibrio", "Ginocchio d'appoggio leggermente flesso"] },
+          { "id": "stretching-ischiocrurali", "name": "Stretching ischiocrurali", "type": "time", "category": "stretching", "sides": 1, "sets": 1, "duration": { "min": 25, "max": 35 },
+            "description": "Allungamento dei muscoli posteriori della coscia da seduti.",
+            "steps": ["Siediti con le gambe distese in avanti", "Piega il busto in avanti mantenendo la schiena lunga", "Avvicina le mani verso le caviglie senza forzare"],
+            "tips": ["Non inarcare la schiena, piega dai fianchi", "Mantieni una respirazione fluida"] }
         ]}
       ]
     }
