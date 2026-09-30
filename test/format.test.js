@@ -7,6 +7,7 @@ import {
   formatNumber,
   formatRange,
   formatSet,
+  parseDurationMinutesInput,
   parseNumberInput,
 } from '../js/format.js';
 
@@ -21,6 +22,17 @@ test('parseNumberInput restituisce null per vuoto o non numerico', () => {
   assert.equal(parseNumberInput(''), null);
   assert.equal(parseNumberInput('   '), null);
   assert.equal(parseNumberInput('abc'), null);
+});
+
+test('parseDurationMinutesInput: m:ss, minuti decimali o interi, in secondi', () => {
+  assert.equal(parseDurationMinutesInput('5:30'), 330);
+  assert.equal(parseDurationMinutesInput('5:00'), 300);
+  assert.equal(parseDurationMinutesInput('25:00'), 1500);
+  assert.equal(parseDurationMinutesInput('5,5'), 330);
+  assert.equal(parseDurationMinutesInput('5.5'), 330);
+  assert.equal(parseDurationMinutesInput('5'), 300);
+  assert.equal(parseDurationMinutesInput(''), null);
+  assert.equal(parseDurationMinutesInput('abc'), null);
 });
 
 test('formatNumber usa la virgola e niente separatore migliaia', () => {

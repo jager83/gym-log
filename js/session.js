@@ -141,7 +141,11 @@ export const clampValue = (field, value) => {
   return Math.max(0, Math.round(value));
 };
 
-export const stepValue = (field, value, direction) => clampValue(field, (value ?? 0) + direction * STEPS[field]);
+// La durata cardio avanza di 30 s (arrivo/allenamento cardio), quella degli esercizi a tempo di 5 s.
+const stepAmount = (field, type) => (field === 'duration' && type === 'cardio' ? 30 : STEPS[field]);
+
+export const stepValue = (field, value, direction, type) =>
+  clampValue(field, (value ?? 0) + direction * stepAmount(field, type));
 
 // L'effort DONE_EFFORT ('fatto') vale solo per gli esercizi con category diversa da forza
 // (stretching/mobilita): per forza restano ammessi solo gli EFFORTS (faccine).

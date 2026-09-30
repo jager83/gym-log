@@ -426,6 +426,8 @@ test('clampValue e stepValue', () => {
   assert.equal(stepValue('weight', null, 1), 0.5);
   assert.equal(stepValue('reps', 0, -1), 0);
   assert.equal(stepValue('duration', 60, 1), 65);
+  assert.equal(stepValue('duration', 60, 1, 'cardio'), 90);
+  assert.equal(stepValue('duration', 90, -1, 'cardio'), 60);
 });
 
 test('clampValue e stepValue: distance, level, speed', () => {

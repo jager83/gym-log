@@ -20,7 +20,7 @@ test('targetText: righe della lista per tipo, per lato e cardio senza obiettivo'
   assert.equal(targetText(weight), '3 × 8-10');
   assert.equal(targetText(plank), '2 × 30');
   assert.equal(unitsText(plank), 'secondi per lato');
-  assert.equal(targetText(cardio), '1 × 20:00-30:00');
+  assert.equal(targetText(cardio), '1 × 20-30 min');
   assert.equal(targetText(cardioFree), '1 serie');
   assert.equal(unitsText(cardio), 's · km · liv · km/h');
   assert.equal(unitsText({ ...weight, load: 'per-dumbbell' }), 'kg a manubrio × rip');
@@ -45,7 +45,7 @@ test('assisted: unità e campo peso come assistenza', () => {
 test('focusTargetText: "Serie n di m" con obiettivo, unità e per lato', () => {
   assert.equal(focusTargetText(weight, 1), 'Serie 2 di 3 · 8-10 rip');
   assert.equal(focusTargetText(plank, 0), 'Serie 1 di 2 · 30 s per lato');
-  assert.equal(focusTargetText({ ...cardio, duration: { min: 1500, max: 1500 } }, 0), 'Serie 1 di 1 · 25:00');
+  assert.equal(focusTargetText({ ...cardio, duration: { min: 1500, max: 1500 } }, 0), 'Serie 1 di 1 · 25 min');
   assert.equal(focusTargetText(cardioFree, 0), 'Serie 1 di 1');
 });
 
@@ -75,6 +75,13 @@ test('formatFieldValue: distanza a 2 decimali, gli altri campi a 1', () => {
   assert.equal(formatFieldValue('weight', 62.5), '62,5');
   assert.equal(formatFieldValue('reps', 8), '8');
   assert.equal(formatFieldValue('distance', null), '');
+});
+
+test('formatFieldValue: durata cardio in m:ss, durata time in secondi', () => {
+  assert.equal(formatFieldValue('duration', 330, 'cardio'), '5:30');
+  assert.equal(formatFieldValue('duration', 300, 'cardio'), '5:00');
+  assert.equal(formatFieldValue('duration', null, 'cardio'), '');
+  assert.equal(formatFieldValue('duration', 30, 'time'), '30');
 });
 
 test('setFields e unitsText: niente zavorra per bodyweight di stretching/mobilità', () => {

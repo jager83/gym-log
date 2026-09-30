@@ -1,4 +1,3 @@
-import { findWorkout } from '../program.js';
 import { lastDoneByWorkout, nextWorkoutId, setBodyWeight, startSession } from '../session.js';
 import { exportState, importState, isBackupDue } from '../store.js';
 import { escapeHtml, formatDay, formatNumber, formatTime, parseNumberInput } from '../format.js';
@@ -8,37 +7,39 @@ import { alertDialog, confirmDialog } from './modal.js';
 const bodyWeightSummary = (bodyWeight) =>
   bodyWeight === null ? 'Peso corporeo: non impostato' : `Peso corporeo: ${formatNumber(bodyWeight)} kg`;
 
-// Lettera del badge: primo carattere dell'id (o del nome se l'id manca).
-const workoutLetter = (workout) => (workout.id || workout.name).charAt(0).toUpperCase();
-
 const homeHtml = (program, state, backupDue) => {
   const active = state.activeSession;
   const lastDates = lastDoneByWorkout(state.sessions);
-  const lastLabel = (workoutId) => (lastDates[workoutId] ? formatDay(lastDates[workoutId]) : 'mai fatto');
-  const mainId = active ? active.workoutId : nextWorkoutId(program, state.sessions);
-  const mainName = active ? active.workoutName : findWorkout(program, mainId).name;
-  const others = program.workouts.filter((workout) => workout.id !== mainId);
+  const lastLabel = (workoutId) => (lastDates[workoutId] ? `ultima volta: ${formatDay(lastDates[workoutId])}` : 'mai fatto');
+  const nextId = nextWorkoutId(program, state.sessions);
+
+  const heroHtml = active
+    ? `
+      <button type="button" class="hero" data-action="resume" data-workout="${escapeHtml(active.workoutId)}">
+        <span class="hero__kicker">Riprendi</span>
+        <span class="hero__title">${escapeHtml(active.workoutName)}</span>
+        <span class="hero__meta">iniziato alle ${formatTime(active.startedAt)}</span>
+        <span class="hero__play" aria-hidden="true">▶</span>
+      </button>`
+    : '';
 
   return `
     <section class="home">
-      <button type="button" class="hero" data-action="${active ? 'resume' : 'start'}" data-workout="${escapeHtml(mainId)}">
-        <span class="hero__kicker">${active ? 'Riprendi' : 'Prossimo'}</span>
-        <span class="hero__title">${escapeHtml(mainName)}</span>
-        <span class="hero__meta">${active ? `iniziato alle ${formatTime(active.startedAt)}` : `ultima volta: ${lastLabel(mainId)}`}</span>
-        <span class="hero__play" aria-hidden="true">▶</span>
-      </button>
+      ${heroHtml}
       <ul class="workout-list">
-        ${others
-          .map(
-            (workout) => `
+        ${program.workouts
+          .map((workout) => {
+            const isNext = workout.id === nextId;
+            return `
           <li>
-            <button type="button" class="workout-item" data-action="start" data-workout="${escapeHtml(workout.id)}" ${active ? 'disabled' : ''}>
-              <span class="workout-item__badge" aria-hidden="true">${escapeHtml(workoutLetter(workout))}</span>
-              <span class="workout-item__name">${escapeHtml(workout.name)}</span>
-              <span class="workout-item__last muted">${lastLabel(workout.id)}</span>
+            <button type="button" class="workout-card${isNext ? ' workout-card--next' : ''}" data-action="start"
+              data-workout="${escapeHtml(workout.id)}" ${active ? 'disabled' : ''}>
+              ${isNext ? '<span class="workout-card__kicker">Prossimo</span>' : ''}
+              <span class="workout-card__name">${escapeHtml(workout.name)}</span>
+              <span class="workout-card__meta muted">${lastLabel(workout.id)}</span>
             </button>
-          </li>`,
-          )
+          </li>`;
+          })
           .join('')}
       </ul>
       <nav class="home__links" aria-label="Altre funzioni">

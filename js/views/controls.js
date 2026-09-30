@@ -3,7 +3,7 @@
 import { countKey } from '../program.js';
 import { isDone, setOutcome } from '../metrics.js';
 import { DONE_EFFORT, EFFORTS, EFFORT_LABELS, finishSession, hasDoneSets, stepValue, updateSet } from '../session.js';
-import { escapeHtml, formatDuration, formatNumber, formatRange, parseNumberInput } from '../format.js';
+import { escapeHtml, formatDuration, formatNumber, formatRange, parseDurationMinutesInput, parseNumberInput } from '../format.js';
 import { faceSvg } from './faces.js';
 import { confirmDialog } from './modal.js';
 
@@ -21,14 +21,29 @@ export const FIELD_LABELS = {
 
 const DECIMAL_FIELDS = ['weight', 'distance', 'speed'];
 
-// La distanza si salva a 2 decimali (clampValue), gli altri campi al massimo a 1.
-export const formatFieldValue = (field, value) => formatNumber(value, field === 'distance' ? 2 : 1);
+// La distanza si salva a 2 decimali (clampValue), gli altri campi al massimo a 1. La durata cardio
+// si mostra in m:ss (il valore resta in secondi nello storage).
+export const formatFieldValue = (field, value, type) => {
+  if (field === 'duration' && type === 'cardio') return value === null || value === undefined ? '' : formatDuration(value);
+  return formatNumber(value, field === 'distance' ? 2 : 1);
+};
 
 const UNITS = {
   weight: 'kg × rip',
   bodyweight: 'zavorra kg × rip',
   time: 'secondi',
   cardio: 's · km · liv · km/h',
+};
+
+// Unità mostrata sopra il singolo stepper (−/+), per campo e tipo di esercizio.
+const unitLabelOf = (field, target) => {
+  if (field === 'weight') return target.assisted ? 'assistenza kg' : target.type === 'bodyweight' ? 'zavorra kg' : 'kg';
+  if (field === 'reps') return 'rip';
+  if (field === 'duration') return target.type === 'cardio' ? 'min' : 's';
+  if (field === 'distance') return 'km';
+  if (field === 'level') return 'liv';
+  if (field === 'speed') return 'km/h';
+  return '';
 };
 
 export const PHASE_LABELS = { riscaldamento: 'Riscaldamento', defaticamento: 'Defaticamento' };
@@ -39,9 +54,14 @@ const categoryOf = (target) => target.category ?? 'forza';
 
 const isPerSide = (target) => target.sides === 2;
 
+// Il target cardio si esprime in minuti (l'esercizio si logga in secondi, ma l'obiettivo è "20-30 min").
+const minutesOf = (seconds) => Math.round(seconds / 60);
+
 const durationRange = (range) => {
   if (range.max === null) return formatRange(range);
-  return range.min === range.max ? formatDuration(range.min) : `${formatDuration(range.min)}-${formatDuration(range.max)}`;
+  const min = minutesOf(range.min);
+  const max = minutesOf(range.max);
+  return `${min === max ? `${min}` : `${min}-${max}`} min`;
 };
 
 // Riga della lista: "3 × 8-10 · kg × rip"; cardio "1 × 20:00-30:00" (o "1 serie" senza obiettivo).
@@ -89,14 +109,19 @@ export const outcomeClass = (outcome) => (outcome === 'fallita' || outcome === '
 export const outcomeOf = (set, target) =>
   target.type === 'cardio' ? null : setOutcome(set, target.type, target[countKey(target.type)]);
 
-export const stepperHtml = (field, value, outcome, name, setNumber, fieldLabel = FIELD_LABELS[field]) => {
+export const stepperHtml = (field, value, outcome, name, setNumber, fieldLabel = FIELD_LABELS[field], unit = '', type) => {
   const label = `${fieldLabel} ${name} serie ${setNumber}`;
+  const cardioDuration = field === 'duration' && type === 'cardio';
+  const inputMode = cardioDuration ? 'text' : DECIMAL_FIELDS.includes(field) ? 'decimal' : 'numeric';
   return `
-    <div class="stepper">
-      <button type="button" class="stepper__btn" data-action="step" data-field="${field}" data-dir="-1" aria-label="Diminuisci ${label}">−</button>
-      <input class="stepper__input ${outcomeClass(outcome)}" type="text" inputmode="${DECIMAL_FIELDS.includes(field) ? 'decimal' : 'numeric'}"
-        autocomplete="off" value="${formatFieldValue(field, value)}" data-field="${field}" aria-label="${label}">
-      <button type="button" class="stepper__btn" data-action="step" data-field="${field}" data-dir="1" aria-label="Aumenta ${label}">+</button>
+    <div class="stepper-field">
+      <span class="stepper-field__unit" aria-hidden="true">${escapeHtml(unit)}</span>
+      <div class="stepper">
+        <button type="button" class="stepper__btn" data-action="step" data-field="${field}" data-dir="-1" aria-label="Diminuisci ${label}">−</button>
+        <input class="stepper__input ${outcomeClass(outcome)}" type="text" inputmode="${inputMode}"
+          autocomplete="off" value="${formatFieldValue(field, value, type)}" data-field="${field}" aria-label="${label}">
+        <button type="button" class="stepper__btn" data-action="step" data-field="${field}" data-dir="1" aria-label="Aumenta ${label}">+</button>
+      </div>
     </div>`;
 };
 
@@ -118,7 +143,9 @@ export const fieldsHtml = (target, set, name, setNumber, fields = setFields(targ
   const key = countKey(target.type);
   const outcome = outcomeOf(set, target);
   return fields
-    .map(([field, label]) => stepperHtml(field, set[field], field === key ? outcome : null, name, setNumber, label))
+    .map(([field, label]) =>
+      stepperHtml(field, set[field], field === key ? outcome : null, name, setNumber, label, unitLabelOf(field, target), target.type),
+    )
     .join('');
 };
 
@@ -182,8 +209,9 @@ const currentValue = (ctx, exerciseId, setIndex, field) => ctx.getState().active
 // i pesi che seguono, senza ridisegnare.
 const setField = (ctx, { row, exerciseId, setIndex, field, value }) => {
   ctx.commit(updateSet(ctx.getState(), exerciseId, setIndex, { [field]: value }, new Date()));
+  const type = ctx.getState().activeSession.targets[exerciseId].type;
   const input = row?.querySelector(`.stepper__input[data-field="${field}"]`);
-  if (input) input.value = formatFieldValue(field, currentValue(ctx, exerciseId, setIndex, field));
+  if (input) input.value = formatFieldValue(field, currentValue(ctx, exerciseId, setIndex, field), type);
   if (row) refreshOutcome(row, ctx.getState().activeSession, exerciseId, setIndex);
   if (field === 'weight') refreshFollowingWeights(ctx, exerciseId, setIndex);
 };
@@ -191,7 +219,8 @@ const setField = (ctx, { row, exerciseId, setIndex, field, value }) => {
 // Un passo −/+ su un campo: salva e aggiorna il numero sul posto, senza ridisegnare.
 export const stepSet = (ctx, { row, exerciseId, setIndex, field, dir }) => {
   const current = currentValue(ctx, exerciseId, setIndex, field);
-  setField(ctx, { row, exerciseId, setIndex, field, value: stepValue(field, current, dir) });
+  const type = ctx.getState().activeSession.targets[exerciseId].type;
+  setField(ctx, { row, exerciseId, setIndex, field, value: stepValue(field, current, dir, type) });
 };
 
 // --- Suggerimento di carico (advice.js) -------------------------------------------------------
@@ -218,18 +247,20 @@ export const applyAdvice = (ctx, button) => {
 
 export const commitInput = (ctx, input) => {
   const { row, exerciseId, setIndex } = setTargetOf(input);
-  ctx.commit(
-    updateSet(ctx.getState(), exerciseId, setIndex, { [input.dataset.field]: parseNumberInput(input.value) }, new Date()),
-  );
+  const { field } = input.dataset;
+  const type = ctx.getState().activeSession.targets[exerciseId].type;
+  const value = field === 'duration' && type === 'cardio' ? parseDurationMinutesInput(input.value) : parseNumberInput(input.value);
+  ctx.commit(updateSet(ctx.getState(), exerciseId, setIndex, { [field]: value }, new Date()));
   refreshOutcome(row, ctx.getState().activeSession, exerciseId, setIndex);
-  if (input.dataset.field === 'weight') refreshFollowingWeights(ctx, exerciseId, setIndex);
+  if (field === 'weight') refreshFollowingWeights(ctx, exerciseId, setIndex);
 };
 
 // Su blur mostra il valore normalizzato senza ridisegnare.
 export const normalizeInput = (ctx, input) => {
   const { exerciseId, setIndex } = setTargetOf(input);
   const { field } = input.dataset;
-  input.value = formatFieldValue(field, currentValue(ctx, exerciseId, setIndex, field));
+  const type = ctx.getState().activeSession.targets[exerciseId].type;
+  input.value = formatFieldValue(field, currentValue(ctx, exerciseId, setIndex, field), type);
 };
 
 // Pressione prolungata su −/+. Il primo passo avviene sul click, così uno scroll che parte da −/+

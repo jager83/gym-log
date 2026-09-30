@@ -31,6 +31,16 @@ export const parseNumberInput = (text) => {
 
 export const formatDuration = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 
+// Durata cardio digitata in minuti: "5:30" (m:ss), "5,5"/"5.5" o "5" (minuti decimali). Restituisce
+// i secondi arrotondati, o null se non interpretabile.
+export const parseDurationMinutesInput = (text) => {
+  const trimmed = String(text).trim();
+  const colonMatch = trimmed.match(/^(\d+):(\d{1,2})$/);
+  if (colonMatch) return Number(colonMatch[1]) * 60 + Number(colonMatch[2]);
+  const minutes = parseNumberInput(trimmed);
+  return minutes === null ? null : Math.round(minutes * 60);
+};
+
 // Durata trascorsa arrotondata al minuto per difetto: "52 min", "1 h 05 min".
 export const formatElapsed = (seconds) => {
   const minutes = Math.max(0, Math.floor(seconds / 60));

@@ -43,7 +43,6 @@ import { openExerciseInfo } from './info.js';
 
 const TICK_MS = 250;
 const ENDING_MS = 10000;
-const CARDIO_CAPTIONS = { distance: 'Distanza km', level: 'Livello', speed: 'Velocità km/h' };
 
 const sidesAutoOf = (settings) => settings.sidesAuto ?? true;
 
@@ -123,10 +122,7 @@ const controlsHtml = (session, settings, exerciseId, setIndex, name, now) => {
       ? timerPanelHtml(timerText(session, now), '', true)
       : timerPanelHtml(formatDuration(set.duration ?? 0), '', false);
     const buttons = timed ? `<div class="focus-card__actions">${timerButtonsHtml(session, phase)}</div>` : start;
-    const labeled = extraFields
-      .map((field) => `<div class="focus-field"><span class="focus-field__label" aria-hidden="true">${CARDIO_CAPTIONS[field[0]]}</span>${fieldsHtml(target, set, name, number, [field])}</div>`)
-      .join('');
-    return `${panel}${buttons}<div class="focus-card__fields">${labeled}</div>`;
+    return `${panel}${buttons}<div class="focus-card__fields">${fieldsHtml(target, set, name, number, extraFields)}</div>`;
   }
 
   return `<div class="focus-card__fields">${fieldsHtml(target, set, name, number)}</div>`;
