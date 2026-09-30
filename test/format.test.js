@@ -40,6 +40,7 @@ test('formatDuration', () => {
 test('formatRange', () => {
   assert.equal(formatRange({ min: 8, max: 10 }), '8-10');
   assert.equal(formatRange({ min: 8, max: 8 }), '8');
+  assert.equal(formatRange({ min: 1, max: null }), 'MAX');
 });
 
 test('formatSet per tipo', () => {

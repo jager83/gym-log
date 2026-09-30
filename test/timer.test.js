@@ -48,6 +48,21 @@ const timerProgram = () => normalizeProgram({
   ],
 });
 
+// time MAX: nessun conto alla rovescia possibile, si cronometra quanto si tiene.
+const maxTimeState = () => startSession(normalizeProgram({
+  version: 1,
+  workouts: [{ id: 'M', name: 'Max', blocks: [{ exercises: [{ id: 'plank', name: 'Plank', type: 'time', duration: 'max' }] }] }],
+}), emptyState(), 'M', atS(0));
+
+test('time MAX: startTimer usa il cronometro, stop registra la durata', () => {
+  const started = startTimer(maxTimeState(), 'plank', 0, atS(0));
+  assert.equal(started.activeSession.timer.mode, 'stopwatch');
+  assert.equal(started.activeSession.timer.targetSeconds, null);
+  const stopped = stopTimer(started, atS(75));
+  assert.deepEqual(stopped.activeSession.entries.plank[0], { duration: 75, effort: null });
+  assert.equal(stopped.activeSession.timer, null);
+});
+
 const session0 = () => startSession(timerProgram(), emptyState(), 'T', atS(0));
 const withSettings = (state, settings) => ({ ...state, settings });
 const setOf = (state, exerciseId, setIndex) => state.activeSession.entries[exerciseId][setIndex];

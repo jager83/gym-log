@@ -2,7 +2,7 @@
 // è stato fatto. Regola del trainer: si aumenta quando si supera il numero di ripetizioni indicato
 // (tutte le serie fatte oltre il massimo del range, la fatica non conta); dopo l'aumento non si
 // scende. null quando non c'è nulla da suggerire.
-import { countKey } from './program.js';
+import { countKey, isMaxRange } from './program.js';
 import { isDone } from './metrics.js';
 import { clampValue, lastDoneSets } from './session.js';
 import { formatNumber } from './format.js';
@@ -24,7 +24,7 @@ export const loadAdvice = (sessions, exerciseId, target) => {
   if ((target.category ?? 'forza') !== 'forza' || target.type === 'cardio') return null;
   const key = countKey(target.type);
   const range = target[key];
-  if (!range) return null;
+  if (!range || isMaxRange(range)) return null;
   const done = (lastDoneSets(sessions, exerciseId) ?? []).filter(isDone);
   if (done.length === 0) return null;
 

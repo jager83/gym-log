@@ -62,6 +62,12 @@ test('epley', () => {
   assert.equal(epley(60, 0), 60);
 });
 
+test('setOutcome con range MAX: nessun esito', () => {
+  const target = { min: 1, max: null };
+  assert.equal(setOutcome({ reps: 0, effort: 'dura' }, 'bodyweight', target), null);
+  assert.equal(setOutcome({ reps: 30, effort: 'facile' }, 'bodyweight', target), null);
+});
+
 test('setOutcome ai bordi del range', () => {
   const target = { min: 8, max: 10 };
   assert.equal(setOutcome({ weight: 60, reps: 7, effort: 'dura' }, 'weight', target), 'fallita');

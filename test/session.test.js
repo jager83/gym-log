@@ -270,6 +270,20 @@ test('rest 0: nessun recupero, né a fine giro né a fine blocco', () => {
   assert.equal(shouldStartRest(state.activeSession, 'panca', 0), true);
 });
 
+test('esercizi MAX: conteggio precompilato vuoto', () => {
+  const p = normalizeProgram({
+    version: 1,
+    workouts: [{ id: 'A', name: 'Giorno 1', blocks: [{ exercises: [
+      { id: 'piegamenti', name: 'Piegamenti', type: 'bodyweight', reps: 'max' },
+      { id: 'plank', name: 'Plank', type: 'time', duration: 'max' },
+    ] }] }],
+  });
+  const state = startSession(p, emptyState(), 'A', at(T0));
+  assert.deepEqual(state.activeSession.entries.piegamenti[0], { reps: null, effort: null, weight: 0 });
+  assert.deepEqual(state.activeSession.entries.plank[0], { duration: null, effort: null });
+  assert.deepEqual(state.activeSession.targets.piegamenti.reps, { min: 1, max: null });
+});
+
 test('startRest con 0 secondi non avvia il recupero', () => {
   const state = startSession(noRestProgram(), emptyState(), 'A', at(T0));
   assert.equal(startRest(state, 0, at(T0), 0), state);

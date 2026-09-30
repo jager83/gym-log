@@ -26,6 +26,16 @@ test('targetText: righe della lista per tipo, per lato e cardio senza obiettivo'
   assert.equal(unitsText({ ...weight, load: 'per-dumbbell' }), 'kg a manubrio × rip');
 });
 
+test('esercizi MAX: "MAX" nella lista e nel focus', () => {
+  const pushUp = { name: 'Piegamenti', type: 'bodyweight', category: 'forza', sides: 1, sets: 3, reps: { min: 1, max: null } };
+  const plankMax = { ...plank, sides: 1, sets: 3, duration: { min: 1, max: null } };
+  assert.equal(targetText(pushUp), '3 × MAX');
+  assert.equal(focusTargetText(pushUp, 0), 'Serie 1 di 3 · MAX rip');
+  assert.equal(focusTargetText(plankMax, 1), 'Serie 2 di 3 · MAX s');
+  assert.equal(outcomeOf({ weight: 0, reps: 0, effort: 'dura' }, pushUp), null);
+  assert.equal(outcomeOf({ weight: 0, reps: 40, effort: 'facile' }, pushUp), null);
+});
+
 test('focusTargetText: "Serie n di m" con obiettivo, unità e per lato', () => {
   assert.equal(focusTargetText(weight, 1), 'Serie 2 di 3 · 8-10 rip');
   assert.equal(focusTargetText(plank, 0), 'Serie 1 di 2 · 30 s per lato');

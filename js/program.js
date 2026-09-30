@@ -28,7 +28,13 @@ export const countKey = (type) => (type === 'time' || type === 'cardio' ? 'durat
 
 export const isTextArray = (value) => Array.isArray(value) && value.every((item) => typeof item === 'string' && item !== '');
 
+// "max" nella scheda: quante più ripetizioni (o secondi) possibili, senza un tetto.
+export const MAX_RANGE_VALUE = 'max';
+
+export const isMaxRange = (range) => range?.max === null;
+
 const normalizeRange = (value, label) => {
+  if (value === MAX_RANGE_VALUE) return { min: 1, max: null };
   const range = typeof value === 'number' ? { min: value, max: value } : value;
   if (!range || typeof range !== 'object') throw new ProgramError(`${label}: range mancante`);
   if (!isPositiveInt(range.min) || !isPositiveInt(range.max)) {

@@ -50,7 +50,9 @@ const isBlock = (block) =>
 
 const isCount = (value) => Number.isInteger(value) && value >= 0;
 
-const isRange = (range) => isObject(range) && isCount(range.min) && isCount(range.max) && range.min <= range.max;
+// max null: esercizio "MAX" (spec: reps/duration "max" nella scheda).
+const isRange = (range) =>
+  isObject(range) && isCount(range.min) && (range.max === null || (isCount(range.max) && range.min <= range.max));
 
 // Per cardio l'obiettivo è facoltativo: null è ammesso oltre al range.
 const isTargetRange = (target) => {

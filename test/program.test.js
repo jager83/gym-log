@@ -110,6 +110,17 @@ test('rest 0 di blocco è ammesso (nessun recupero)', () => {
   assert.equal(findWorkout(normalizeProgram(raw), 'C').blocks[0].rest, 0);
 });
 
+test('reps o duration "max": range { min: 1, max: null }', () => {
+  const raw = rawProgram();
+  raw.workouts[2].blocks[0].exercises.push(
+    { id: 'piegamenti', name: 'Piegamenti', type: 'bodyweight', reps: 'max' },
+    { id: 'plank-max', name: 'Plank', type: 'time', duration: 'max' },
+  );
+  const p = normalizeProgram(raw);
+  assert.deepEqual(findExercise(p, 'piegamenti').reps, { min: 1, max: null });
+  assert.deepEqual(findExercise(p, 'plank-max').duration, { min: 1, max: null });
+});
+
 test('validazione della scheda', () => {
   expectError((r) => { r.workouts = []; }, 'workouts vuoto');
   expectError((r) => { r.defaultRest = 0; }, 'defaultRest deve essere intero > 0');

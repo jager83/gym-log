@@ -1,5 +1,6 @@
 import { DONE_EFFORT, REST_LIVE_GRACE_MS, updateSet } from './session.js';
 import { isDone } from './metrics.js';
+import { isMaxRange } from './program.js';
 
 // Timer degli esercizi (spec §4): logica pura, istanti assoluti in activeSession.timer, `now`
 // sempre iniettato. Le transizioni automatiche (fine lato, cambio lato, fine) le applica
@@ -73,7 +74,8 @@ export const startTimer = (state, exerciseId, setIndex, now) => {
   const target = session.targets[exerciseId];
   const set = session.entries[exerciseId]?.[setIndex];
   if (!target || !set || isDone(set)) return state;
-  const mode = MODE_BY_TYPE[target.type];
+  // time MAX: nessun tempo da contare alla rovescia, si cronometra quanto si tiene.
+  const mode = target.type === 'time' && isMaxRange(target.duration) ? 'stopwatch' : MODE_BY_TYPE[target.type];
   if (!mode) return state;
 
   const existing = session.timer ?? null;

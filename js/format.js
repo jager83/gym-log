@@ -38,7 +38,11 @@ export const formatElapsed = (seconds) => {
   return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')} min`;
 };
 
-export const formatRange = ({ min, max }) => (min === max ? `${min}` : `${min}-${max}`);
+// max null: esercizio "MAX" (quante più ripetizioni o secondi possibili).
+export const formatRange = ({ min, max }) => {
+  if (max === null) return 'MAX';
+  return min === max ? `${min}` : `${min}-${max}`;
+};
 
 export const formatSet = (set, type) => {
   if (type === 'cardio') {

@@ -1,4 +1,4 @@
-import { countKey } from './program.js';
+import { countKey, isMaxRange } from './program.js';
 
 export const METRIC_LABELS = {
   weight: '1RM stimato (kg)',
@@ -15,8 +15,9 @@ export const round1 = (value) => Math.round(value * 10) / 10;
 
 export const epley = (weight, reps) => round1(weight * (1 + reps / 30));
 
+// Range MAX: nessun tetto né minimo significativo, quindi nessun esito.
 export const setOutcome = (set, type, target) => {
-  if (!isDone(set)) return null;
+  if (!isDone(set) || isMaxRange(target)) return null;
   const count = set[countKey(type)];
   if (typeof count !== 'number') return null;
   if (count < target.min) return 'fallita';

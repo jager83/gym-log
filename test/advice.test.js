@@ -135,6 +135,13 @@ test('time non forza: nessun suggerimento', () => {
   assert.equal(loadAdvice(sessions, 'plank', { ...timeTarget, category: 'mobilita' }), null);
 });
 
+test('esercizi MAX: nessun suggerimento', () => {
+  const pushUp = { ...bodyweightTarget, reps: { min: 1, max: null } };
+  assert.equal(loadAdvice([sessionWith('piegamenti', weightSets(0, [30, 30, 30]))], 'piegamenti', pushUp), null);
+  const plankMax = { ...timeTarget, duration: { min: 1, max: null } };
+  assert.equal(loadAdvice([sessionWith('plank', [{ duration: 90, effort: 'giusta' }])], 'plank', plankMax), null);
+});
+
 test('il valore suggerito è arrotondato al mezzo chilo', () => {
   const sessions = [sessionWith('panca', weightSets(60.3, [11, 11, 11]))];
   assert.equal(loadAdvice(sessions, 'panca', weightTarget).value, 63);

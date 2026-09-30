@@ -532,6 +532,14 @@ test('importState accetta un blocco con rest 0 e rifiuta rest negativo', () => {
   assert.throws(() => importState(withRest(-1)), isStoreError('activeSession non valida'));
 });
 
+test('importState accetta un target MAX (max null) e rifiuta min null', () => {
+  assert.doesNotThrow(() => importState(withPanca((target) => ({ ...target, reps: { min: 1, max: null } }))));
+  assert.throws(
+    () => importState(withPanca((target) => ({ ...target, reps: { min: null, max: null } }))),
+    isStoreError('activeSession non valida'),
+  );
+});
+
 test('importState rifiuta un blocco senza esercizi', () => {
   const text = withActive((session) => ({ ...session, blocks: [...session.blocks, { rest: 60, phase: null, exerciseIds: [] }] }));
   assert.throws(() => importState(text), isStoreError('activeSession non valida'));

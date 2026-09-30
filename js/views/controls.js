@@ -39,7 +39,10 @@ const categoryOf = (target) => target.category ?? 'forza';
 
 const isPerSide = (target) => target.sides === 2;
 
-const durationRange = ({ min, max }) => (min === max ? formatDuration(min) : `${formatDuration(min)}-${formatDuration(max)}`);
+const durationRange = (range) => {
+  if (range.max === null) return formatRange(range);
+  return range.min === range.max ? formatDuration(range.min) : `${formatDuration(range.min)}-${formatDuration(range.max)}`;
+};
 
 // Riga della lista: "3 × 8-10 · kg × rip"; cardio "1 × 20:00-30:00" (o "1 serie" senza obiettivo).
 export const targetText = (target) => {
