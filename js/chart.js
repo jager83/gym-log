@@ -52,3 +52,43 @@ export const lineChartSvg = (points, { width = 320, height = 180, title = '' } =
 
   return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(title)}">${axis}<path class="chart-line" d="${path}"/>${dots}</svg>`;
 };
+
+// Etichetta dell'asse in al massimo 4-5 caratteri: oltre 1000 in migliaia ("24,3k"), così non
+// esce dal margine sinistro. I <title> delle barre restano col valore pieno.
+export const compactNumber = (value) => (Math.abs(value) >= 1000 ? `${formatNumber(value / 1000)}k` : formatNumber(value));
+
+// Barre da 0 al massimo (una per punto, es. una per settimana). `partial`: barra tenue (settimana
+// in corso). Tutti zero: solo la linea di base.
+export const barChartSvg = (points, { width = 320, height = 180, title = '' } = {}) => {
+  const right = width - PADDING.right;
+  const bottom = height - PADDING.bottom;
+  const maxValue = Math.max(0, ...points.map((point) => point.value));
+  const y = scaleLinear(0, maxValue > 0 ? maxValue : 1, bottom, PADDING.top);
+  const slot = (right - PADDING.left) / Math.max(1, points.length);
+  const barWidth = round1(slot * 0.7);
+  const center = (index) => round1(PADDING.left + slot * index + slot / 2);
+
+  const bars = points
+    .map((point, index) => {
+      const top = round1(y(point.value));
+      const className = point.partial ? 'chart-bar chart-bar--partial' : 'chart-bar';
+      return `<rect class="${className}" rx="2" x="${round1(center(index) - barWidth / 2)}" y="${top}" width="${barWidth}" height="${round1(bottom - top)}"><title>${escapeHtml(point.label)}: ${formatNumber(point.value)}</title></rect>`;
+    })
+    .join('');
+
+  const maxLine = maxValue > 0
+    ? `<line class="chart-grid" x1="${PADDING.left}" x2="${right}" y1="${round1(y(maxValue))}" y2="${round1(y(maxValue))}"/>` +
+      `<text class="chart-axis" x="${PADDING.left - 6}" y="${round1(y(maxValue)) + 4}" text-anchor="end">${compactNumber(maxValue)}</text>`
+    : '';
+  const axis = [
+    `<line class="chart-grid" x1="${PADDING.left}" x2="${right}" y1="${bottom}" y2="${bottom}"/>`,
+    `<text class="chart-axis" x="${PADDING.left - 6}" y="${bottom + 4}" text-anchor="end">0</text>`,
+    maxLine,
+    points.length ? `<text class="chart-axis" x="${center(0)}" y="${height - 8}" text-anchor="middle">${escapeHtml(points[0].label)}</text>` : '',
+    points.length > 1
+      ? `<text class="chart-axis" x="${center(points.length - 1)}" y="${height - 8}" text-anchor="middle">${escapeHtml(points.at(-1).label)}</text>`
+      : '',
+  ].join('');
+
+  return `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(title)}">${axis}${bars}</svg>`;
+};
