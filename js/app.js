@@ -7,6 +7,7 @@ import { renderHome } from './views/home.js';
 import { renderSession } from './views/session.js';
 import { renderFocus } from './views/focus.js';
 import { renderHistory } from './views/history.js';
+import { renderDays } from './views/days.js';
 import { renderPreview } from './views/preview.js';
 
 const NOTICE_MS = 4000;
@@ -108,6 +109,7 @@ const startRouter = (root, ctx) => {
     else if (view === 'focus') cleanup = renderFocus(root, ctx, param ? Number(param) : null);
     else if (view === 'workout') cleanup = renderPreview(root, ctx, param ? decodeURIComponent(param) : null);
     else if (view === 'history') cleanup = renderHistory(root, ctx, param ? decodeURIComponent(param) : null);
+    else if (view === 'days') cleanup = renderDays(root, ctx, param ? decodeURIComponent(param) : null);
     else cleanup = renderHome(root, ctx);
     window.scrollTo(0, 0);
   };

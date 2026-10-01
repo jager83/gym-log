@@ -245,6 +245,16 @@ export const finishSession = (state, now) => {
   };
 };
 
+// Elimina una giornata dallo storico per id; id sconosciuto: stato invariato. La sessione attiva
+// (se c'è) non viene mai toccata.
+export const deleteSession = (state, sessionId) => {
+  if (!state.sessions.some((session) => session.id === sessionId)) return state;
+  return { ...state, sessions: state.sessions.filter((session) => session.id !== sessionId) };
+};
+
+// Azzera tutto lo storico: impostazioni, ultimo export e sessione attiva restano invariati.
+export const deleteAllSessions = (state) => ({ ...state, sessions: [] });
+
 export const setSound = (state, enabled) => ({ ...state, settings: { ...state.settings, sound: enabled } });
 
 // "Lati di seguito": il lato 2 parte da solo dopo il cambio lato (assente = true, vedi timer.js).

@@ -1072,6 +1072,42 @@ input:focus-visible {
   margin: 8px 0 8px;
 }
 
+/* Giornate */
+.history__days {
+  margin-bottom: 20px;
+}
+
+.days__row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.days__row .history__item {
+  flex: 1;
+  min-width: 0;
+}
+
+.days__trash {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+}
+
+.days__meta {
+  margin: 4px 0 8px;
+}
+
+.days__actions {
+  margin-top: 20px;
+}
+
 .chart-card {
   padding: 12px 8px 4px;
   border: 1.5px solid var(--line);

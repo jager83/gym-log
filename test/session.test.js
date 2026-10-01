@@ -5,6 +5,8 @@ import {
   clampValue,
   clearRest,
   currentBlockIndex,
+  deleteAllSessions,
+  deleteSession,
   discardSession,
   extendRest,
   finishSession,
@@ -527,6 +529,36 @@ test('finishSession e discardSession senza sessione aperta non cambiano nulla', 
   assert.equal(finishSession(state, at(T1)), state);
   assert.equal(discardSession(state).activeSession, null);
   assert.equal(discardSession(state).sessions, state.sessions);
+});
+
+test('deleteSession rimuove la giornata per id, id sconosciuto non cambia nulla', () => {
+  const state = { ...emptyState(), sessions: [{ id: 's1' }, { id: 's2' }] };
+  const next = deleteSession(state, 's1');
+  assert.deepEqual(next.sessions, [{ id: 's2' }]);
+  assert.equal(deleteSession(state, 'inesistente'), state);
+});
+
+test('deleteSession non tocca la sessione attiva', () => {
+  const activeSession = { id: 'attiva' };
+  const state = { ...emptyState(), activeSession, sessions: [{ id: 's1' }] };
+  const next = deleteSession(state, 's1');
+  assert.equal(next.activeSession, activeSession);
+  assert.deepEqual(next.sessions, []);
+});
+
+test('deleteAllSessions azzera lo storico senza toccare impostazioni, lastExportAt e sessione attiva', () => {
+  const activeSession = { id: 'attiva' };
+  const state = {
+    ...emptyState(),
+    activeSession,
+    sessions: [{ id: 's1' }, { id: 's2' }],
+    lastExportAt: '2026-09-01T00:00:00.000Z',
+  };
+  const next = deleteAllSessions(state);
+  assert.deepEqual(next.sessions, []);
+  assert.equal(next.activeSession, activeSession);
+  assert.equal(next.lastExportAt, state.lastExportAt);
+  assert.equal(next.settings, state.settings);
 });
 
 test('setSound', () => {

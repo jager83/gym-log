@@ -1,9 +1,10 @@
 import { countKey, findExercise } from '../program.js';
 import { METRIC_LABELS, chartSeries, exerciseHistory, retiredExercises } from '../metrics.js';
-import { EFFORT_LABELS } from '../session.js';
+import { EFFORT_LABELS, deleteAllSessions } from '../session.js';
 import { lineChartSvg } from '../chart.js';
 import { outcomeClass, outcomeOf } from './controls.js';
 import { escapeHtml, formatDate, formatDay, formatSet } from '../format.js';
+import { confirmDialog } from './modal.js';
 
 const headerHtml = (title, backHash, backLabel) => `
   <header class="page-header">
@@ -32,8 +33,18 @@ const listHtml = (program, sessions) => {
   const retired = retiredExercises(program, sessions);
   if (retired.length) groups.push(groupHtml('Non più in scheda', retired));
 
-  return `<section class="history">${headerHtml('Storico', '#/', 'Torna alla home')}${groups.join('')}</section>`;
+  const daysLink = `
+    <ul class="history__list history__days">
+      <li><a class="history__item" href="#/days"><span>Giornate</span></a></li>
+    </ul>`;
+  const deleteAll = sessions.length
+    ? `<div class="days__actions"><button type="button" class="button button--danger" data-action="delete-all">Elimina tutto lo storico</button></div>`
+    : '';
+
+  return `<section class="history">${headerHtml('Storico', '#/', 'Torna alla home')}${daysLink}${groups.join('')}${deleteAll}</section>`;
 };
+
+const sessionCountLabel = (count) => (count === 1 ? '1 giornata' : `${count} giornate`);
 
 // Forza e cardio: pallino della fatica; stretching/mobilità: ✓ "Fatto" (nessuna faccina).
 const setMarkerHtml = (set, category) =>
@@ -103,7 +114,31 @@ const detailHtml = (program, sessions, exerciseId) => {
 };
 
 export const renderHistory = (root, ctx, exerciseId) => {
-  const { sessions } = ctx.getState();
-  root.innerHTML = exerciseId ? detailHtml(ctx.program, sessions, exerciseId) : listHtml(ctx.program, sessions);
-  return () => {};
+  const draw = () => {
+    const { sessions } = ctx.getState();
+    root.innerHTML = exerciseId ? detailHtml(ctx.program, sessions, exerciseId) : listHtml(ctx.program, sessions);
+  };
+
+  const confirmDeleteAll = async () => {
+    const { sessions } = ctx.getState();
+    const confirmed = await confirmDialog({
+      title: 'Eliminare tutto lo storico?',
+      message: `${sessionCountLabel(sessions.length)} verranno eliminate. L'operazione non si può annullare.`,
+      confirmLabel: 'Elimina',
+      danger: true,
+    });
+    if (!confirmed) return;
+    ctx.commit(deleteAllSessions(ctx.getState()));
+    draw();
+  };
+
+  const onClick = (event) => {
+    const target = event.target.closest('[data-action="delete-all"]');
+    if (!target) return;
+    confirmDeleteAll();
+  };
+
+  draw();
+  root.addEventListener('click', onClick);
+  return () => root.removeEventListener('click', onClick);
 };
