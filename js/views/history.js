@@ -44,7 +44,8 @@ const listHtml = (program, sessions) => {
   return `<section class="history">${headerHtml('Storico', '#/', 'Torna alla home')}${daysLink}${groups.join('')}${deleteAll}</section>`;
 };
 
-const sessionCountLabel = (count) => (count === 1 ? '1 giornata' : `${count} giornate`);
+const deleteAllMessage = (count) =>
+  `${count === 1 ? '1 giornata verrà eliminata' : `${count} giornate verranno eliminate`}. L'operazione non si può annullare.`;
 
 // Forza e cardio: pallino della fatica; stretching/mobilità: ✓ "Fatto" (nessuna faccina).
 const setMarkerHtml = (set, category) =>
@@ -123,7 +124,7 @@ export const renderHistory = (root, ctx, exerciseId) => {
     const { sessions } = ctx.getState();
     const confirmed = await confirmDialog({
       title: 'Eliminare tutto lo storico?',
-      message: `${sessionCountLabel(sessions.length)} verranno eliminate. L'operazione non si può annullare.`,
+      message: deleteAllMessage(sessions.length),
       confirmLabel: 'Elimina',
       danger: true,
     });
