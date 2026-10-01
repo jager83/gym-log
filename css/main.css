@@ -1287,6 +1287,11 @@ input:focus-visible {
   height: 56px;
 }
 
+.focus-card .stepper__btn .icon {
+  width: 28px;
+  height: 28px;
+}
+
 .focus-card .stepper__input {
   height: 56px;
   font-size: 32px;
