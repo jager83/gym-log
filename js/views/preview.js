@@ -3,6 +3,7 @@
 // al tap su "Inizia" (eventualmente scartando quella attiva, con la stessa conferma della home).
 import { discardSession, startSession } from '../session.js';
 import { escapeHtml } from '../format.js';
+import { chevronLeftSvg } from './icons.js';
 import { alertDialog } from './modal.js';
 import { blockTagsHtml, exerciseHeaderHtml } from './session.js';
 import { confirmSwitchWorkout } from './workout-switch.js';
@@ -25,7 +26,7 @@ const blockPreviewHtml = (session, blockIndex) => {
 const previewHtml = (workout, session) => `
   <section class="session">
     <header class="page-header">
-      <a class="back" href="#/" aria-label="Indietro">‹</a>
+      <a class="back" href="#/" aria-label="Indietro">${chevronLeftSvg()}</a>
       <h1>${escapeHtml(workout.name)}</h1>
     </header>
     <button type="button" class="button button--primary session__start" data-action="begin">Inizia</button>

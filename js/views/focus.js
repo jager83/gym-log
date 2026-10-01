@@ -23,7 +23,7 @@ import {
 } from '../timer.js';
 import { escapeHtml, formatDuration, formatElapsed } from '../format.js';
 import { adviceBySession } from '../advice.js';
-import { bellSvg } from './icons.js';
+import { bellSvg, checkSvg, chevronLeftSvg, chevronRightSvg } from './icons.js';
 import {
   PHASE_LABELS,
   adviceHtml,
@@ -154,9 +154,9 @@ const barHtml = (nav) => `
 
 const navHtml = ({ slot, maxSlot, total }) => `
   <nav class="focus__nav" aria-label="Blocchi">
-    <button type="button" class="focus__arrow" data-action="prev" aria-label="Blocco precedente" ${slot === 0 ? 'disabled' : ''}>‹</button>
+    <button type="button" class="focus__arrow" data-action="prev" aria-label="Blocco precedente" ${slot === 0 ? 'disabled' : ''}>${chevronLeftSvg()}</button>
     <span class="focus__count">${slot < total ? `${slot + 1} / ${total}` : 'Fine'}</span>
-    <button type="button" class="focus__arrow" data-action="next" aria-label="Blocco successivo" ${slot >= maxSlot ? 'disabled' : ''}>›</button>
+    <button type="button" class="focus__arrow" data-action="next" aria-label="Blocco successivo" ${slot >= maxSlot ? 'disabled' : ''}>${chevronRightSvg()}</button>
   </nav>`;
 
 const blockScreenHtml = (session, settings, position, slots, now, adviceById) => {
@@ -164,7 +164,7 @@ const blockScreenHtml = (session, settings, position, slots, now, adviceById) =>
   const tags = [
     block.phase ? `<span class="focus__phase">${PHASE_LABELS[block.phase]}</span>` : '',
     position.items.length > 1 ? '<span class="block__tag">Superset</span>' : '',
-    position.blockComplete ? '<span class="block__completed">✓ Completato</span>' : '',
+    position.blockComplete ? `<span class="block__completed">${checkSvg()} Completato</span>` : '',
   ].join('');
   return `
     <section class="focus">

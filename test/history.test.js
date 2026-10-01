@@ -24,15 +24,15 @@ test('logSetHtml: forza con pallino di fatica ed esito', () => {
   assert.match(html, /aria-label="Dura"/i);
 });
 
-test('logSetHtml: stretching/mobilità con ✓ "Fatto" al posto del pallino', () => {
+test('logSetHtml: stretching/mobilità con l\'icona "Fatto" al posto del pallino', () => {
   const stretching = item({ type: 'time', category: 'stretching', target: { min: 30, max: 30 } });
   const html = logSetHtml({ duration: 30, effort: 'fatto' }, stretching);
-  assert.match(html, /✓/);
+  assert.match(html, /icon--check/);
   assert.match(html, /aria-label="Fatto"/);
   assert.doesNotMatch(html, /dot--|undefined/);
   assert.match(html, /0:30/);
   const mobility = item({ type: 'bodyweight', category: 'mobilita', target: { min: 10, max: 10 } });
-  assert.match(logSetHtml({ reps: 10, weight: 0, effort: 'fatto' }, mobility), /✓[\s\S]*10/);
+  assert.match(logSetHtml({ reps: 10, weight: 0, effort: 'fatto' }, mobility), /icon--check[\s\S]*10/);
 });
 
 test('historyMetricLabel: etichetta della serie, del tipo per forza, nessuna per stretching/mobilità e cardio senza serie', () => {

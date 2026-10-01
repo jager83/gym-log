@@ -4,11 +4,13 @@ import { EFFORT_LABELS, deleteAllSessions } from '../session.js';
 import { lineChartSvg } from '../chart.js';
 import { outcomeClass, outcomeOf } from './controls.js';
 import { escapeHtml, formatDate, formatDay, formatSet } from '../format.js';
+import { checkSvg, chevronLeftSvg } from './icons.js';
 import { confirmDialog } from './modal.js';
 
-const headerHtml = (title, backHash, backLabel) => `
+// Condiviso con days.js (stessa intestazione "pagina con freccia indietro").
+export const headerHtml = (title, backHash, backLabel) => `
   <header class="page-header">
-    <a class="back" href="${backHash}" aria-label="${backLabel}">‹</a>
+    <a class="back" href="${backHash}" aria-label="${backLabel}">${chevronLeftSvg()}</a>
     <h1>${escapeHtml(title)}</h1>
   </header>`;
 
@@ -51,7 +53,7 @@ const deleteAllMessage = (count) =>
 const setMarkerHtml = (set, category) =>
   category === 'forza'
     ? `<span class="dot dot--${set.effort}" role="img" aria-label="${EFFORT_LABELS[set.effort]}"></span>`
-    : '<span class="log__check" role="img" aria-label="Fatto">✓</span>';
+    : `<span class="log__check" role="img" aria-label="Fatto">${checkSvg()}</span>`;
 
 // `item` è una voce di exerciseHistory: l'esito segue le regole della sessione (outcomeOf),
 // quindi nessun esito per cardio, con o senza obiettivo di durata.

@@ -5,7 +5,7 @@ import { isDone, setOutcome } from '../metrics.js';
 import { DONE_EFFORT, EFFORTS, EFFORT_LABELS, finishSession, hasDoneSets, stepValue, updateSet } from '../session.js';
 import { escapeHtml, formatDuration, formatNumber, formatRange, parseDurationMinutesInput, parseNumberInput } from '../format.js';
 import { faceSvg } from './faces.js';
-import { infoSvg } from './icons.js';
+import { checkSvg, infoSvg, minusSvg, plusSvg } from './icons.js';
 import { confirmDialog } from './modal.js';
 
 const REPEAT_DELAY_MS = 400;
@@ -118,10 +118,10 @@ export const stepperHtml = (field, value, outcome, name, setNumber, fieldLabel =
     <div class="stepper-field">
       <span class="stepper-field__unit" aria-hidden="true">${escapeHtml(unit)}</span>
       <div class="stepper">
-        <button type="button" class="stepper__btn" data-action="step" data-field="${field}" data-dir="-1" aria-label="Diminuisci ${label}">−</button>
+        <button type="button" class="stepper__btn" data-action="step" data-field="${field}" data-dir="-1" aria-label="Diminuisci ${label}">${minusSvg()}</button>
         <input class="stepper__input ${outcomeClass(outcome)}" type="text" inputmode="${inputMode}"
           autocomplete="off" value="${formatFieldValue(field, value, type)}" data-field="${field}" aria-label="${label}">
-        <button type="button" class="stepper__btn" data-action="step" data-field="${field}" data-dir="1" aria-label="Aumenta ${label}">+</button>
+        <button type="button" class="stepper__btn" data-action="step" data-field="${field}" data-dir="1" aria-label="Aumenta ${label}">${plusSvg()}</button>
       </div>
     </div>`;
 };
@@ -157,7 +157,7 @@ export const effortsHtml = (target, set, name, setNumber) => {
     return `
       <div class="efforts">
         <button type="button" class="done-toggle" data-action="effort" data-effort="${DONE_EFFORT}"
-          aria-pressed="${done}" aria-label="Fatto ${name} serie ${setNumber}">${done ? '✓ ' : ''}Fatto</button>
+          aria-pressed="${done}" aria-label="Fatto ${name} serie ${setNumber}">${done ? `${checkSvg()} ` : ''}Fatto</button>
       </div>`;
   }
   return `

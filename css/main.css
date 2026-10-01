@@ -196,8 +196,6 @@ input:focus-visible {
   border-radius: 50%;
   background: var(--surface);
   color: var(--ink);
-  font-size: 28px;
-  line-height: 1;
   text-decoration: none;
 }
 
@@ -225,6 +223,13 @@ input:focus-visible {
 .icon {
   width: 24px;
   height: 24px;
+}
+
+/* Inline con il testo (es. "Fatto"): segue il font-size del contenitore. */
+.icon--check {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
 }
 
 /* Avvisi */
@@ -333,8 +338,6 @@ input:focus-visible {
   border-radius: 50%;
   background: var(--accent);
   color: var(--accent-ink);
-  font-size: 24px;
-  line-height: 1;
 }
 
 .workout-list {
@@ -620,7 +623,6 @@ input:focus-visible {
 
 .block__check {
   color: var(--ok);
-  font-weight: 700;
 }
 
 .round__label {
@@ -720,8 +722,6 @@ input:focus-visible {
   background: var(--surface);
   box-shadow: 0 0 0 1.5px var(--line);
   color: var(--ink);
-  font-size: 22px;
-  font-weight: 600;
   user-select: none;
 }
 
@@ -1172,8 +1172,6 @@ input:focus-visible {
 .log__check {
   flex: none;
   color: var(--ok);
-  font-weight: 700;
-  line-height: 1;
 }
 
 .log__set.is-fallita {
@@ -1210,12 +1208,6 @@ input:focus-visible {
   border-radius: 50%;
   background: var(--surface);
   color: var(--ink);
-  font-size: 26px;
-  line-height: 1;
-}
-
-.focus__sound {
-  font-size: 20px;
 }
 
 .focus__arrow:disabled {
@@ -1293,7 +1285,6 @@ input:focus-visible {
 .focus-card .stepper__btn {
   width: 56px;
   height: 56px;
-  font-size: 26px;
 }
 
 .focus-card .stepper__input {

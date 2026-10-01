@@ -5,15 +5,9 @@ import { countKey } from '../program.js';
 import { isDone } from '../metrics.js';
 import { deleteSession } from '../session.js';
 import { escapeHtml, formatDate, formatElapsed } from '../format.js';
-import { logSetHtml } from './history.js';
+import { headerHtml, logSetHtml } from './history.js';
 import { trashSvg } from './icons.js';
 import { confirmDialog } from './modal.js';
-
-const headerHtml = (title, backHash, backLabel) => `
-  <header class="page-header">
-    <a class="back" href="${backHash}" aria-label="${backLabel}">‹</a>
-    <h1>${escapeHtml(title)}</h1>
-  </header>`;
 
 // Numero di esercizi della giornata con almeno una serie fatta, al singolare/plurale nel testo.
 export const exerciseCountOf = (session) =>

@@ -2,6 +2,7 @@ import { discardSession, lastDoneByWorkout, nextWorkoutId, setBodyWeight } from 
 import { exportState, importState, isBackupDue } from '../store.js';
 import { escapeHtml, formatDay, formatNumber, formatTime, parseNumberInput } from '../format.js';
 import { downloadText } from '../device.js';
+import { playSvg } from './icons.js';
 import { alertDialog, confirmDialog } from './modal.js';
 import { discardMessage } from './workout-switch.js';
 
@@ -20,7 +21,7 @@ const homeHtml = (program, state, backupDue) => {
         <span class="hero__kicker">Riprendi</span>
         <span class="hero__title">${escapeHtml(active.workoutName)}</span>
         <span class="hero__meta">iniziato alle ${formatTime(active.startedAt)}</span>
-        <span class="hero__play" aria-hidden="true">▶</span>
+        <span class="hero__play" aria-hidden="true">${playSvg()}</span>
       </button>
       <button type="button" class="link home__discard" data-action="discard-active">Scarta allenamento</button>`
     : '';

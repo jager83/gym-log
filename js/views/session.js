@@ -18,7 +18,7 @@ import { toggleEffort } from '../focus.js';
 import { adviceBySession } from '../advice.js';
 import { escapeHtml, formatDuration, formatSet } from '../format.js';
 import { faceSvg } from './faces.js';
-import { bellSvg } from './icons.js';
+import { bellSvg, checkSvg, chevronLeftSvg } from './icons.js';
 import { openExerciseInfo } from './info.js';
 import { confirmDialog } from './modal.js';
 import {
@@ -125,13 +125,13 @@ const blockHtml = (session, blockIndex, manualOpen, previousById, pendingCollaps
     return `
       <article class="block block--done" data-block="${blockIndex}">
         <button type="button" class="block__summary" data-action="toggle-block" aria-expanded="false">
-          <span><span class="block__check">✓</span> ${names}</span><span class="muted">Mostra</span>
+          <span><span class="block__check">${checkSvg()}</span> ${names}</span><span class="muted">Mostra</span>
         </button>
       </article>`;
   }
 
   const header = autoOpen
-    ? '<p class="block__completed" aria-live="polite">✓ Completato</p>'
+    ? `<p class="block__completed" aria-live="polite">${checkSvg()} Completato</p>`
     : exerciseHeaderHtml(session, blockIndex, adviceById);
 
   return `
@@ -146,7 +146,7 @@ const blockHtml = (session, blockIndex, manualOpen, previousById, pendingCollaps
 const sessionHtml = (session, manualOpen, previousById, pendingCollapse, adviceById) => `
   <section class="session">
     <header class="page-header">
-      <a class="back" href="#/" aria-label="Torna alla home">‹</a>
+      <a class="back" href="#/" aria-label="Torna alla home">${chevronLeftSvg()}</a>
       <h1>${escapeHtml(session.workoutName)}</h1>
     </header>
     <a class="button button--primary session__start" href="#/focus">Inizia</a>
