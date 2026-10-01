@@ -18,7 +18,7 @@ import { toggleEffort } from '../focus.js';
 import { adviceBySession } from '../advice.js';
 import { escapeHtml, formatDuration, formatSet } from '../format.js';
 import { faceSvg } from './faces.js';
-import { bellSvg, checkSvg, chevronLeftSvg } from './icons.js';
+import { bellSvg, checkSvg, chevronLeftSvg, exerciseTypeSvg } from './icons.js';
 import { openExerciseInfo } from './info.js';
 import { confirmDialog } from './modal.js';
 import {
@@ -32,6 +32,7 @@ import {
   fieldsHtml,
   infoButtonHtml,
   normalizeInput,
+  outcomeSlotHtml,
   setTargetOf,
   stepSet,
   targetText,
@@ -58,6 +59,7 @@ const setHtml = (session, exerciseId, setIndex, previous, showName) => {
       <div class="set__meta">
         <span class="set__index">${number}</span>
         <span class="set__prev">${prev && prevText !== formatSet(set, target.type) ? `prec. ${escapeHtml(prevText)}` : ''}</span>
+        ${outcomeSlotHtml(set, target)}
         ${effortsHtml(target, set, name, number)}
       </div>
     </div>`;
@@ -80,6 +82,7 @@ export const exerciseHeaderHtml = (session, blockIndex, adviceById, linkable = t
       const name = escapeHtml(target.name);
       const title = linkable ? `<a class="block__link" href="#/focus/${blockIndex}">${name}</a>` : name;
       return `<div class="block__head">
+          ${exerciseTypeSvg(target.type)}
           <h2 class="block__title">${title}</h2>
           ${infoButtonHtml(exerciseId, target)}
         </div>

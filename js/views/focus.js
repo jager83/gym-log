@@ -36,6 +36,7 @@ import {
   focusTargetText,
   infoButtonHtml,
   normalizeInput,
+  outcomeSlotHtml,
   setFields,
   setTargetOf,
   stepSet,
@@ -60,6 +61,25 @@ const timerPhase = (session, now) => {
 };
 
 const secondsUp = (ms) => Math.ceil(Math.max(0, ms) / 1000);
+
+// Quota dell'anello (0..1): rimanente sul totale, piena se il rimanente supera il totale (+15 s
+// sul recupero) o se manca un totale valido (es. recupero avviato su un blocco con rest 0).
+export const ringFraction = (remainingMs, totalMs) => {
+  if (!(totalMs > 0)) return 1;
+  return Math.min(1, Math.max(0, remainingMs) / totalMs);
+};
+
+// Totale del recupero in corso: il rest del blocco che lo ha avviato.
+const restTotalMs = (session) => (session.blocks[session.restBlockIndex]?.rest ?? 0) * 1000;
+
+// Anello del conto alla rovescia: pieno durante il cambio lato; null per il cronometro.
+const timerRing = (timer, now) => {
+  if (timer.mode !== 'countdown') return null;
+  if (timer.switchEndsAt) return 1;
+  return ringFraction(timerRemainingMs(timer, now), (timer.targetSeconds ?? 0) * 1000);
+};
+
+const ringStyle = (fraction) => `--ring: ${Math.round(fraction * 1000) / 1000}`;
 
 const timerText = (session, now) => {
   const { timer } = session;
@@ -94,11 +114,15 @@ const sidesSwitchHtml = (settings) => `
     <span class="switch__track" aria-hidden="true"></span>Lati di seguito
   </button>`;
 
-const timerPanelHtml = (text, side, live) => `
-  <div class="timer" role="timer">
+// `ring`: quota dell'anello (0..1) per il conto alla rovescia, null senza anello (cronometro, fermo).
+const timerPanelHtml = (text, side, live, ring = null) => {
+  const time = `<span class="timer__time"${live ? ' data-live="timer"' : ''}>${text}</span>`;
+  return `
+  <div class="timer${ring === null ? '' : ' timer--ring'}" role="timer">
     ${side ? `<span class="timer__side">${side}</span>` : ''}
-    <span class="timer__time"${live ? ' data-live="timer"' : ''}>${text}</span>
+    ${ring === null ? time : `<div class="ring" data-ring="timer" style="${ringStyle(ring)}">${time}</div>`}
   </div>`;
+};
 
 // Controlli di una serie per tipo: stepper (forza e simili), conto alla rovescia (time),
 // cronometro + distanza/livello/velocità (cardio). `name` già escapato.
@@ -113,7 +137,7 @@ const controlsHtml = (session, settings, exerciseId, setIndex, name, now) => {
 
   if (target.type === 'time') {
     if (!timed) return `<div class="focus-card__fields">${fieldsHtml(target, set, name, number)}</div>${start}${switchHtml}`;
-    return `${timerPanelHtml(timerText(session, now), sideText(session, target, phase), true)}
+    return `${timerPanelHtml(timerText(session, now), sideText(session, target, phase), true, timerRing(session.timer, now))}
       <div class="focus-card__actions">${timerButtonsHtml(session, phase)}</div>${switchHtml}`;
   }
 
@@ -139,7 +163,7 @@ const cardHtml = (session, settings, { exerciseId, setIndex }, now, adviceById) 
         <h2 class="focus-card__name">${name}</h2>
         ${infoButtonHtml(exerciseId, target)}
       </div>
-      <p class="focus-card__target">${focusTargetText(target, setIndex)}</p>
+      <p class="focus-card__target">${focusTargetText(target, setIndex)} ${outcomeSlotHtml(set, target)}</p>
       ${setIndex === 0 ? adviceHtml(adviceById[exerciseId], exerciseId, set) : ''}
       ${controlsHtml(session, settings, exerciseId, setIndex, name, now)}
       <div class="focus-card__efforts">${effortsHtml(target, set, name, setIndex + 1)}</div>
@@ -178,13 +202,16 @@ const blockScreenHtml = (session, settings, position, slots, now, adviceById) =>
 const soundButtonHtml = (settings) =>
   `<button type="button" class="focus__sound" data-action="sound" aria-label="Suono" aria-pressed="${settings.sound}">${bellSvg(settings.sound)}</button>`;
 
-const restScreenHtml = (session, settings) => {
+const restScreenHtml = (session, settings, now) => {
   const preview = nextPreview(session);
+  const ring = ringFraction(restRemainingMs(session, now), restTotalMs(session));
   return `
     <section class="focus rest-screen" aria-label="Recupero">
       ${barHtml(soundButtonHtml(settings))}
       <p class="focus__phase">Recupero</p>
-      <p class="rest-screen__time" role="timer" data-live="rest"></p>
+      <div class="ring ring--rest" data-ring="rest" style="${ringStyle(ring)}">
+        <p class="rest-screen__time" role="timer" data-live="rest"></p>
+      </div>
       <div class="rest-screen__actions">
         <button type="button" class="button" data-action="rest-add" aria-label="Aggiungi ${REST_ADJUST_SECONDS} secondi">+${REST_ADJUST_SECONDS}</button>
         <button type="button" class="button button--primary" data-action="rest-skip">Salta</button>
@@ -278,9 +305,15 @@ export const renderFocus = (root, ctx, initialBlock) => {
       const remaining = restRemainingMs(session, now);
       restTime.textContent = formatDuration(secondsUp(remaining));
       root.querySelector('.rest-screen').classList.toggle('is-ending', remaining <= ENDING_MS);
+      root.querySelector('[data-ring="rest"]')?.setAttribute('style', ringStyle(ringFraction(remaining, restTotalMs(session))));
     }
     const timerTime = root.querySelector('[data-live="timer"]');
     if (timerTime && session.timer) timerTime.textContent = timerText(session, now);
+    const timerRingElement = root.querySelector('[data-ring="timer"]');
+    if (timerRingElement && session.timer) {
+      const ring = timerRing(session.timer, now);
+      if (ring !== null) timerRingElement.setAttribute('style', ringStyle(ring));
+    }
   };
 
   const draw = (session, screen, now) => {
@@ -288,7 +321,7 @@ export const renderFocus = (root, ctx, initialBlock) => {
     const active = document.activeElement;
     const selector = active && root.contains(active) ? focusSelector(active) : null;
     const settings = getSettings();
-    if (screen.kind === 'rest') root.innerHTML = restScreenHtml(session, settings);
+    if (screen.kind === 'rest') root.innerHTML = restScreenHtml(session, settings, now);
     else if (screen.kind === 'summary') root.innerHTML = summaryScreenHtml(session, screen.slots, now);
     else root.innerHTML = blockScreenHtml(session, settings, screen.position, screen.slots, now, adviceById);
 

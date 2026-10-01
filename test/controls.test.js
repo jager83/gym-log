@@ -9,6 +9,8 @@ import {
   setFields,
   targetText,
   unitsText,
+  outcomeChipHtml,
+  outcomeSlotHtml,
 } from '../js/views/controls.js';
 
 const weight = { name: 'Panca', type: 'weight', category: 'forza', sides: 1, sets: 3, reps: { min: 8, max: 10 }, load: 'total' };
@@ -114,4 +116,21 @@ test('adviceHtml: niente riga senza suggerimento, con la serie 1 fatta o col pes
   assert.equal(adviceHtml(null, 'panca', { weight: 60, reps: 10, effort: null }), '');
   assert.equal(adviceHtml(up, 'panca', { weight: 60, reps: 10, effort: 'giusta' }), '');
   assert.equal(adviceHtml(up, 'panca', { weight: 62.5, reps: 10, effort: null }), '');
+});
+
+test('outcomeChipHtml: chip con testo per ogni esito, niente senza esito', () => {
+  assert.equal(outcomeChipHtml('ok'), '<span class="chip chip--ok">Nel range</span>');
+  assert.equal(outcomeChipHtml('carico-basso'), '<span class="chip chip--info">Carico basso</span>');
+  assert.equal(outcomeChipHtml('fallita'), '<span class="chip chip--sun">Sotto il minimo</span>');
+  assert.equal(outcomeChipHtml(null), '');
+});
+
+test('outcomeSlotHtml: chip solo per serie fatte con un range; vuoto per non fatte, MAX e cardio', () => {
+  const weight = { type: 'weight', reps: { min: 8, max: 10 } };
+  assert.match(outcomeSlotHtml({ weight: 60, reps: 9, effort: 'giusta' }, weight), /data-outcome-slot><span class="chip chip--ok">Nel range/);
+  assert.match(outcomeSlotHtml({ weight: 60, reps: 11, effort: 'dura' }, weight), /Carico basso/);
+  assert.match(outcomeSlotHtml({ weight: 60, reps: 7, effort: 'facile' }, weight), /Sotto il minimo/);
+  assert.equal(outcomeSlotHtml({ weight: 60, reps: 9, effort: null }, weight), '<span class="outcome-slot" data-outcome-slot></span>');
+  assert.doesNotMatch(outcomeSlotHtml({ reps: 30, effort: 'giusta' }, { type: 'bodyweight', reps: { min: 1, max: null } }), /chip/);
+  assert.doesNotMatch(outcomeSlotHtml({ duration: 600, effort: 'giusta' }, { type: 'cardio', duration: { min: 300, max: 300 } }), /chip/);
 });

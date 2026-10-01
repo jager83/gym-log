@@ -110,6 +110,23 @@ export const outcomeClass = (outcome) => (outcome === 'fallita' || outcome === '
 export const outcomeOf = (set, target) =>
   target.type === 'cardio' ? null : setOutcome(set, target.type, target[countKey(target.type)]);
 
+// Esito di una serie fatta come chip pastello con testo; nessun chip senza esito (serie non fatta,
+// range MAX, cardio, stretching/mobilità senza range significativo).
+const OUTCOME_CHIPS = {
+  ok: { label: 'Nel range', tone: 'ok' },
+  'carico-basso': { label: 'Carico basso', tone: 'info' },
+  fallita: { label: 'Sotto il minimo', tone: 'sun' },
+};
+
+export const outcomeChipHtml = (outcome) => {
+  const chip = OUTCOME_CHIPS[outcome];
+  return chip ? `<span class="chip chip--${chip.tone}">${chip.label}</span>` : '';
+};
+
+// Contenitore del chip d'esito, aggiornato sul posto da refreshOutcome.
+export const outcomeSlotHtml = (set, target) =>
+  `<span class="outcome-slot" data-outcome-slot>${outcomeChipHtml(outcomeOf(set, target))}</span>`;
+
 export const stepperHtml = (field, value, outcome, name, setNumber, fieldLabel = FIELD_LABELS[field], unit = '', type) => {
   const label = `${fieldLabel} ${name} serie ${setNumber}`;
   const cardioDuration = field === 'duration' && type === 'cardio';
@@ -185,10 +202,13 @@ export const setTargetOf = (element) => {
 
 export const refreshOutcome = (row, session, exerciseId, setIndex) => {
   const target = session.targets[exerciseId];
+  const outcome = outcomeOf(session.entries[exerciseId][setIndex], target);
+  const slot = row.querySelector('[data-outcome-slot]');
+  if (slot) slot.innerHTML = outcomeChipHtml(outcome);
   const input = row.querySelector(`.stepper__input[data-field="${countKey(target.type)}"]`);
   if (!input) return;
   input.classList.remove('is-fallita', 'is-carico-basso');
-  const className = outcomeClass(outcomeOf(session.entries[exerciseId][setIndex], target));
+  const className = outcomeClass(outcome);
   if (className) input.classList.add(className);
 };
 
