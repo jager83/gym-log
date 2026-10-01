@@ -1,5 +1,7 @@
 import { countKey, findExercise } from '../program.js';
 import { METRIC_LABELS, chartSeries, exerciseHistory, retiredExercises } from '../metrics.js';
+import { exerciseSessionStats } from '../report.js';
+import { METRIC_NAMES, exerciseInsights, programLoadExercises } from '../insights.js';
 import { EFFORT_LABELS, deleteAllSessions } from '../session.js';
 import { lineChartSvg } from '../chart.js';
 import { outcomeClass, outcomeOf } from './controls.js';
@@ -49,6 +51,30 @@ const listHtml = (program, sessions) => {
 const deleteAllMessage = (count) =>
   `${count === 1 ? '1 giornata verrà eliminata' : `${count} giornate verranno eliminate`}. L'operazione non si può annullare.`;
 
+// Elenco di suggerimenti (insights.js) con il pallino del tono. `linked`: le voci di un esercizio
+// portano al suo dettaglio, col nome davanti (pagina Progressi). Condiviso con progress.js.
+export const insightsHtml = (list, { linked = false } = {}) => {
+  const itemHtml = (item) => {
+    const text = escapeHtml(item.text);
+    const body = linked && item.exerciseId
+      ? `<a class="insight__link" href="#/history/${encodeURIComponent(item.exerciseId)}"><strong>${escapeHtml(item.name)}</strong> ${text}</a>`
+      : `<span>${text}</span>`;
+    return `<li class="insight insight--${item.tone}"><span class="insight__dot" aria-hidden="true"></span>${body}</li>`;
+  };
+  return `<ul class="insights" aria-label="Suggerimenti">${list.map(itemHtml).join('')}</ul>`;
+};
+
+// Bottoni segmentati con aria-pressed: `options` [{ value, label }], `action` va in data-action.
+export const segmentedHtml = (options, selected, action, label) => `
+  <div class="segmented" role="group" aria-label="${escapeHtml(label)}">
+    ${options
+      .map(
+        ({ value, label: text }) =>
+          `<button type="button" class="segmented__option" data-action="${action}" data-value="${escapeHtml(value)}" aria-pressed="${value === selected}">${escapeHtml(text)}</button>`,
+      )
+      .join('')}
+  </div>`;
+
 // Forza e cardio: pallino della fatica; stretching/mobilità: ✓ "Fatto" (nessuna faccina).
 const setMarkerHtml = (set, category) =>
   category === 'forza'
@@ -83,17 +109,47 @@ const exerciseLoad = (program, sessions, exerciseId) => {
   return lastSession?.targets[exerciseId]?.load;
 };
 
-const detailHtml = (program, sessions, exerciseId) => {
+// Metriche del grafico del dettaglio: quella principale (la serie dello storico), il volume e il
+// tonnellaggio quando l'esercizio li ha. Nessuna opzione senza serie principale.
+export const chartViews = (series, stats) => {
+  if (!series) return [];
+  const views = [{ value: 'main', label: METRIC_NAMES[series.metric] ?? 'Metrica', title: null, points: series.points }];
+  if (stats.length) {
+    views.push({
+      value: 'volume',
+      label: 'Volume',
+      title: `Volume (${stats[0].volumeUnit})`,
+      points: stats.map((item) => ({ date: item.date, value: item.volume })),
+    });
+  }
+  const withTonnage = stats.filter((item) => item.tonnage !== null);
+  if (withTonnage.length) {
+    views.push({
+      value: 'tonnage',
+      label: 'Tonnellaggio',
+      title: 'Tonnellaggio (kg)',
+      points: withTonnage.map((item) => ({ date: item.date, value: item.tonnage })),
+    });
+  }
+  return views;
+};
+
+export const detailHtml = (program, sessions, exerciseId, selected = 'main', now = new Date()) => {
   const history = exerciseHistory(sessions, exerciseId);
   const name = findExercise(program, exerciseId)?.name ?? history.at(-1)?.name ?? exerciseId;
   const header = headerHtml(name, '#/history', 'Torna allo storico');
   const loadNote = exerciseLoad(program, sessions, exerciseId) === 'per-dumbbell' ? '<p class="history__load">peso a manubrio</p>' : '';
   if (!history.length) return `<section class="history">${header}${loadNote}<p class="muted">Nessuna sessione registrata.</p></section>`;
 
+  const inScope = programLoadExercises(program).find((exercise) => exercise.id === exerciseId);
+  const insights = inScope ? exerciseInsights(sessions, inScope, now) : [];
   const series = chartSeries(history);
-  const metricLabel = historyMetricLabel(history, series);
-  const chart = series
-    ? lineChartSvg(series.points.map((point) => ({ label: formatDay(point.date), value: point.value })), { title: metricLabel })
+  const views = chartViews(series, exerciseSessionStats(sessions, exerciseId));
+  const view = views.find((item) => item.value === selected) ?? views[0];
+  const metricLabel = view?.title ?? historyMetricLabel(history, series);
+  const selector = views.length > 1 ? segmentedHtml(views, view.value, 'metric', 'Metrica del grafico') : '';
+  const chart = view
+    ? lineChartSvg(view.points.map((point) => ({ label: formatDay(point.date), value: point.value })), { title: metricLabel })
     : '';
   const log = [...history]
     .reverse()
@@ -110,6 +166,8 @@ const detailHtml = (program, sessions, exerciseId) => {
     <section class="history">
       ${header}
       ${loadNote}
+      ${insights.length ? insightsHtml(insights) : ''}
+      ${selector}
       ${metricLabel ? `<p class="history__metric">${metricLabel}</p>` : ''}
       ${chart ? `<div class="chart-card">${chart}</div>` : ''}
       <ul class="log">${log}</ul>
@@ -117,9 +175,10 @@ const detailHtml = (program, sessions, exerciseId) => {
 };
 
 export const renderHistory = (root, ctx, exerciseId) => {
+  let metric = 'main';
   const draw = () => {
     const { sessions } = ctx.getState();
-    root.innerHTML = exerciseId ? detailHtml(ctx.program, sessions, exerciseId) : listHtml(ctx.program, sessions);
+    root.innerHTML = exerciseId ? detailHtml(ctx.program, sessions, exerciseId, metric, new Date()) : listHtml(ctx.program, sessions);
   };
 
   const confirmDeleteAll = async () => {
@@ -136,6 +195,12 @@ export const renderHistory = (root, ctx, exerciseId) => {
   };
 
   const onClick = (event) => {
+    const metricButton = event.target.closest('[data-action="metric"]');
+    if (metricButton) {
+      metric = metricButton.dataset.value;
+      draw();
+      return;
+    }
     const target = event.target.closest('[data-action="delete-all"]');
     if (!target) return;
     confirmDeleteAll();
