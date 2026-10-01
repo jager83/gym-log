@@ -24,6 +24,7 @@ const SHELL = [
   'js/views/focus.js',
   'js/views/history.js',
   'js/views/home.js',
+  'js/views/icons.js',
   'js/views/info.js',
   'js/views/modal.js',
   'js/views/preview.js',

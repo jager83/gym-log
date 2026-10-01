@@ -23,6 +23,7 @@ import {
 } from '../timer.js';
 import { escapeHtml, formatDuration, formatElapsed } from '../format.js';
 import { adviceBySession } from '../advice.js';
+import { bellSvg } from './icons.js';
 import {
   PHASE_LABELS,
   adviceHtml,
@@ -175,7 +176,7 @@ const blockScreenHtml = (session, settings, position, slots, now, adviceById) =>
 };
 
 const soundButtonHtml = (settings) =>
-  `<button type="button" class="focus__sound" data-action="sound" aria-label="Suono" aria-pressed="${settings.sound}">${settings.sound ? '🔔' : '🔕'}</button>`;
+  `<button type="button" class="focus__sound" data-action="sound" aria-label="Suono" aria-pressed="${settings.sound}">${bellSvg(settings.sound)}</button>`;
 
 const restScreenHtml = (session, settings) => {
   const preview = nextPreview(session);

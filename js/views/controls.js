@@ -5,6 +5,7 @@ import { isDone, setOutcome } from '../metrics.js';
 import { DONE_EFFORT, EFFORTS, EFFORT_LABELS, finishSession, hasDoneSets, stepValue, updateSet } from '../session.js';
 import { escapeHtml, formatDuration, formatNumber, formatRange, parseDurationMinutesInput, parseNumberInput } from '../format.js';
 import { faceSvg } from './faces.js';
+import { infoSvg } from './icons.js';
 import { confirmDialog } from './modal.js';
 
 const REPEAT_DELAY_MS = 400;
@@ -171,7 +172,7 @@ export const effortsHtml = (target, set, name, setNumber) => {
 export const infoButtonHtml = (exerciseId, target) =>
   hasExerciseTexts(target)
     ? `<button type="button" class="info-button" data-action="info" data-exercise="${escapeHtml(exerciseId)}"
-        aria-label="Scheda esercizio ${escapeHtml(target.name)}">i</button>`
+        aria-label="Scheda esercizio ${escapeHtml(target.name)}">${infoSvg()}</button>`
     : '';
 
 // --- Comportamento dei controlli --------------------------------------------------------------

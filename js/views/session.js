@@ -18,6 +18,7 @@ import { toggleEffort } from '../focus.js';
 import { adviceBySession } from '../advice.js';
 import { escapeHtml, formatDuration, formatSet } from '../format.js';
 import { faceSvg } from './faces.js';
+import { bellSvg } from './icons.js';
 import { openExerciseInfo } from './info.js';
 import { confirmDialog } from './modal.js';
 import {
@@ -163,7 +164,7 @@ const sessionHtml = (session, manualOpen, previousById, pendingCollapse, adviceB
     <span class="rest-bar__time"></span>
     <button type="button" data-action="rest-add" aria-label="Aggiungi ${REST_ADJUST_SECONDS} secondi">+${REST_ADJUST_SECONDS}</button>
     <button type="button" data-action="rest-skip">Salta</button>
-    <button type="button" data-action="sound" aria-label="Suono"></button>
+    <button type="button" class="rest-bar__sound" data-action="sound" aria-label="Suono"></button>
   </div>`;
 
 export const renderSession = (root, ctx) => {
@@ -211,7 +212,7 @@ export const renderSession = (root, ctx) => {
 
   const drawSound = () => {
     const on = ctx.getState().settings.sound;
-    soundButton.textContent = on ? '🔔' : '🔕';
+    soundButton.innerHTML = bellSvg(on);
     soundButton.setAttribute('aria-pressed', String(on));
   };
 
