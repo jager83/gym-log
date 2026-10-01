@@ -2,13 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   bellSvg,
+  calendarSvg,
   checkSvg,
   chevronLeftSvg,
   chevronRightSvg,
+  exerciseTypeSvg,
   infoSvg,
+  kettlebellSvg,
   minusSvg,
   plusSvg,
   playSvg,
+  repeatSvg,
   trashSvg,
 } from '../js/views/icons.js';
 
@@ -64,4 +68,20 @@ test('checkSvg: markup distinto dalle altre icone', () => {
   assert.match(html, /icon--check/);
   assert.match(html, /<polyline/);
   assert.notEqual(html, bellSvg(true));
+});
+
+test('icone di riga: una per tipo di esercizio, stile comune, peso come default', () => {
+  const byType = ['weight', 'bodyweight', 'time', 'cardio'].map(exerciseTypeSvg);
+  assert.equal(new Set(byType).size, 4);
+  [...byType, calendarSvg(), repeatSvg(), kettlebellSvg()].forEach((svg) => {
+    assert.match(svg, /class="icon icon--row icon--[a-z]+"/);
+    assert.match(svg, /aria-hidden="true"/);
+    assert.match(svg, /focusable="false"/);
+    assert.match(svg, /stroke="currentColor"/);
+  });
+  assert.match(exerciseTypeSvg('weight'), /icon--dumbbell/);
+  assert.match(exerciseTypeSvg('bodyweight'), /icon--person/);
+  assert.match(exerciseTypeSvg('time'), /icon--stopwatch/);
+  assert.match(exerciseTypeSvg('cardio'), /icon--heart/);
+  assert.equal(exerciseTypeSvg('boh'), exerciseTypeSvg('weight'));
 });
