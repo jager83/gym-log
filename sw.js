@@ -1,6 +1,6 @@
 // Incrementa CACHE_VERSION a ogni deploy (codice o scheda): la nuova versione
 // si scarica in background e si attiva alla successiva riapertura dell'app.
-const CACHE_VERSION = 'gym-log-v13';
+const CACHE_VERSION = 'gym-log-v14';
 
 const SHELL = [
   './',
@@ -37,9 +37,8 @@ const SHELL = [
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',
-  'fonts/atkinson-hyperlegible-mono-latin-var.woff2',
-  'fonts/atkinson-hyperlegible-next-latin-var.woff2',
-  'fonts/bricolage-grotesque-latin-var.woff2',
+  'fonts/figtree-latin-var.woff2',
+  'fonts/outfit-latin-var.woff2',
 ];
 
 self.addEventListener('install', (event) => {

@@ -28,6 +28,7 @@ const homeHtml = (program, state, backupDue) => {
 
   return `
     <section class="home">
+      <h1 class="home__title">Gym Log</h1>
       ${heroHtml}
       <ul class="workout-list">
         ${program.workouts
