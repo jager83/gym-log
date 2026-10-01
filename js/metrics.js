@@ -146,8 +146,9 @@ export const chartSeries = (history) => {
     label = hasDistance ? METRIC_LABELS.cardioDistance : METRIC_LABELS.cardioDuration;
     entries = history.filter((item) => item.metric === (hasDistance ? 'distance' : 'duration'));
   }
-  const points = entries.filter((item) => item.value !== null).map((item) => ({ date: item.date, value: item.value }));
-  return points.length ? { label, points } : null;
+  const valued = entries.filter((item) => item.value !== null);
+  const points = valued.map((item) => ({ date: item.date, value: item.value }));
+  return points.length ? { label, metric: valued[0].metric, points } : null;
 };
 
 export const retiredExercises = (program, sessions) => {

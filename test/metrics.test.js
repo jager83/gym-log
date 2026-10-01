@@ -206,8 +206,8 @@ test('assisted senza peso corporeo: il grafico mostra l\'assistenza, etichettata
   assert.equal(history[0].value, 30);
   assert.equal(METRIC_LABELS.assistance, 'Assistenza (kg)');
   // Con almeno una voce a 1RM si usano solo quelle, come per il bodyweight.
-  assert.deepEqual(chartSeries(history), { label: METRIC_LABELS.assistedLoad, points: [{ date: '2026-09-22T19:00:00.000Z', value: epley(55, 10) }] });
-  assert.deepEqual(chartSeries(history.slice(0, 1)), { label: 'Assistenza (kg)', points: [{ date: '2026-09-20T19:00:00.000Z', value: 30 }] });
+  assert.deepEqual(chartSeries(history), { label: METRIC_LABELS.assistedLoad, metric: '1rm', points: [{ date: '2026-09-22T19:00:00.000Z', value: epley(55, 10) }] });
+  assert.deepEqual(chartSeries(history.slice(0, 1)), { label: 'Assistenza (kg)', metric: 'assistance', points: [{ date: '2026-09-20T19:00:00.000Z', value: 30 }] });
 });
 
 test('exerciseHistory: metric duration per gli esercizi a tempo', () => {
@@ -278,6 +278,7 @@ test('chartSeries: cardio usa la distanza se almeno una voce ce l\'ha', () => {
   ];
   assert.deepEqual(chartSeries(history), {
     label: METRIC_LABELS.cardioDistance,
+    metric: 'distance',
     points: [{ date: '2026-09-22T19:00:00.000Z', value: 5.2 }],
   });
 });
@@ -289,6 +290,7 @@ test('chartSeries: cardio senza distanza in nessuna voce usa la durata in minuti
   ];
   assert.deepEqual(chartSeries(history), {
     label: METRIC_LABELS.cardioDuration,
+    metric: 'duration',
     points: [
       { date: '2026-09-20T19:00:00.000Z', value: 20 },
       { date: '2026-09-22T19:00:00.000Z', value: 25 },
@@ -319,6 +321,7 @@ test('chartSeries: weight usa sempre l\'etichetta corrente', () => {
   ];
   assert.deepEqual(chartSeries(history), {
     label: METRIC_LABELS.weight,
+    metric: '1rm',
     points: [
       { date: '2026-09-20T19:00:00.000Z', value: 80 },
       { date: '2026-09-22T19:00:00.000Z', value: 85 },
@@ -333,6 +336,7 @@ test('chartSeries: bodyweight senza 1RM in storico usa le ripetizioni', () => {
   ];
   assert.deepEqual(chartSeries(history), {
     label: METRIC_LABELS.bodyweight,
+    metric: 'reps',
     points: [
       { date: '2026-09-20T19:00:00.000Z', value: 8 },
       { date: '2026-09-22T19:00:00.000Z', value: 9 },
@@ -348,6 +352,7 @@ test('chartSeries: bodyweight con storico misto tiene solo le voci 1RM con la nu
   ];
   assert.deepEqual(chartSeries(history), {
     label: METRIC_LABELS.bodyweightLoad,
+    metric: '1rm',
     points: [
       { date: '2026-09-20T19:00:00.000Z', value: 107.7 },
       { date: '2026-09-22T19:00:00.000Z', value: 110 },
@@ -362,6 +367,7 @@ test('chartSeries: esclude i punti con value null', () => {
   ];
   assert.deepEqual(chartSeries(history), {
     label: METRIC_LABELS.time,
+    metric: 'duration',
     points: [{ date: '2026-09-20T19:00:00.000Z', value: 50 }],
   });
 });
