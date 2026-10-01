@@ -47,6 +47,7 @@ const homeHtml = (program, state, backupDue) => {
       </ul>
       <nav class="home__links" aria-label="Altre funzioni">
         <a href="#/history">Storico</a>
+        <a href="#/progress">Progressi</a>
         <details class="backup">
           <summary class="backup__summary">Backup${backupDue ? '<span class="dot" role="img" aria-label="backup consigliato"></span>' : ''}</summary>
           <p class="muted">Ultimo export: ${state.lastExportAt ? formatDay(state.lastExportAt) : 'mai'}</p>

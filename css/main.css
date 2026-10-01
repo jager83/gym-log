@@ -1596,6 +1596,130 @@ input:focus-visible {
   color: #ffffff;
 }
 
+/* Progressi */
+.segmented {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0 16px;
+  padding: 4px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.segmented__option {
+  flex: 1;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.segmented__option[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.segmented__option:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.progress__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.progress__stat {
+  padding: 10px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.progress__stat dt {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.progress__stat dd {
+  margin: 2px 0 0;
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.insights {
+  margin: 0 0 16px;
+  padding: 0 16px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  list-style: none;
+}
+
+.insight {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 0;
+  color: var(--ink);
+}
+
+.insight + .insight {
+  border-top: 1.5px solid var(--line);
+}
+
+.insight__dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+
+.insight--positive .insight__dot {
+  background: var(--ok);
+}
+
+.insight--attention .insight__dot {
+  background: var(--sun);
+}
+
+.insight__link {
+  display: block;
+  min-height: 24px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.progress .chart-card + .history__metric {
+  margin-top: 16px;
+}
+
+.chart-bar {
+  fill: var(--accent);
+}
+
+.chart-bar--partial {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
 /* Tablet */
 @media (min-width: 769px) {
   .app {
