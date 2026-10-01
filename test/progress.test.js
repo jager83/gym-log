@@ -68,7 +68,10 @@ test('progressHtml: riepilogo e grafici del periodo', () => {
   assert.match(four, /<dt>Sessioni<\/dt><dd>2<\/dd>/);
   assert.match(four, /<dt>A settimana<\/dt><dd>0,5<\/dd>/);
   assert.match(four, /<dt>Tonnellaggio<\/dt><dd>2,2 t<\/dd>/);
-  assert.equal((four.match(/<rect /g) ?? []).length, 12);
+  assert.equal((four.match(/<rect class="chart-bar/g) ?? []).length, 12);
+  assert.match(four, /icon--calendar[\s\S]*<dt>Sessioni/);
+  assert.match(four, /icon--repeat[\s\S]*<dt>A settimana/);
+  assert.match(four, /icon--kettlebell[\s\S]*<dt>Tonnellaggio/);
   assert.equal((four.match(/chart-bar--partial/g) ?? []).length, 3);
   const all = progressHtml(program, sessions, NOW, 'all');
   assert.match(all, /<dt>Sessioni<\/dt><dd>3<\/dd>/);
@@ -86,17 +89,26 @@ test('progressHtml: suggerimenti con link al dettaglio, oppure il messaggio dei 
 test('exerciseRows: ultimo valore, variazione nel periodo, assistenza in kg', () => {
   const rows = exerciseRows(program, sessions, NOW, 4);
   assert.deepEqual(rows, [
-    { exerciseId: 'panca', name: 'Panca', value: 81.3, unit: 'kg', change: '+4%' },
-    { exerciseId: 'trazioni', name: 'Trazioni', value: 25, unit: 'kg', change: '−5 kg' },
+    { exerciseId: 'panca', name: 'Panca', type: 'weight', value: 81.3, unit: 'kg', change: '+4%', trend: 'better' },
+    { exerciseId: 'trazioni', name: 'Trazioni', type: 'weight', value: 25, unit: 'kg', change: '−5 kg', trend: 'better' },
   ]);
   const all = exerciseRows(program, sessions, NOW, null);
   assert.equal(all[0].change, '+22%');
   const one = exerciseRows(program, sessions.slice(2), NOW, 4);
   assert.equal(one[0].change, null);
+  assert.equal(one[0].trend, null);
+  const worse = [session('w1', new Date(2026, 8, 22, 19), { panca: lifts(60, 9, 9) }), session('w2', new Date(2026, 8, 29, 19), { panca: lifts(55, 9, 9) })];
+  assert.equal(exerciseRows(program, worse, NOW, 4)[0].trend, 'worse');
+  const flat = [session('f1', new Date(2026, 8, 22, 19), { panca: lifts(60, 9, 9) }), session('f2', new Date(2026, 8, 29, 19), { panca: lifts(60, 9, 9) })];
+  const [flatRow] = exerciseRows(program, flat, NOW, 4);
+  assert.deepEqual([flatRow.change, flatRow.trend], ['+0%', 'flat']);
+  const moreAssist = [session('a1', new Date(2026, 8, 22, 19), { trazioni: lifts(25, 9, 9) }), session('a2', new Date(2026, 8, 29, 19), { trazioni: lifts(30, 9, 9) })];
+  assert.equal(exerciseRows(program, moreAssist, NOW, 4)[0].trend, 'worse');
 });
 
 test('progressHtml: elenco esercizi con link e dettaglio', () => {
   const html = progressHtml(program, sessions, NOW);
-  assert.match(html, /href="#\/history\/panca">\s*<span>Panca<\/span>\s*<span class="muted">81,3 kg · \+4%<\/span>/);
+  assert.match(html, /href="#\/history\/panca">\s*<span class="history__name"><svg class="icon icon--row icon--dumbbell"[^]*?<\/svg><span>Panca<\/span><\/span>\s*<span class="muted">81,3 kg <span class="chip chip--ok">\+4%<\/span><\/span>/);
+  assert.match(html, /<span class="muted">25 kg <span class="chip chip--ok">−5 kg<\/span><\/span>/);
   assert.doesNotMatch(html, /history\/plank/);
 });

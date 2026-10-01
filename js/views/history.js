@@ -6,7 +6,7 @@ import { EFFORT_LABELS, deleteAllSessions } from '../session.js';
 import { lineChartSvg } from '../chart.js';
 import { outcomeClass, outcomeOf } from './controls.js';
 import { escapeHtml, formatDate, formatDay, formatSet } from '../format.js';
-import { checkSvg, chevronLeftSvg } from './icons.js';
+import { checkSvg, chevronLeftSvg, exerciseTypeSvg } from './icons.js';
 import { confirmDialog } from './modal.js';
 
 // Condiviso con days.js (stessa intestazione "pagina con freccia indietro").
@@ -19,10 +19,11 @@ export const headerHtml = (title, backHash, backLabel) => `
 const listHtml = (program, sessions) => {
   const itemHtml = ({ id, name }) => {
     const last = exerciseHistory(sessions, id).at(-1);
+    const type = findExercise(program, id)?.type ?? last?.type;
     return `
       <li>
         <a class="history__item" href="#/history/${encodeURIComponent(id)}">
-          <span>${escapeHtml(name)}</span>
+          <span class="history__name">${exerciseTypeSvg(type)}<span>${escapeHtml(name)}</span></span>
           <span class="muted">${last ? formatDay(last.date) : '—'}</span>
         </a>
       </li>`;

@@ -7,6 +7,7 @@ import { programLoadExercises, progressInsights } from '../insights.js';
 import { barChartSvg } from '../chart.js';
 import { escapeHtml, formatDay, formatNumber } from '../format.js';
 import { headerHtml, insightsHtml, segmentedHtml } from './history.js';
+import { calendarSvg, exerciseTypeSvg, kettlebellSvg, repeatSvg } from './icons.js';
 
 export const PERIODS = [
   { value: '4', label: '4 sett', weeks: 4 },
@@ -32,8 +33,18 @@ const periodStart = (now, weeks) => {
   return start;
 };
 
+// Direzione della variazione mostrata, per il colore del chip: 'better' | 'worse' | 'flat' (0 dopo
+// l'arrotondamento mostrato).
+const trendOf = (shown, lowerIsBetter) => {
+  if (shown === 0) return 'flat';
+  return (shown > 0) !== lowerIsBetter ? 'better' : 'worse';
+};
+
+const CHANGE_TONES = { better: 'ok', worse: 'sun', flat: 'neutral' };
+
 // Una riga per esercizio della scheda con almeno un punto: ultimo valore e variazione nel periodo
-// (percentuale; per l'assistenza in kg). change null con meno di 2 punti nel periodo.
+// (percentuale; per l'assistenza in kg) con la sua direzione. change e trend null con meno di 2
+// punti nel periodo.
 export const exerciseRows = (program, sessions, now, weeks) => {
   const start = periodStart(now, weeks);
   return programLoadExercises(program)
@@ -43,13 +54,29 @@ export const exerciseRows = (program, sessions, now, weeks) => {
       const inPeriod = start ? series.points.filter((point) => Date.parse(point.date) >= start.getTime()) : series.points;
       const last = series.points.at(-1).value;
       let change = null;
+      let trend = null;
       if (inPeriod.length >= 2) {
         const first = inPeriod[0].value;
         const end = inPeriod.at(-1).value;
-        if (series.metric === 'assistance') change = `${signed(end - first, 1)} kg`;
-        else if (first > 0) change = `${signed(((end - first) / first) * 100)}%`;
+        if (series.metric === 'assistance') {
+          const shown = Math.round((end - first) * 10) / 10;
+          change = `${signed(end - first, 1)} kg`;
+          trend = trendOf(shown, true);
+        } else if (first > 0) {
+          const shown = Math.round(((end - first) / first) * 100);
+          change = `${signed(((end - first) / first) * 100)}%`;
+          trend = trendOf(shown, false);
+        }
       }
-      return { exerciseId: exercise.id, name: exercise.name, value: last, unit: METRIC_UNITS[series.metric], change };
+      return {
+        exerciseId: exercise.id,
+        name: exercise.name,
+        type: exercise.type,
+        value: last,
+        unit: METRIC_UNITS[series.metric],
+        change,
+        trend,
+      };
     })
     .filter(Boolean);
 };
@@ -58,12 +85,12 @@ export const exerciseRows = (program, sessions, now, weeks) => {
 const summaryHtml = (weeks) => {
   const total = weeks.reduce((sum, week) => sum + week.sessions, 0);
   const tonnage = weeks.reduce((sum, week) => sum + week.tonnage, 0);
-  const stat = (label, value) => `<div class="progress__stat"><dt>${label}</dt><dd>${value}</dd></div>`;
+  const stat = (icon, label, value) => `<div class="progress__stat">${icon}<dt>${label}</dt><dd>${value}</dd></div>`;
   return `
     <dl class="progress__summary">
-      ${stat('Sessioni', total)}
-      ${stat('A settimana', formatNumber(weeks.length ? total / weeks.length : 0))}
-      ${stat('Tonnellaggio', `${formatNumber(tonnage / 1000)} t`)}
+      ${stat(calendarSvg(), 'Sessioni', total)}
+      ${stat(repeatSvg(), 'A settimana', formatNumber(weeks.length ? total / weeks.length : 0))}
+      ${stat(kettlebellSvg(), 'Tonnellaggio', `${formatNumber(tonnage / 1000)} t`)}
     </dl>`;
 };
 
@@ -77,12 +104,12 @@ const weeklyChartHtml = (weeks, title, field) => `
 const rowsHtml = (rows) => {
   if (!rows.length) return '';
   const rowHtml = (row) => {
-    const detail = [`${formatNumber(row.value)} ${row.unit}`, row.change].filter(Boolean).join(' · ');
+    const change = row.change ? ` <span class="chip chip--${CHANGE_TONES[row.trend]}">${escapeHtml(row.change)}</span>` : '';
     return `
       <li>
         <a class="history__item" href="#/history/${encodeURIComponent(row.exerciseId)}">
-          <span>${escapeHtml(row.name)}</span>
-          <span class="muted">${escapeHtml(detail)}</span>
+          <span class="history__name">${exerciseTypeSvg(row.type)}<span>${escapeHtml(row.name)}</span></span>
+          <span class="muted">${escapeHtml(`${formatNumber(row.value)} ${row.unit}`)}${change}</span>
         </a>
       </li>`;
   };
