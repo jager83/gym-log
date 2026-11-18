@@ -2,6 +2,8 @@ export const EXERCISE_TYPES = ['weight', 'bodyweight', 'time', 'cardio'];
 export const LOAD_VALUES = ['total', 'per-dumbbell'];
 export const CATEGORIES = ['forza', 'stretching', 'mobilita'];
 export const PHASES = ['riscaldamento', 'defaticamento'];
+// Macchina di un esercizio cardio: fissata in scheda o scelta in sessione.
+export const CARDIO_MACHINES = ['camminata', 'cyclette'];
 
 const DEFAULTS = { version: 1, defaultSets: 3, defaultRest: 90 };
 
@@ -66,6 +68,13 @@ const normalizeExercise = (raw, defaultSets, seen) => {
   if (raw.assisted !== undefined && typeof raw.assisted !== 'boolean') throw new ProgramError(`${label}: assisted non valido`);
   const assisted = raw.assisted === true;
 
+  if (raw.machine !== undefined && raw.type !== 'cardio') {
+    throw new ProgramError(`${label}: machine ammessa solo per type cardio`);
+  }
+  if (raw.machine !== undefined && !CARDIO_MACHINES.includes(raw.machine)) {
+    throw new ProgramError(`${label}: machine sconosciuta "${raw.machine}"`);
+  }
+
   const sides = raw.sides ?? 1;
   if (sides !== 1 && sides !== 2) throw new ProgramError(`${label}: sides deve essere 1 o 2`);
 
@@ -89,6 +98,7 @@ const normalizeExercise = (raw, defaultSets, seen) => {
       previous.load !== load ||
       previous.category !== category ||
       previous.sides !== sides ||
+      previous.machine !== raw.machine ||
       (previous.assisted === true) !== assisted)
   ) {
     throw new ProgramError(`id duplicato: ${raw.id}`);
@@ -114,6 +124,7 @@ const normalizeExercise = (raw, defaultSets, seen) => {
     [key]: target,
     ...(raw.type === 'weight' ? { load } : {}),
     ...(assisted ? { assisted } : {}),
+    ...(raw.machine !== undefined ? { machine: raw.machine } : {}),
     ...(raw.description !== undefined ? { description: raw.description } : {}),
     ...(raw.steps !== undefined ? { steps: raw.steps } : {}),
     ...(raw.tips !== undefined ? { tips: raw.tips } : {}),

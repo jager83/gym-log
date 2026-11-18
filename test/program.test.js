@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
+  CARDIO_MACHINES,
   CATEGORIES,
   EXERCISE_TYPES,
   PHASES,
@@ -326,4 +327,28 @@ test('data/program.json spedito: scheda reale, riscaldamento senza recupero, car
     assert.ok(Array.isArray(exercise.steps) && exercise.steps.length > 0, `${exercise.id}: steps mancanti`);
     assert.ok(Array.isArray(exercise.tips) && exercise.tips.length > 0, `${exercise.id}: tips mancanti`);
   });
+});
+
+test('cardio: machine camminata o cyclette normalizzata sull\'esercizio', () => {
+  const raw = rawProgram();
+  raw.workouts[2].blocks[0].exercises[0] = { id: 'spin', name: 'Spinning', type: 'cardio', machine: 'cyclette', duration: 900 };
+  assert.equal(findExercise(normalizeProgram(raw), 'spin').machine, 'cyclette');
+  assert.ok(CARDIO_MACHINES.includes('camminata'));
+});
+
+test('cardio: senza machine nessun campo machine', () => {
+  const raw = rawProgram();
+  raw.workouts[2].blocks[0].exercises[0] = { id: 'spin', name: 'Spinning', type: 'cardio' };
+  assert.equal('machine' in findExercise(normalizeProgram(raw), 'spin'), false);
+});
+
+test('cardio: machine sconosciuta', () => {
+  expectError(
+    (r) => { r.workouts[2].blocks[0].exercises[0] = { id: 'spin', name: 'Spinning', type: 'cardio', machine: 'ellittica' }; },
+    'esercizio spin: machine sconosciuta "ellittica"',
+  );
+});
+
+test('machine ammessa solo per type cardio', () => {
+  expectError((r) => { r.workouts[0].blocks[0].exercises[0].machine = 'cyclette'; }, 'esercizio panca: machine ammessa solo per type cardio');
 });
