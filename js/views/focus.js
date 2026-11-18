@@ -295,7 +295,11 @@ export const renderFocus = (root, ctx, initialBlock) => {
         position.blockIndex,
         position.round,
         position.blockComplete ?? false,
-        position.items.map(({ exerciseId, setIndex }) => session.entries[exerciseId][setIndex].effort),
+        // La macchina cardio cambia i campi della card: ridisegno anche quando cambia lei.
+        position.items.map(({ exerciseId, setIndex }) => {
+          const { effort, machine } = session.entries[exerciseId][setIndex];
+          return [effort, machine ?? null];
+        }),
         timer ? [timer.exerciseId, timer.setIndex, timer.side, timerPhase(session, now)] : null,
       );
     }
