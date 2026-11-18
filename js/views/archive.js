@@ -55,9 +55,9 @@ export const archivedProgramHtml = (entry, program) => `
       .join('')}
   </section>`;
 
-export const archiveErrorHtml = () => `
+export const archiveErrorHtml = (backHash = '#/history') => `
   <section class="history">
-    ${headerHtml('Schede precedenti', '#/history', 'Torna allo storico')}
+    ${headerHtml('Schede precedenti', backHash, 'Indietro')}
     <p class="muted">Scheda non disponibile</p>
   </section>`;
 
@@ -72,12 +72,12 @@ export const renderArchive = (root, ctx, version) => {
       const index = await loadArchiveIndex();
       if (version === null) return archiveListHtml(index);
       const entry = index.find((item) => item.version === version);
-      if (!entry) return archiveErrorHtml();
+      if (!entry) return archiveErrorHtml('#/archive');
       const program = await loadArchivedProgram(entry);
       targets = Object.assign({}, ...sessionsOf(program).map((session) => session.targets));
       return archivedProgramHtml(entry, program);
     } catch {
-      return archiveErrorHtml();
+      return archiveErrorHtml(version === null ? '#/history' : '#/archive');
     }
   };
   load().then((html) => {

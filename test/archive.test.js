@@ -52,3 +52,7 @@ test('archiveErrorHtml: "Scheda non disponibile" con ritorno all\'elenco', () =>
   assert.match(html, /Scheda non disponibile/);
   assert.match(html, /href="#\/history"/);
 });
+
+test('archiveErrorHtml: dalla vista di una scheda torna all\'elenco delle schede', () => {
+  assert.match(archiveErrorHtml('#/archive'), /href="#\/archive"/);
+});

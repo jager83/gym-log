@@ -74,6 +74,8 @@ const metricKind = (type, bodyWeight, assisted) => {
 // Metrica di una sessione per un esercizio cardio, secondo la macchina della prima serie fatta
 // (null per le serie salvate prima della scelta macchina): potenza massima per la cyclette,
 // distanza massima per camminata e serie vecchie; altrimenti durata massima in minuti (round1).
+// shortcut: una sola macchina per sessione (la prima serie fatta); serie miste camminata+cyclette
+// nella stessa sessione ignorano l'altra macchina. Oggi il cardio ha 1 serie; rivedere se ne avrà di più.
 const cardioMetric = (sets) => {
   const doneSets = sets.filter(isDone);
   const machine = doneSets[0]?.machine ?? null;

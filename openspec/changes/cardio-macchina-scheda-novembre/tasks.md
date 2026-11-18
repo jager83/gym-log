@@ -20,7 +20,7 @@ Ogni task di codice: test prima (visto fallire), codice minimo, `npm test` verde
 
 - [x] 3.1 Campi per macchina. RED: in `test/controls.test.js` "setFields cardio: camminata duration, distance, speed, incline; cyclette duration, power, cadence; legacy duration, distance, level, speed" e "unità %, W, rpm"; fallisce perché `setFields` non guarda la serie. GREEN: `setFields(target, set)`, `FIELD_LABELS`, `unitOf`, `DECIMAL_FIELDS` (incline) e `formatFieldValue` in `js/views/controls.js`; aggiornare i chiamanti di `setFields` (focus, lista sessione) e il riassunto unità cardio della riga.
 - [x] 3.2 Pulsanti Camminata/Cyclette. RED: in `test/controls.test.js` "machineToggleHtml: due button con aria-pressed sulla macchina corrente; stringa vuota se il target ha machine fissata"; in `test/focus-view.test.js` "la card cardio senza machine mostra la scelta, lo spinning no"; falliscono perché il markup non esiste. GREEN: `machineToggleHtml` in `controls.js`, inserito nella card del focus e nella riga cardio della lista; stile in `css/main.css` (mobile-first, classi, niente `!important`).
-- [ ] 3.3 Azione `machine`. RED: in `test/focus-view.test.js` "click su Cyclette chiama setMachine, salva e ridisegna i campi della cyclette"; fallisce perché l'azione non è gestita. GREEN: gestore `data-action="machine"` dove sono gestiti `step` e input (focus e lista sessione).
+- [x] 3.3 Azione `machine`. RED: in `test/focus-view.test.js` "click su Cyclette chiama setMachine, salva e ridisegna i campi della cyclette"; fallisce perché l'azione non è gestita. GREEN: gestore `data-action="machine"` dove sono gestiti `step` e input (focus e lista sessione).
 
 ## 4. Archivio schede
 
@@ -38,7 +38,7 @@ Ogni task di codice: test prima (visto fallire), codice minimo, `npm test` verde
 
 ## 6. Verifica finale
 
-- [ ] 6.1 `npm test` verde.
+- [x] 6.1 `npm test` verde.
 - [ ] 6.2 Prova reale con `npm run serve`: importare un backup reale, avviare Giorno 1 (camminata: km, velocità, pendenza), cambiare in cyclette (watt, rpm), Giorno 3 spinning senza scelta; storico e grafico per macchina; "Schede precedenti" apre la v1; ricaricare offline e riaprire l'archivio. Esito annotato nel commit o in nota alla change.
 - [ ] 6.3 Code review con superpowers:requesting-code-review e verifica con superpowers:verification-before-completion; correzioni applicate con test.
 

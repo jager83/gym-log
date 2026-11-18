@@ -158,8 +158,8 @@ test('fieldsHtml cardio: unità %, W e rpm e pendenza decimale', () => {
 });
 
 test('machineToggleHtml: due pulsanti con aria-pressed sulla macchina della serie', () => {
-  const html = machineToggleHtml(cardio, { machine: 'cyclette' }, 'Corsa');
-  assert.match(html, /role="group" aria-label="Macchina Corsa"/);
+  const html = machineToggleHtml(cardio, { machine: 'cyclette' }, 'Corsa', 1);
+  assert.match(html, /role="group" aria-label="Macchina Corsa serie 1"/);
   assert.match(html, /data-action="machine" data-machine="camminata" aria-pressed="false">Camminata</);
   assert.match(html, /data-action="machine" data-machine="cyclette" aria-pressed="true">Cyclette</);
 });

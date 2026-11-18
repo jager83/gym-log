@@ -55,7 +55,7 @@ const setHtml = (session, exerciseId, setIndex, previous, showName) => {
   return `
     <div class="set" data-exercise="${escapeHtml(exerciseId)}" data-set="${setIndex}">
       ${showName ? `<p class="set__name">${name}</p>` : ''}
-      ${machineToggleHtml(target, set, name)}
+      ${machineToggleHtml(target, set, name, number)}
       <div class="set__fields">
         ${fieldsHtml(target, set, name, number)}
       </div>
@@ -313,8 +313,11 @@ export const renderSession = (root, ctx) => {
     }
     if (action === 'machine') {
       const { exerciseId, setIndex } = setTargetOf(target);
-      ctx.commit(setMachine(ctx.getState(), exerciseId, setIndex, target.dataset.machine));
+      const { machine } = target.dataset;
+      ctx.commit(setMachine(ctx.getState(), exerciseId, setIndex, machine));
       redrawBlock(blockIndexOf(target));
+      // Il ridisegno sostituisce il blocco: il focus torna sul pulsante scelto (uso da tastiera).
+      root.querySelector(`[data-exercise="${CSS.escape(exerciseId)}"][data-set="${setIndex}"] [data-machine="${machine}"]`)?.focus();
       return;
     }
     if (action === 'use-advice') {

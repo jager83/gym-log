@@ -149,7 +149,7 @@ const controlsHtml = (session, settings, exerciseId, setIndex, name, now) => {
       ? timerPanelHtml(timerText(session, now), '', true)
       : timerPanelHtml(formatDuration(set.duration ?? 0), '', false);
     const buttons = timed ? `<div class="focus-card__actions">${timerButtonsHtml(session, phase)}</div>` : start;
-    return `${machineToggleHtml(target, set, name)}${panel}${buttons}<div class="focus-card__fields">${fieldsHtml(target, set, name, number, extraFields)}</div>`;
+    return `${machineToggleHtml(target, set, name, number)}${panel}${buttons}<div class="focus-card__fields">${fieldsHtml(target, set, name, number, extraFields)}</div>`;
   }
 
   return `<div class="focus-card__fields">${fieldsHtml(target, set, name, number)}</div>`;
@@ -238,15 +238,16 @@ const summaryScreenHtml = (session, slots, now) => {
 };
 
 // Descrive l'elemento con il focus per ritrovarlo dopo un ridisegno.
-const focusSelector = (element) => {
+export const focusSelector = (element) => {
   const row = element.closest('[data-set]');
   const scope = row ? `[data-exercise="${CSS.escape(row.dataset.exercise)}"][data-set="${row.dataset.set}"] ` : '';
-  const { action, field, dir, effort } = element.dataset;
+  const { action, field, dir, effort, machine } = element.dataset;
   const attributes = [
     action ? `[data-action="${action}"]` : '',
     field ? `[data-field="${field}"]` : '',
     dir ? `[data-dir="${dir}"]` : '',
     effort ? `[data-effort="${effort}"]` : '',
+    machine ? `[data-machine="${machine}"]` : '',
   ].join('');
   return attributes ? `${scope}${attributes}` : null;
 };

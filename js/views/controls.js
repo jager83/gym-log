@@ -177,13 +177,13 @@ const MACHINE_LABELS = { camminata: 'Camminata', cyclette: 'Cyclette' };
 
 // Scelta Camminata/Cyclette di una serie cardio. Assente se la scheda fissa la macchina o se la
 // serie è stata creata prima della scelta macchina (nessun machine). `name` già escapato.
-export const machineToggleHtml = (target, set, name) => {
+export const machineToggleHtml = (target, set, name, setNumber) => {
   if (target.type !== 'cardio' || target.machine || !set.machine) return '';
   const buttons = CARDIO_MACHINES.map(
     (machine) =>
       `<button type="button" class="machine-toggle__option" data-action="machine" data-machine="${machine}" aria-pressed="${set.machine === machine}">${MACHINE_LABELS[machine]}</button>`,
   ).join('');
-  return `<div class="machine-toggle" role="group" aria-label="Macchina ${name}">${buttons}</div>`;
+  return `<div class="machine-toggle" role="group" aria-label="Macchina ${name} serie ${setNumber}">${buttons}</div>`;
 };
 
 // `name` già escapato. L'esito (colore del numero) vale solo per il campo di conteggio.
