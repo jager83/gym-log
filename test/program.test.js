@@ -365,3 +365,18 @@ test('normalizeProgram: name o from non stringa', () => {
   expectError((r) => { r.name = 3; }, 'name scheda non valido');
   expectError((r) => { r.from = ''; }, 'from scheda non valido');
 });
+
+test('archivio: index.json elenca schede con file esistenti e program-v1.json è la scheda versione 1', () => {
+  const index = JSON.parse(readFileSync(new URL('../data/archive/index.json', import.meta.url), 'utf8'));
+  assert.ok(Array.isArray(index) && index.length > 0);
+  index.forEach((entry) => {
+    assert.ok(Number.isInteger(entry.version));
+    ['name', 'from', 'to', 'file'].forEach((field) => assert.equal(typeof entry[field], 'string'));
+    const archived = parseProgram(readFileSync(new URL(`../data/archive/${entry.file}`, import.meta.url), 'utf8'));
+    assert.equal(archived.version, entry.version);
+  });
+  const v1 = index.find((entry) => entry.version === 1);
+  const archived = parseProgram(readFileSync(new URL(`../data/archive/${v1.file}`, import.meta.url), 'utf8'));
+  assert.equal(archived.name, 'Scheda settembre 2026');
+  assert.ok(findExercise(archived, 'goblet-squat-alzata'));
+});
