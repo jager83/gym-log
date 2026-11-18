@@ -1,4 +1,4 @@
-import { countKey, findWorkout } from './program.js';
+import { CARDIO_MACHINES, countKey, findWorkout } from './program.js';
 import { isDone, round1 } from './metrics.js';
 
 export const EFFORTS = ['facile', 'giusta', 'dura'];
@@ -180,6 +180,16 @@ const followWeight = (sets, setIndex, current, next) => {
     if (!changesWeight || index < setIndex || isDone(set) || set.weight !== current.weight) return set;
     return { ...set, weight: next.weight };
   });
+};
+
+// Camminata/cyclette scelta sulla card: i valori dell'altra macchina restano nella serie (un tocco
+// sbagliato non li perde) ma non si mostrano. Nessun effetto se la scheda fissa la macchina.
+export const setMachine = (state, exerciseId, setIndex, machine) => {
+  const session = state.activeSession;
+  const current = session?.entries[exerciseId]?.[setIndex];
+  if (!current || session.targets[exerciseId].machine || !CARDIO_MACHINES.includes(machine)) return state;
+  const sets = session.entries[exerciseId].map((set, index) => (index === setIndex ? { ...set, machine } : set));
+  return withSession(state, { entries: { ...session.entries, [exerciseId]: sets } });
 };
 
 export const updateSet = (state, exerciseId, setIndex, patch, now) => {

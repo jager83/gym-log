@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   DONE_EFFORT,
   clampValue,
+  setMachine,
   clearRest,
   currentBlockIndex,
   deleteAllSessions,
@@ -633,4 +634,19 @@ test('clampValue e stepValue: incline, power, cadence', () => {
   assert.equal(stepValue('incline', 4, 1), 4.5);
   assert.equal(stepValue('power', 100, 1), 105);
   assert.equal(stepValue('cadence', 80, -1), 79);
+});
+
+test('setMachine cambia solo la macchina della serie e lascia gli altri valori', () => {
+  let state = startSession(cardioProgram(600), emptyState(), 'D', at(T0));
+  state = updateSet(state, 'corsa', 0, { distance: 1.2 }, at(T0));
+  const next = setMachine(state, 'corsa', 0, 'cyclette');
+  assert.equal(next.activeSession.entries.corsa[0].machine, 'cyclette');
+  assert.equal(next.activeSession.entries.corsa[0].distance, 1.2);
+});
+
+test('setMachine ignora macchine sconosciute e target con machine fissata', () => {
+  const free = startSession(cardioProgram(600), emptyState(), 'D', at(T0));
+  assert.equal(setMachine(free, 'corsa', 0, 'ellittica'), free);
+  const fixed = startSession(cardioProgram(600, 'cyclette'), emptyState(), 'D', at(T0));
+  assert.equal(setMachine(fixed, 'corsa', 0, 'camminata'), fixed);
 });
