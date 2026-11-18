@@ -624,3 +624,13 @@ test('startSession cardio: machine fissata in scheda vince sull\'ultima usata', 
   assert.equal(session.entries.corsa[0].machine, 'cyclette');
   assert.equal(session.targets.corsa.machine, 'cyclette');
 });
+
+test('clampValue e stepValue: incline, power, cadence', () => {
+  assert.equal(clampValue('incline', 4.56), 4.6);
+  assert.equal(clampValue('incline', -1), 0);
+  assert.equal(clampValue('power', 121.4), 121);
+  assert.equal(clampValue('cadence', 84.6), 85);
+  assert.equal(stepValue('incline', 4, 1), 4.5);
+  assert.equal(stepValue('power', 100, 1), 105);
+  assert.equal(stepValue('cadence', 80, -1), 79);
+});

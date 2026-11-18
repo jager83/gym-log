@@ -4,7 +4,7 @@ import { isDone, round1 } from './metrics.js';
 export const EFFORTS = ['facile', 'giusta', 'dura'];
 export const EFFORT_LABELS = { facile: 'Facile', giusta: 'Giusta', dura: 'Dura' };
 export const DONE_EFFORT = 'fatto';
-export const STEPS = { weight: 0.5, reps: 1, duration: 5, distance: 0.1, level: 1, speed: 0.5 };
+export const STEPS = { weight: 0.5, reps: 1, duration: 5, distance: 0.1, level: 1, speed: 0.5, incline: 0.5, power: 5, cadence: 1 };
 export const REST_ADJUST_SECONDS = 15;
 export const REST_LIVE_GRACE_MS = 3000;
 
@@ -148,7 +148,7 @@ export const clampValue = (field, value) => {
   if (value === null || value === undefined || Number.isNaN(value)) return null;
   if (field === 'weight') return Math.max(0, Math.round(value * 2) / 2);
   if (field === 'distance') return Math.max(0, Math.round(value * 100) / 100);
-  if (field === 'speed') return Math.max(0, Math.round(value * 10) / 10);
+  if (field === 'speed' || field === 'incline') return Math.max(0, Math.round(value * 10) / 10);
   return Math.max(0, Math.round(value));
 };
 
