@@ -54,14 +54,22 @@ export const formatRange = ({ min, max }) => {
   return min === max ? `${min}` : `${min}-${max}`;
 };
 
+// Parti del riepilogo cardio per macchina; 'legacy': serie salvate prima della scelta macchina.
+const durationPart = ['duration', (value) => formatDuration(value)];
+const distancePart = ['distance', (value) => `${formatNumber(value, 2)} km`];
+const speedPart = ['speed', (value) => `${formatNumber(value)} km/h`];
+const CARDIO_PARTS = {
+  camminata: [durationPart, distancePart, speedPart, ['incline', (value) => `${formatNumber(value)}%`]],
+  cyclette: [durationPart, ['power', (value) => `${value} W`], ['cadence', (value) => `${value} rpm`]],
+  legacy: [durationPart, distancePart, ['level', (value) => `liv ${value}`], speedPart],
+};
+
 export const formatSet = (set, type) => {
   if (type === 'cardio') {
-    const parts = [];
-    if (set.duration !== undefined && set.duration !== null) parts.push(formatDuration(set.duration));
-    if (set.distance !== undefined && set.distance !== null) parts.push(`${formatNumber(set.distance, 2)} km`);
-    if (set.level !== undefined && set.level !== null) parts.push(`liv ${set.level}`);
-    if (set.speed !== undefined && set.speed !== null) parts.push(`${formatNumber(set.speed)} km/h`);
-    return parts.join(' · ');
+    return CARDIO_PARTS[set.machine ?? 'legacy']
+      .filter(([field]) => set[field] !== undefined && set[field] !== null)
+      .map(([field, format]) => format(set[field]))
+      .join(' · ');
   }
   if (type === 'time') return formatDuration(set.duration ?? 0);
   const reps = set.reps ?? '–';

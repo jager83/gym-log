@@ -92,3 +92,17 @@ test('formatElapsed: minuti interi, ore oltre i 60 minuti', () => {
   assert.equal(formatElapsed(3600 + 5 * 60), '1 h 05 min');
   assert.equal(formatElapsed(-10), '0 min');
 });
+
+test('formatSet cardio camminata: durata, km, km/h, pendenza', () => {
+  assert.equal(
+    formatSet({ machine: 'camminata', duration: 600, distance: 1.2, speed: 6.5, incline: 4.5, power: 100 }, 'cardio'),
+    '10:00 · 1,2 km · 6,5 km/h · 4,5%',
+  );
+});
+
+test('formatSet cardio cyclette: durata, W, rpm, senza i campi della camminata', () => {
+  assert.equal(
+    formatSet({ machine: 'cyclette', duration: 900, distance: 1.2, power: 120, cadence: 85 }, 'cardio'),
+    '15:00 · 120 W · 85 rpm',
+  );
+});
