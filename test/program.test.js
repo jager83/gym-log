@@ -306,7 +306,7 @@ test('loadProgram', async () => {
   await assert.rejects(loadProgram(offline), { message: 'Serve la connessione al primo avvio' });
 });
 
-test('data/program.json spedito: scheda reale, riscaldamento senza recupero, cardio, sides:2, MAX e assistenza', () => {
+test('data/program.json spedito: scheda reale, riscaldamento senza recupero, cardio, sides:2 e MAX', () => {
   const raw = JSON.parse(readFileSync(new URL('../data/program.json', import.meta.url), 'utf8'));
   const shipped = normalizeProgram(raw);
   const blocks = allBlocks(shipped);
@@ -318,10 +318,10 @@ test('data/program.json spedito: scheda reale, riscaldamento senza recupero, car
   assert.ok(warmups.every((block) => block.rest === 0), 'il riscaldamento non ha recupero');
   assert.ok(exercises.some((exercise) => exercise.type === 'cardio'), 'manca un esercizio cardio');
   assert.ok(exercises.some((exercise) => exercise.sides === 2), 'manca un esercizio a due lati');
-  assert.deepEqual(findExercise(shipped, 'piegamenti').reps, { min: 1, max: null });
+  assert.deepEqual(findExercise(shipped, 'addome-panca-declinata').reps, { min: 1, max: null });
   assert.deepEqual(findExercise(shipped, 'plank').duration, { min: 1, max: null });
-  assert.equal(findExercise(shipped, 'trazioni-assistite').assisted, true);
   assert.equal(findExercise(shipped, 'riscaldamento-cardio').duration.max, 300);
+  assert.equal('machine' in findExercise(shipped, 'riscaldamento-cardio'), false);
   exercises.forEach((exercise) => {
     assert.ok(typeof exercise.description === 'string' && exercise.description !== '', `${exercise.id}: description mancante`);
     assert.ok(Array.isArray(exercise.steps) && exercise.steps.length > 0, `${exercise.id}: steps mancanti`);
@@ -379,4 +379,33 @@ test('archivio: index.json elenca schede con file esistenti e program-v1.json è
   const archived = parseProgram(readFileSync(new URL(`../data/archive/${v1.file}`, import.meta.url), 'utf8'));
   assert.equal(archived.name, 'Scheda settembre 2026');
   assert.ok(findExercise(archived, 'goblet-squat-alzata'));
+});
+
+const idsOf = (workout) => workout.blocks.map((block) => block.exercises.map((exercise) => exercise.id).join('+'));
+
+test('data/program.json spedito: scheda novembre 2026, versione 2, esercizi e serie della programmazione', () => {
+  const shipped = parseProgram(readFileSync(new URL('../data/program.json', import.meta.url), 'utf8'));
+  assert.equal(shipped.version, 2);
+  assert.equal(shipped.name, 'Scheda novembre 2026');
+  assert.equal(shipped.from, '2026-11-18');
+  const [day1, day2, day3] = shipped.workouts;
+  assert.deepEqual(idsOf(day1), [
+    'riscaldamento-cardio', 'mobilita-anca-1', 'mobilita-anca-2', 'squat-landmine-alzata', 'lat-machine-doppia-maniglia',
+    'curl-panca-60+alzate-laterali-panca-60', 'pushdown-fune+hammer-curl',
+  ]);
+  assert.deepEqual(idsOf(day2), [
+    'riscaldamento-cardio', 'mobilita-spalla-extra', 'mobilita-spalla-intra', 'panca-piana-manubri', 'panca-30-manubri',
+    'pulley-triangolo', 'french-press-singola+curl-bilanciere-sagomato',
+  ]);
+  assert.deepEqual(idsOf(day3), ['spinning', 'stacco-hexbar', 'rematore-tbar', 'chest-press-piastre', 'addome-panca-declinata+plank']);
+  assert.equal(findExercise(shipped, 'spinning').machine, 'cyclette');
+  assert.deepEqual(findExercise(shipped, 'spinning').duration, { min: 900, max: 900 });
+  assert.deepEqual(findExercise(shipped, 'squat-landmine-alzata').reps, { min: 6, max: 8 });
+  assert.equal(findExercise(shipped, 'pushdown-fune').sets, 2);
+  assert.equal(findExercise(shipped, 'pulley-triangolo').sets, 2);
+  assert.deepEqual(findExercise(shipped, 'curl-bilanciere-sagomato').reps, { min: 8, max: 10 });
+  assert.equal(findExercise(shipped, 'french-press-singola').sides, 2);
+  assert.equal(findExercise(shipped, 'panca-piana-manubri').load, 'per-dumbbell');
+  assert.equal(day1.blocks[5].rest, 60);
+  assert.equal(day3.blocks[4].rest, 120);
 });

@@ -33,7 +33,7 @@ Ogni task di codice: test prima (visto fallire), codice minimo, `npm test` verde
 
 ## 5. Scheda novembre 2026
 
-- [ ] 5.1 RED: in `test/program.test.js` "data/program.json è version 2, name 'Scheda novembre 2026', from '2026-11-18', ha gli id della tabella in design §7 per Giorno 1/2/3 e spinning con machine cyclette"; fallisce sulla versione. GREEN: riscrivere `data/program.json` secondo la tabella di design §7 (serie, ripetizioni, recuperi al minimo dell'intervallo, superserie come blocchi a due esercizi, `load` e `sides` come indicato, testi `description`/`steps`/`tips` dal PDF e nello stile v1). Verifica anche che `test/fixtures.js` e i test che leggono la scheda reale restino verdi.
+- [x] 5.1 RED: in `test/program.test.js` "data/program.json è version 2, name 'Scheda novembre 2026', from '2026-11-18', ha gli id della tabella in design §7 per Giorno 1/2/3 e spinning con machine cyclette"; fallisce sulla versione. GREEN: riscrivere `data/program.json` secondo la tabella di design §7 (serie, ripetizioni, recuperi al minimo dell'intervallo, superserie come blocchi a due esercizi, `load` e `sides` come indicato, testi `description`/`steps`/`tips` dal PDF e nello stile v1). Verifica anche che `test/fixtures.js` e i test che leggono la scheda reale restino verdi.
 - [ ] 5.2 Esercizi tolti. Verifica con un test in `test/history.test.js`: con una sessione v1 che contiene `goblet-squat-alzata` e la scheda v2, `retiredExercises` lo elenca e `pulley-triangolo` resta in scheda con lo storico v1.
 
 ## 6. Verifica finale
