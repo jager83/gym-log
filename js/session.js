@@ -33,6 +33,15 @@ export const lastDoneSets = (sessions, exerciseId) => {
   return null;
 };
 
+// Macchina dell'ultima serie cardio fatta che ne ha una (le serie salvate prima non ce l'hanno).
+const lastMachine = (sessions, exerciseId) => {
+  for (let index = sessions.length - 1; index >= 0; index -= 1) {
+    const set = sessions[index].entries[exerciseId]?.find((item) => isDone(item) && item.machine);
+    if (set) return set.machine;
+  }
+  return null;
+};
+
 // Serie da cui precompilare l'indice setIndex: stessa posizione se fatta; altrimenti l'ultima
 // fatta con indice minore; se non ce n'è, la prima fatta con indice maggiore; oltre la
 // lunghezza di previous, l'ultima serie fatta.
@@ -54,9 +63,10 @@ export const sourceSet = (previous, setIndex) => {
   return null;
 };
 
-const prefillSet = (exercise, previous, setIndex) => {
+const prefillSet = (exercise, previous, setIndex, machine) => {
   if (exercise.type === 'cardio') {
-    return { duration: exercise.duration?.max ?? null, distance: null, level: null, speed: null, effort: null };
+    const duration = exercise.duration?.max ?? null;
+    return { machine, duration, distance: null, speed: null, incline: null, power: null, cadence: null, effort: null };
   }
   const source = sourceSet(previous, setIndex);
   const key = countKey(exercise.type);
@@ -81,7 +91,8 @@ export const startSession = (program, state, workoutId, now) => {
       const key = countKey(exercise.type);
       targets[id] = { ...target, [key]: exercise[key] ? { ...exercise[key] } : null };
       const previous = lastDoneSets(state.sessions, id);
-      entries[id] = Array.from({ length: exercise.sets }, (_, setIndex) => prefillSet(exercise, previous, setIndex));
+      const machine = exercise.type === 'cardio' ? exercise.machine ?? lastMachine(state.sessions, id) ?? 'camminata' : null;
+      entries[id] = Array.from({ length: exercise.sets }, (_, setIndex) => prefillSet(exercise, previous, setIndex, machine));
     });
   });
 

@@ -36,7 +36,7 @@ const T1 = '2026-09-27T19:00:00.000Z';
 
 // Programma minimale con un esercizio cardio, usato solo per i test cardio: non tocca la
 // fixture condivisa program() per non alterare le rotazioni di nextWorkoutId negli altri test.
-const cardioProgram = (duration) => normalizeProgram({
+const cardioProgram = (duration, machine) => normalizeProgram({
   version: 1,
   defaultSets: 1,
   defaultRest: 60,
@@ -44,7 +44,7 @@ const cardioProgram = (duration) => normalizeProgram({
     {
       id: 'D',
       name: 'Cardio',
-      blocks: [{ exercises: [{ id: 'corsa', name: 'Corsa', type: 'cardio', sets: 1, ...(duration !== undefined ? { duration } : {}) }] }],
+      blocks: [{ exercises: [{ id: 'corsa', name: 'Corsa', type: 'cardio', sets: 1, ...(duration !== undefined ? { duration } : {}), ...(machine ? { machine } : {}) }] }],
     },
   ],
 });
@@ -128,11 +128,11 @@ test('startSession precompila il tempo dal massimo del range', () => {
 
 test('startSession precompila cardio: duration dal max del target (o null se assente), altri campi vuoti', () => {
   const withDuration = startSession(cardioProgram({ min: 600, max: 1500 }), emptyState(), 'D', at(T0)).activeSession;
-  assert.deepEqual(withDuration.entries.corsa[0], { duration: 1500, distance: null, level: null, speed: null, effort: null });
+  assert.deepEqual(withDuration.entries.corsa[0], { machine: 'camminata', duration: 1500, distance: null, speed: null, incline: null, power: null, cadence: null, effort: null });
   assert.equal(withDuration.targets.corsa.duration.max, 1500);
 
   const withoutDuration = startSession(cardioProgram(), emptyState(), 'D', at(T0)).activeSession;
-  assert.deepEqual(withoutDuration.entries.corsa[0], { duration: null, distance: null, level: null, speed: null, effort: null });
+  assert.deepEqual(withoutDuration.entries.corsa[0], { machine: 'camminata', duration: null, distance: null, speed: null, incline: null, power: null, cadence: null, effort: null });
   assert.equal(withoutDuration.targets.corsa.duration, null);
 });
 
@@ -598,4 +598,29 @@ test('setBodyWeight arrotonda a 0,1 kg, accetta null e riporta a null valori non
   assert.equal(setBodyWeight(emptyState(), -5).settings.bodyWeight, null);
   assert.equal(setBodyWeight(emptyState(), Number.NaN).settings.bodyWeight, null);
   assert.equal(setBodyWeight(emptyState(), undefined).settings.bodyWeight, null);
+});
+
+const pastCorsa = (...sets) => ({
+  ...emptyState(),
+  sessions: sets.map((set, index) => ({ id: `s${index}`, workoutId: 'D', endedAt: `2026-10-0${index + 1}T18:00:00.000Z`, entries: { corsa: [set] }, targets: {} })),
+});
+
+test('startSession cardio: macchina dall\'ultima serie fatta con machine', () => {
+  const state = pastCorsa(
+    { machine: 'cyclette', duration: 600, effort: 'giusta' },
+    { duration: 600, distance: 1, level: 3, speed: 6, effort: 'giusta' },
+  );
+  assert.equal(startSession(cardioProgram(), state, 'D', at(T0)).activeSession.entries.corsa[0].machine, 'cyclette');
+});
+
+test('startSession cardio: serie non fatte non contano per la macchina', () => {
+  const state = pastCorsa({ machine: 'cyclette', duration: 600, effort: null });
+  assert.equal(startSession(cardioProgram(), state, 'D', at(T0)).activeSession.entries.corsa[0].machine, 'camminata');
+});
+
+test('startSession cardio: machine fissata in scheda vince sull\'ultima usata', () => {
+  const state = pastCorsa({ machine: 'camminata', duration: 600, effort: 'giusta' });
+  const session = startSession(cardioProgram(900, 'cyclette'), state, 'D', at(T0)).activeSession;
+  assert.equal(session.entries.corsa[0].machine, 'cyclette');
+  assert.equal(session.targets.corsa.machine, 'cyclette');
 });
