@@ -18,9 +18,12 @@ export const FIELD_LABELS = {
   distance: 'distanza',
   level: 'livello',
   speed: 'velocità',
+  incline: 'pendenza',
+  power: 'potenza',
+  cadence: 'cadenza',
 };
 
-const DECIMAL_FIELDS = ['weight', 'distance', 'speed'];
+const DECIMAL_FIELDS = ['weight', 'distance', 'speed', 'incline'];
 
 // La distanza si salva a 2 decimali (clampValue), gli altri campi al massimo a 1. La durata cardio
 // si mostra in m:ss (il valore resta in secondi nello storage).
@@ -33,8 +36,11 @@ const UNITS = {
   weight: 'kg × rip',
   bodyweight: 'zavorra kg × rip',
   time: 'secondi',
-  cardio: 's · km · liv · km/h',
+  cardio: 'camminata o cyclette',
 };
+
+// Unità della riga cardio quando la scheda fissa la macchina.
+const MACHINE_UNITS = { camminata: 'min · km · km/h · %', cyclette: 'min · W · rpm' };
 
 // Unità mostrata sopra il singolo stepper (−/+), per campo e tipo di esercizio.
 const unitLabelOf = (field, target) => {
@@ -44,6 +50,9 @@ const unitLabelOf = (field, target) => {
   if (field === 'distance') return 'km';
   if (field === 'level') return 'liv';
   if (field === 'speed') return 'km/h';
+  if (field === 'incline') return '%';
+  if (field === 'power') return 'W';
+  if (field === 'cadence') return 'rpm';
   return '';
 };
 
@@ -79,6 +88,7 @@ const baseUnits = (target) => {
   if (target.type === 'weight' && target.assisted) return 'assistenza kg × rip';
   if (target.type === 'weight' && target.load === 'per-dumbbell') return 'kg a manubrio × rip';
   if (isUnloadedBodyweight(target)) return 'rip';
+  if (target.type === 'cardio' && target.machine) return MACHINE_UNITS[target.machine];
   return UNITS[target.type];
 };
 
@@ -148,16 +158,23 @@ const weightLabelOf = (target) => {
   return target.load === 'per-dumbbell' ? 'peso a manubrio' : FIELD_LABELS.weight;
 };
 
+// Campi cardio per macchina della serie; 'legacy': serie salvate prima della scelta macchina.
+const CARDIO_FIELDS = {
+  camminata: ['duration', 'distance', 'speed', 'incline'],
+  cyclette: ['duration', 'power', 'cadence'],
+  legacy: ['duration', 'distance', 'level', 'speed'],
+};
+
 // Campi di una serie, nell'ordine mostrato: [campo, etichetta accessibile].
-export const setFields = (target) => {
+export const setFields = (target, set = {}) => {
   if (target.type === 'time') return [['duration', FIELD_LABELS.duration]];
-  if (target.type === 'cardio') return ['duration', 'distance', 'level', 'speed'].map((field) => [field, FIELD_LABELS[field]]);
+  if (target.type === 'cardio') return CARDIO_FIELDS[set.machine ?? 'legacy'].map((field) => [field, FIELD_LABELS[field]]);
   if (isUnloadedBodyweight(target)) return [['reps', FIELD_LABELS.reps]];
   return [['weight', weightLabelOf(target)], ['reps', FIELD_LABELS.reps]];
 };
 
 // `name` già escapato. L'esito (colore del numero) vale solo per il campo di conteggio.
-export const fieldsHtml = (target, set, name, setNumber, fields = setFields(target)) => {
+export const fieldsHtml = (target, set, name, setNumber, fields = setFields(target, set)) => {
   const key = countKey(target.type);
   const outcome = outcomeOf(set, target);
   return fields

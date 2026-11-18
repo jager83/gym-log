@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   adviceHtml,
+  fieldsHtml,
   focusTargetText,
   formatFieldValue,
   hasExerciseTexts,
@@ -24,7 +25,9 @@ test('targetText: righe della lista per tipo, per lato e cardio senza obiettivo'
   assert.equal(unitsText(plank), 'secondi per lato');
   assert.equal(targetText(cardio), '1 × 20-30 min');
   assert.equal(targetText(cardioFree), '1 serie');
-  assert.equal(unitsText(cardio), 's · km · liv · km/h');
+  assert.equal(unitsText(cardio), 'camminata o cyclette');
+  assert.equal(unitsText({ ...cardio, machine: 'cyclette' }), 'min · W · rpm');
+  assert.equal(unitsText({ ...cardio, machine: 'camminata' }), 'min · km · km/h · %');
   assert.equal(unitsText({ ...weight, load: 'per-dumbbell' }), 'kg a manubrio × rip');
 });
 
@@ -133,4 +136,22 @@ test('outcomeSlotHtml: chip solo per serie fatte con un range; vuoto per non fat
   assert.equal(outcomeSlotHtml({ weight: 60, reps: 9, effort: null }, weight), '<span class="outcome-slot" data-outcome-slot></span>');
   assert.doesNotMatch(outcomeSlotHtml({ reps: 30, effort: 'giusta' }, { type: 'bodyweight', reps: { min: 1, max: null } }), /chip/);
   assert.doesNotMatch(outcomeSlotHtml({ duration: 600, effort: 'giusta' }, { type: 'cardio', duration: { min: 300, max: 300 } }), /chip/);
+});
+
+test('setFields cardio: campi secondo la macchina della serie, legacy senza macchina', () => {
+  const fieldsOf = (set) => setFields(cardio, set).map(([field]) => field);
+  assert.deepEqual(fieldsOf({ machine: 'camminata' }), ['duration', 'distance', 'speed', 'incline']);
+  assert.deepEqual(fieldsOf({ machine: 'cyclette' }), ['duration', 'power', 'cadence']);
+  assert.deepEqual(fieldsOf({}), ['duration', 'distance', 'level', 'speed']);
+});
+
+test('fieldsHtml cardio: unità %, W e rpm e pendenza decimale', () => {
+  const walk = fieldsHtml(cardio, { machine: 'camminata', duration: 600, incline: 4.5 }, 'Corsa', 1);
+  assert.match(walk, /stepper-field__unit" aria-hidden="true">%</);
+  assert.match(walk, /inputmode="decimal"[^>]*value="4,5" data-field="incline" aria-label="pendenza Corsa serie 1"/);
+  const bike = fieldsHtml(cardio, { machine: 'cyclette', duration: 900, power: 120, cadence: 85 }, 'Corsa', 1);
+  assert.match(bike, />W</);
+  assert.match(bike, />rpm</);
+  assert.match(bike, /value="120" data-field="power" aria-label="potenza Corsa serie 1"/);
+  assert.doesNotMatch(bike, /data-field="distance"/);
 });

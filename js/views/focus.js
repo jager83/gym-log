@@ -142,7 +142,7 @@ const controlsHtml = (session, settings, exerciseId, setIndex, name, now) => {
   }
 
   if (target.type === 'cardio') {
-    const extraFields = setFields(target).filter(([field]) => field !== 'duration');
+    const extraFields = setFields(target, set).filter(([field]) => field !== 'duration');
     const panel = timed
       ? timerPanelHtml(timerText(session, now), '', true)
       : timerPanelHtml(formatDuration(set.duration ?? 0), '', false);
