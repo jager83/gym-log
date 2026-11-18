@@ -146,3 +146,23 @@ test('listHtml: link "Schede precedenti" solo con archivio non vuoto', () => {
   assert.match(listHtml(p, [], true), /href="#\/archive"[^>]*>.*Schede precedenti/s);
   assert.doesNotMatch(listHtml(p, [], false), /Schede precedenti/);
 });
+
+test('cambio scheda: esercizi tolti in "Non più in scheda", quelli con lo stesso id mantengono lo storico', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { parseProgram } = await import('../js/program.js');
+  const { exerciseHistory, retiredExercises } = await import('../js/metrics.js');
+  const read = (path) => parseProgram(readFileSync(new URL(path, import.meta.url), 'utf8'));
+  const v1 = read('../data/archive/program-v1.json');
+  const v2 = read('../data/program.json');
+  const { playSession, emptyState } = await import('./helpers.js');
+  const state = playSession(v1, emptyState(), 'A', {
+    'goblet-squat-alzata': [{ weight: 20, effort: 'giusta' }],
+  }, '2026-11-10T18:00:00.000Z', '2026-11-10T19:00:00.000Z');
+  const withPulley = playSession(v1, state, 'B', {
+    'pulley-triangolo': [{ weight: 40, effort: 'giusta' }],
+  }, '2026-11-12T18:00:00.000Z', '2026-11-12T19:00:00.000Z');
+  const retired = retiredExercises(v2, withPulley.sessions).map((item) => item.id);
+  assert.ok(retired.includes('goblet-squat-alzata'));
+  assert.ok(!retired.includes('pulley-triangolo'));
+  assert.equal(exerciseHistory(withPulley.sessions, 'pulley-triangolo').length, 1);
+});
