@@ -1,4 +1,4 @@
-import { CATEGORIES, EXERCISE_TYPES, LOAD_VALUES, PHASES, countKey, isTextArray } from './program.js';
+import { CARDIO_MACHINES, CATEGORIES, EXERCISE_TYPES, LOAD_VALUES, PHASES, countKey, isTextArray } from './program.js';
 import { DONE_EFFORT, EFFORTS } from './session.js';
 
 export const STORAGE_KEY = 'gym-log';
@@ -65,6 +65,7 @@ const isOptionalTargetCopy = (target) =>
   (target.category === undefined || CATEGORIES.includes(target.category)) &&
   (target.sides === undefined || target.sides === 1 || target.sides === 2) &&
   isOptionalBoolean(target.assisted) &&
+  isOptionalMachine(target.machine) &&
   (target.description === undefined || typeof target.description === 'string') &&
   (target.steps === undefined || isTextArray(target.steps)) &&
   (target.tips === undefined || isTextArray(target.tips));
@@ -86,6 +87,8 @@ const isOptionalPositiveNumber = (value) =>
 
 const isOptionalNonNegativeInt = (value) => value === null || value === undefined || isCount(value);
 
+const isOptionalMachine = (value) => value === undefined || CARDIO_MACHINES.includes(value);
+
 const isOptionalBoolean = (value) => value === undefined || typeof value === 'boolean';
 
 const isValidEffort = (value) => value === null || EFFORTS.includes(value) || value === DONE_EFFORT;
@@ -93,7 +96,8 @@ const isValidEffort = (value) => value === null || EFFORTS.includes(value) || va
 const isSet = (set) =>
   isObject(set) &&
   isValidEffort(set.effort) &&
-  ['weight', 'reps', 'duration', 'distance', 'speed'].every((field) => isOptionalNumber(set[field])) &&
+  ['weight', 'reps', 'duration', 'distance', 'speed', 'incline', 'power', 'cadence'].every((field) => isOptionalNumber(set[field])) &&
+  isOptionalMachine(set.machine) &&
   isOptionalNonNegativeInt(set.level);
 
 const isSetList = (setList, target) =>

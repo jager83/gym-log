@@ -585,3 +585,24 @@ test('backward compat: backup vecchio senza category, sides, testi, phase e time
   assert.equal('timer' in old.activeSession, false);
   assert.doesNotThrow(() => importState(JSON.stringify(old)));
 });
+
+const withCorsaSet = (set) => withCardioActive((session) => ({ ...session, entries: { ...session.entries, corsa: [set] } }));
+
+test('importState accetta serie cardio con machine, incline, power, cadence', () => {
+  const walk = { machine: 'camminata', duration: 600, distance: 1.2, speed: 6.5, incline: 4.5, effort: 'giusta' };
+  const bike = { machine: 'cyclette', duration: 900, power: 120, cadence: 85, effort: 'giusta' };
+  assert.equal(importState(withCorsaSet(walk)).activeSession.entries.corsa[0].incline, 4.5);
+  assert.equal(importState(withCorsaSet(bike)).activeSession.entries.corsa[0].power, 120);
+});
+
+test('importState rifiuta machine sconosciuta o campi cardio nuovi non numerici', () => {
+  assert.throws(() => importState(withCorsaSet({ machine: 'ellittica', duration: 600, effort: null })), isStoreError('activeSession non valida'));
+  assert.throws(() => importState(withCorsaSet({ machine: 'cyclette', duration: 600, power: 'x', effort: null })), isStoreError('activeSession non valida'));
+});
+
+test('importState accetta target cardio con machine copiata dalla scheda', () => {
+  const text = withCardioActive((session) => ({ ...session, targets: { corsa: { ...session.targets.corsa, machine: 'cyclette' } } }));
+  assert.equal(importState(text).activeSession.targets.corsa.machine, 'cyclette');
+  const bad = withCardioActive((session) => ({ ...session, targets: { corsa: { ...session.targets.corsa, machine: 'x' } } }));
+  assert.throws(() => importState(bad), isStoreError('activeSession non valida'));
+});
