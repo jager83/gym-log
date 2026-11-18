@@ -1,0 +1,55 @@
+schema: spec-driven
+
+context: |
+  Language: it
+  All artifacts must be written in it.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+  Stack: PWA statica in HTML, CSS e JavaScript Vanilla ES modules, senza framework né dipendenze.
+  Dati in localStorage (js/store.js, schemaVersion con migrazioni), scheda in data/program.json
+  (js/program.js), service worker sw.js con CACHE_VERSION da incrementare a ogni deploy.
+  Test: node --test (cartella test/). Server locale: npm run serve.
+  Spec storiche superpowers in docs/superpowers/specs.
+  Flusso di sviluppo, solo per questo progetto: OpenSpec pianifica e archivia, superpowers sviluppa in TDD.
+  Esplorare con /opsx:explore, non superpowers:brainstorming. Il piano è tasks.md: niente superpowers:writing-plans né ledger in .superpowers/.
+  Ogni task di codice: test scritto prima e visto fallire, codice minimo, commit, checkbox in tasks.md.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
+
+rules:
+  tasks:
+    - Ogni task di codice nomina il test da scrivere per primo (file e caso) e il fallimento atteso, poi l'implementazione minima.
+    - Un task = un ciclo RED, GREEN, commit. Task piccoli e indipendenti, in ordine di dipendenza.
+    - Task senza codice testabile (configurazione, deploy, verifica manuale) dicono come si verifica l'esito.
+    - Ultimo gruppo di task - verifica finale (`npm test` verde, prova reale) e code review.
+
+operations:
+  apply:
+    guidance:
+      - Sviluppa con superpowers:test-driven-development - test prima, vederlo fallire, poi codice.
+      - Esegui con superpowers:executing-plans (inline) o superpowers:subagent-driven-development; il piano è tasks.md, non scrivere altri piani né ledger.
+      - Spunta la checkbox in tasks.md subito dopo il commit del task.
+      - Prima di dichiarare finito - superpowers:verification-before-completion e superpowers:requesting-code-review.
+  archive:
+    guidance:
+      - Archivia solo con tutte le checkbox spuntate e `npm test` verde.
+      - Sincronizza i delta in openspec/specs prima di spostare il change in archive.
