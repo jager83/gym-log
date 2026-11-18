@@ -134,3 +134,9 @@ test('insightsHtml: escape del testo e del nome, link solo con linked ed exercis
   assert.match(html, /href="#\/history\/a%20b"><strong>&lt;n&gt;<\/strong> &lt;x&gt;<\/a>/);
   assert.match(html, /insight--neutral"><span class="insight__dot" aria-hidden="true"><\/span><span>Giorno 3 non ancora fatto<\/span>/);
 });
+
+test('logSetHtml: cardio su cyclette mostra watt e cadenza', () => {
+  const item = { type: 'cardio', category: 'forza', target: null, sets: [] };
+  const html = logSetHtml({ machine: 'cyclette', duration: 900, power: 120, cadence: 85, effort: 'giusta' }, item);
+  assert.match(html, /15:00 · 120 W · 85 rpm/);
+});
