@@ -9,6 +9,7 @@ import { renderFocus } from './views/focus.js';
 import { renderHistory } from './views/history.js';
 import { renderDays } from './views/days.js';
 import { renderProgress } from './views/progress.js';
+import { renderArchive } from './views/archive.js';
 import { renderPreview } from './views/preview.js';
 
 const NOTICE_MS = 4000;
@@ -112,6 +113,7 @@ const startRouter = (root, ctx) => {
     else if (view === 'history') cleanup = renderHistory(root, ctx, param ? decodeURIComponent(param) : null);
     else if (view === 'days') cleanup = renderDays(root, ctx, param ? decodeURIComponent(param) : null);
     else if (view === 'progress') cleanup = renderProgress(root, ctx);
+    else if (view === 'archive') cleanup = renderArchive(root, ctx, param ? Number(param) : null);
     else cleanup = renderHome(root, ctx);
     window.scrollTo(0, 0);
   };

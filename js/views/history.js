@@ -8,6 +8,7 @@ import { outcomeClass, outcomeOf } from './controls.js';
 import { escapeHtml, formatDate, formatDay, formatSet } from '../format.js';
 import { checkSvg, chevronLeftSvg, exerciseTypeSvg } from './icons.js';
 import { confirmDialog } from './modal.js';
+import { loadArchiveIndex } from '../archive.js';
 
 // Condiviso con days.js (stessa intestazione "pagina con freccia indietro").
 export const headerHtml = (title, backHash, backLabel) => `
@@ -16,7 +17,7 @@ export const headerHtml = (title, backHash, backLabel) => `
     <h1>${escapeHtml(title)}</h1>
   </header>`;
 
-const listHtml = (program, sessions) => {
+export const listHtml = (program, sessions, hasArchive = false) => {
   const itemHtml = ({ id, name }) => {
     const last = exerciseHistory(sessions, id).at(-1);
     const type = findExercise(program, id)?.type ?? last?.type;
@@ -41,6 +42,7 @@ const listHtml = (program, sessions) => {
   const daysLink = `
     <ul class="history__list history__days">
       <li><a class="history__item" href="#/days"><span>Giornate</span></a></li>
+      ${hasArchive ? '<li><a class="history__item" href="#/archive"><span>Schede precedenti</span></a></li>' : ''}
     </ul>`;
   const deleteAll = sessions.length
     ? `<div class="days__actions"><button type="button" class="button button--danger" data-action="delete-all">Elimina tutto lo storico</button></div>`
@@ -177,10 +179,21 @@ export const detailHtml = (program, sessions, exerciseId, selected = 'main', now
 
 export const renderHistory = (root, ctx, exerciseId) => {
   let metric = 'main';
+  let hasArchive = false;
+  let active = true;
   const draw = () => {
     const { sessions } = ctx.getState();
-    root.innerHTML = exerciseId ? detailHtml(ctx.program, sessions, exerciseId, metric, new Date()) : listHtml(ctx.program, sessions);
+    root.innerHTML = exerciseId ? detailHtml(ctx.program, sessions, exerciseId, metric, new Date()) : listHtml(ctx.program, sessions, hasArchive);
   };
+  // Il link all'archivio compare quando l'indice risulta non vuoto; senza archivio nessun errore.
+  if (!exerciseId) {
+    loadArchiveIndex()
+      .then((index) => {
+        hasArchive = index.length > 0;
+        if (active && hasArchive) draw();
+      })
+      .catch(() => {});
+  }
 
   const confirmDeleteAll = async () => {
     const { sessions } = ctx.getState();
@@ -209,5 +222,8 @@ export const renderHistory = (root, ctx, exerciseId) => {
 
   draw();
   root.addEventListener('click', onClick);
-  return () => root.removeEventListener('click', onClick);
+  return () => {
+    active = false;
+    root.removeEventListener('click', onClick);
+  };
 };

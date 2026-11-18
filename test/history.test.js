@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeProgram } from '../js/program.js';
-import { chartViews, detailHtml, historyMetricLabel, insightsHtml, logSetHtml } from '../js/views/history.js';
+import { chartViews, detailHtml, historyMetricLabel, insightsHtml, listHtml, logSetHtml } from '../js/views/history.js';
 
 const item = (fields) => ({ type: 'weight', category: 'forza', target: { min: 8, max: 10 }, ...fields });
 
@@ -139,4 +139,10 @@ test('logSetHtml: cardio su cyclette mostra watt e cadenza', () => {
   const item = { type: 'cardio', category: 'forza', target: null, sets: [] };
   const html = logSetHtml({ machine: 'cyclette', duration: 900, power: 120, cadence: 85, effort: 'giusta' }, item);
   assert.match(html, /15:00 · 120 W · 85 rpm/);
+});
+
+test('listHtml: link "Schede precedenti" solo con archivio non vuoto', () => {
+  const p = normalizeProgram({ workouts: [{ id: 'A', name: 'A', blocks: [{ exercises: [{ id: 'x', name: 'X', type: 'weight', reps: 8 }] }] }] });
+  assert.match(listHtml(p, [], true), /href="#\/archive"[^>]*>.*Schede precedenti/s);
+  assert.doesNotMatch(listHtml(p, [], false), /Schede precedenti/);
 });
