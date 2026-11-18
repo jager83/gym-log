@@ -10,6 +10,7 @@ const SHELL = [
   'data/program.json',
   'js/advice.js',
   'js/app.js',
+  'js/archive.js',
   'js/chart.js',
   'js/device.js',
   'js/focus.js',
