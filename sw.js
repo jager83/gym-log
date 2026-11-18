@@ -1,6 +1,6 @@
 // Incrementa CACHE_VERSION a ogni deploy (codice o scheda): la nuova versione
 // si scarica in background e si attiva alla successiva riapertura dell'app.
-const CACHE_VERSION = 'gym-log-v14';
+const CACHE_VERSION = 'gym-log-v15';
 
 const SHELL = [
   './',
@@ -8,6 +8,8 @@ const SHELL = [
   'manifest.webmanifest',
   'css/main.css',
   'data/program.json',
+  'data/archive/index.json',
+  'data/archive/program-v1.json',
   'js/advice.js',
   'js/app.js',
   'js/archive.js',

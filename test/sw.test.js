@@ -32,3 +32,10 @@ test('ogni font in fonts/ è in SHELL', () => {
 test('CACHE_VERSION è definita', () => {
   assert.match(source, /const CACHE_VERSION = 'gym-log-v\d+';/);
 });
+
+test('l\'indice dell\'archivio e ogni scheda archiviata sono in SHELL', () => {
+  const index = JSON.parse(readFileSync(new URL('data/archive/index.json', root), 'utf8'));
+  ['data/archive/index.json', ...index.map((entry) => `data/archive/${entry.file}`)].forEach((path) =>
+    assert.ok(shell.includes(path), `manca in SHELL: ${path}`),
+  );
+});
