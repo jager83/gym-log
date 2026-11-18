@@ -22,6 +22,7 @@ const SHELL = [
   'js/session.js',
   'js/store.js',
   'js/timer.js',
+  'js/views/archive.js',
   'js/views/controls.js',
   'js/views/days.js',
   'js/views/faces.js',

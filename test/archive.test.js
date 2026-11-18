@@ -26,3 +26,29 @@ test('loadArchivedProgram carica il file della voce dall\'archivio', async () =>
   assert.equal(requested, 'data/archive/program-v1.json');
   assert.equal(archived.workouts.length, 3);
 });
+
+import { archiveErrorHtml, archiveListHtml, archivedProgramHtml } from '../js/views/archive.js';
+import { program } from './fixtures.js';
+
+test('archiveListHtml elenca nome e periodo con il link alla versione', () => {
+  const html = archiveListHtml([entry]);
+  assert.match(html, /href="#\/archive\/1"/);
+  assert.match(html, /Scheda settembre 2026/);
+  assert.match(html, /27\/09\/2026 – 17\/11\/2026/);
+  assert.match(html, /href="#\/history"/);
+});
+
+test('archivedProgramHtml mostra tutti gli allenamenti con recuperi, in sola lettura', () => {
+  const html = archivedProgramHtml(entry, program());
+  ['Allenamento A', 'Allenamento B', 'Allenamento C', 'Panca piana', 'Curl', 'Plank'].forEach((text) => assert.match(html, new RegExp(text)));
+  assert.match(html, /Recupero 120 s/);
+  assert.match(html, /Superset/);
+  assert.doesNotMatch(html, /Inizia|data-action="begin"|#\/focus/);
+  assert.match(html, /href="#\/archive"/);
+});
+
+test('archiveErrorHtml: "Scheda non disponibile" con ritorno all\'elenco', () => {
+  const html = archiveErrorHtml();
+  assert.match(html, /Scheda non disponibile/);
+  assert.match(html, /href="#\/history"/);
+});
