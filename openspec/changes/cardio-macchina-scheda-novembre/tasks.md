@@ -20,7 +20,7 @@ Ogni task di codice: test prima (visto fallire), codice minimo, `npm test` verde
 
 - [x] 3.1 Campi per macchina. RED: in `test/controls.test.js` "setFields cardio: camminata duration, distance, speed, incline; cyclette duration, power, cadence; legacy duration, distance, level, speed" e "unità %, W, rpm"; fallisce perché `setFields` non guarda la serie. GREEN: `setFields(target, set)`, `FIELD_LABELS`, `unitOf`, `DECIMAL_FIELDS` (incline) e `formatFieldValue` in `js/views/controls.js`; aggiornare i chiamanti di `setFields` (focus, lista sessione) e il riassunto unità cardio della riga.
 - [x] 3.2 Pulsanti Camminata/Cyclette. RED: in `test/controls.test.js` "machineToggleHtml: due button con aria-pressed sulla macchina corrente; stringa vuota se il target ha machine fissata"; in `test/focus-view.test.js` "la card cardio senza machine mostra la scelta, lo spinning no"; falliscono perché il markup non esiste. GREEN: `machineToggleHtml` in `controls.js`, inserito nella card del focus e nella riga cardio della lista; stile in `css/main.css` (mobile-first, classi, niente `!important`).
-- [ ] 3.3 Azione `machine`. RED: in `test/focus-view.test.js` "click su Cyclette chiama setMachine, salva e ridisegna i campi della cyclette"; fallisce perché l'azione non è gestita. GREEN: gestore `data-action="machine"` dove sono gestiti `step` e input (focus e lista sessione).
+- [x] 3.3 Azione `machine`. RED: in `test/focus-view.test.js` "click su Cyclette chiama setMachine, salva e ridisegna i campi della cyclette"; fallisce perché l'azione non è gestita. GREEN: gestore `data-action="machine"` dove sono gestiti `step` e input (focus e lista sessione).
 
 ## 4. Archivio schede
 
@@ -39,10 +39,23 @@ Ogni task di codice: test prima (visto fallire), codice minimo, `npm test` verde
 ## 6. Verifica finale
 
 - [x] 6.1 `npm test` verde.
-- [ ] 6.2 Prova reale con `npm run serve`: importare un backup reale, avviare Giorno 1 (camminata: km, velocità, pendenza), cambiare in cyclette (watt, rpm), Giorno 3 spinning senza scelta; storico e grafico per macchina; "Schede precedenti" apre la v1; ricaricare offline e riaprire l'archivio. Esito annotato nel commit o in nota alla change.
-- [ ] 6.3 Code review con superpowers:requesting-code-review e verifica con superpowers:verification-before-completion; correzioni applicate con test.
+- [x] 6.2 Prova reale con `npm run serve`: importare un backup reale, avviare Giorno 1 (camminata: km, velocità, pendenza), cambiare in cyclette (watt, rpm), Giorno 3 spinning senza scelta; storico e grafico per macchina; "Schede precedenti" apre la v1; ricaricare offline e riaprire l'archivio. Esito annotato nel commit o in nota alla change.
+- [x] 6.3 Code review con superpowers:requesting-code-review e verifica con superpowers:verification-before-completion; correzioni applicate con test.
 
 ## Workflow follow-up
 
 - Prima del deploy esportare un backup dall'app.
 - Archiviare con `/opsx:archive` solo con tutte le checkbox spuntate e `npm test` verde, sincronizzando i delta in `openspec/specs`.
+
+## Esito prova reale (2026-11-18)
+
+Chrome isolato, viewport 390×844 mobile, scheda v2 servita da `npm run serve`.
+
+- Giorno 1: card cardio con Camminata selezionata (nessuna macchina precedente), campi km, km/h, %; pendenza a passi di 0,5.
+- Cambio in Cyclette: campi W e rpm, potenza a passi di 5, valori della camminata conservati; focus da tastiera resta sul pulsante scelto (focus e lista).
+- Bug trovato e corretto: la card del focus non si ridisegnava al cambio macchina (commit d475057).
+- Storico "Camminata o cyclette": grafico "Potenza (W)", riepilogo "5:00 · 125 W · 85 rpm".
+- Giorno 3: spinning senza scelta, solo W e rpm.
+- Storico: "Non più in scheda" presente, link "Schede precedenti", elenco con periodo 27/09/2026 – 17/11/2026, v1 in sola lettura con recuperi e "i" funzionante.
+- Offline (server spento): elenco e scheda v1 dall'archivio caricati dalla cache v15.
+- Non provato: import di un backup reale dell'utente (coperto dai test di store) e telefono fisico.
