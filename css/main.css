@@ -1841,3 +1841,27 @@ body::before {
     padding-top: 32px;
   }
 }
+
+/* Scelta macchina cardio (Camminata / Cyclette) */
+.machine-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.machine-toggle__option {
+  flex: 1;
+  min-height: var(--tap);
+  padding: 0 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-weight: 700;
+}
+
+.machine-toggle__option[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}

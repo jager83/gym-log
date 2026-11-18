@@ -1,6 +1,6 @@
 // Controlli condivisi tra la vista lista (session.js) e la vista focus (focus.js): stepper −/+,
 // faccine (o "Fatto"), pulsante "i", testi del target, pressione prolungata, conferma "Termina".
-import { countKey } from '../program.js';
+import { CARDIO_MACHINES, countKey } from '../program.js';
 import { isDone, setOutcome } from '../metrics.js';
 import { DONE_EFFORT, EFFORTS, EFFORT_LABELS, finishSession, hasDoneSets, stepValue, updateSet } from '../session.js';
 import { escapeHtml, formatDuration, formatNumber, formatRange, parseDurationMinutesInput, parseNumberInput } from '../format.js';
@@ -171,6 +171,19 @@ export const setFields = (target, set = {}) => {
   if (target.type === 'cardio') return CARDIO_FIELDS[set.machine ?? 'legacy'].map((field) => [field, FIELD_LABELS[field]]);
   if (isUnloadedBodyweight(target)) return [['reps', FIELD_LABELS.reps]];
   return [['weight', weightLabelOf(target)], ['reps', FIELD_LABELS.reps]];
+};
+
+const MACHINE_LABELS = { camminata: 'Camminata', cyclette: 'Cyclette' };
+
+// Scelta Camminata/Cyclette di una serie cardio. Assente se la scheda fissa la macchina o se la
+// serie è stata creata prima della scelta macchina (nessun machine). `name` già escapato.
+export const machineToggleHtml = (target, set, name) => {
+  if (target.type !== 'cardio' || target.machine || !set.machine) return '';
+  const buttons = CARDIO_MACHINES.map(
+    (machine) =>
+      `<button type="button" class="machine-toggle__option" data-action="machine" data-machine="${machine}" aria-pressed="${set.machine === machine}">${MACHINE_LABELS[machine]}</button>`,
+  ).join('');
+  return `<div class="machine-toggle" role="group" aria-label="Macchina ${name}">${buttons}</div>`;
 };
 
 // `name` già escapato. L'esito (colore del numero) vale solo per il campo di conteggio.

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   adviceHtml,
   fieldsHtml,
+  machineToggleHtml,
   focusTargetText,
   formatFieldValue,
   hasExerciseTexts,
@@ -154,4 +155,17 @@ test('fieldsHtml cardio: unità %, W e rpm e pendenza decimale', () => {
   assert.match(bike, />rpm</);
   assert.match(bike, /value="120" data-field="power" aria-label="potenza Corsa serie 1"/);
   assert.doesNotMatch(bike, /data-field="distance"/);
+});
+
+test('machineToggleHtml: due pulsanti con aria-pressed sulla macchina della serie', () => {
+  const html = machineToggleHtml(cardio, { machine: 'cyclette' }, 'Corsa');
+  assert.match(html, /role="group" aria-label="Macchina Corsa"/);
+  assert.match(html, /data-action="machine" data-machine="camminata" aria-pressed="false">Camminata</);
+  assert.match(html, /data-action="machine" data-machine="cyclette" aria-pressed="true">Cyclette</);
+});
+
+test('machineToggleHtml: niente scelta con macchina fissata, serie legacy o esercizio non cardio', () => {
+  assert.equal(machineToggleHtml({ ...cardio, machine: 'cyclette' }, { machine: 'cyclette' }, 'Corsa'), '');
+  assert.equal(machineToggleHtml(cardio, {}, 'Corsa'), '');
+  assert.equal(machineToggleHtml(weight, { machine: 'cyclette' }, 'Panca'), '');
 });

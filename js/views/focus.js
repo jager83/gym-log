@@ -9,6 +9,7 @@ import {
   extendRest,
   restRemainingMs,
   restStatus,
+  setMachine,
   setSidesAuto,
   setSound,
 } from '../session.js';
@@ -35,6 +36,7 @@ import {
   fieldsHtml,
   focusTargetText,
   infoButtonHtml,
+  machineToggleHtml,
   normalizeInput,
   outcomeSlotHtml,
   setFields,
@@ -147,7 +149,7 @@ const controlsHtml = (session, settings, exerciseId, setIndex, name, now) => {
       ? timerPanelHtml(timerText(session, now), '', true)
       : timerPanelHtml(formatDuration(set.duration ?? 0), '', false);
     const buttons = timed ? `<div class="focus-card__actions">${timerButtonsHtml(session, phase)}</div>` : start;
-    return `${panel}${buttons}<div class="focus-card__fields">${fieldsHtml(target, set, name, number, extraFields)}</div>`;
+    return `${machineToggleHtml(target, set, name)}${panel}${buttons}<div class="focus-card__fields">${fieldsHtml(target, set, name, number, extraFields)}</div>`;
   }
 
   return `<div class="focus-card__fields">${fieldsHtml(target, set, name, number)}</div>`;
@@ -418,6 +420,9 @@ export const renderFocus = (root, ctx, initialBlock) => {
     if (action === 'effort') {
       const { exerciseId, setIndex } = setTargetOf(target);
       ctx.commit(toggleEffort(state, exerciseId, setIndex, target.dataset.effort, now));
+    } else if (action === 'machine') {
+      const { exerciseId, setIndex } = setTargetOf(target);
+      ctx.commit(setMachine(state, exerciseId, setIndex, target.dataset.machine));
     } else if (action === 'prev' || action === 'next') {
       moveBy(action === 'prev' ? -1 : 1);
     } else if (action === 'timer-start') {
