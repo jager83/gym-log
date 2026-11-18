@@ -9,6 +9,7 @@ export const METRIC_LABELS = {
   time: 'Durata massima (s)',
   cardioDistance: 'Distanza (km)',
   cardioDuration: 'Durata (min)',
+  cardioPower: 'Potenza (W)',
 };
 
 export const isDone = (set) => set.effort !== null && set.effort !== undefined;
@@ -70,14 +71,17 @@ const metricKind = (type, bodyWeight, assisted) => {
   return 'reps';
 };
 
-// Metrica di una sessione per un esercizio cardio: distanza massima delle serie fatte se almeno
-// una ne ha una; altrimenti durata massima, convertita in minuti (round1).
+// Metrica di una sessione per un esercizio cardio, secondo la macchina della prima serie fatta
+// (null per le serie salvate prima della scelta macchina): potenza massima per la cyclette,
+// distanza massima per camminata e serie vecchie; altrimenti durata massima in minuti (round1).
 const cardioMetric = (sets) => {
   const doneSets = sets.filter(isDone);
-  const distances = doneSets.map((set) => set.distance).filter((value) => typeof value === 'number');
-  if (distances.length) return { metric: 'distance', value: Math.max(...distances) };
+  const machine = doneSets[0]?.machine ?? null;
+  const primary = machine === 'cyclette' ? 'power' : 'distance';
+  const values = doneSets.map((set) => set[primary]).filter((value) => typeof value === 'number');
+  if (values.length) return { machine, metric: primary, value: Math.max(...values) };
   const durations = doneSets.map((set) => set.duration).filter((value) => typeof value === 'number');
-  return { metric: 'duration', value: durations.length ? round1(Math.max(...durations) / 60) : null };
+  return { machine, metric: 'duration', value: durations.length ? round1(Math.max(...durations) / 60) : null };
 };
 
 export const exerciseHistory = (sessions, exerciseId) =>
@@ -89,8 +93,9 @@ export const exerciseHistory = (sessions, exerciseId) =>
       const bodyWeight = session.bodyWeight ?? null;
       const category = target.category ?? 'forza';
       if (target.type === 'cardio') {
-        const { metric, value } = cardioMetric(sets);
+        const { machine, metric, value } = cardioMetric(sets);
         return {
+          machine,
           sessionId: session.id,
           date: session.endedAt,
           name: target.name,
@@ -119,8 +124,7 @@ export const exerciseHistory = (sessions, exerciseId) =>
 
 // Serie del grafico storico: per bodyweight, se lo storico contiene almeno una voce con 1RM
 // (peso corporeo + zavorra), usa solo quelle con la relativa etichetta; altrimenti le ripetizioni.
-// Per cardio, se almeno una voce ha la distanza usa solo quelle con la distanza; altrimenti la
-// durata (minuti). Per weight assistito, 1RM sul carico effettivo (peso corporeo − assistenza) se
+// Per cardio vedi il blocco dedicato (macchina dell'ultima voce). Per weight assistito, 1RM sul carico effettivo (peso corporeo − assistenza) se
 // almeno una voce ce l'ha, altrimenti l'assistenza. Per gli esercizi con category diversa da forza (stretching/mobilita) nessun
 // grafico. Per gli altri tipi, l'etichetta corrente. Solo punti con value non null; null se
 // nessuno resta.
@@ -141,10 +145,15 @@ export const chartSeries = (history) => {
     label = hasLoad ? METRIC_LABELS.assistedLoad : METRIC_LABELS.assistance;
     entries = history.filter((item) => item.metric === (hasLoad ? '1rm' : 'assistance'));
   }
+  // Cardio: solo le voci della macchina dell'ultima voce; potenza (cyclette) o distanza se almeno
+  // una voce ce l'ha, altrimenti la durata.
   if (type === 'cardio') {
-    const hasDistance = history.some((item) => item.metric === 'distance');
-    label = hasDistance ? METRIC_LABELS.cardioDistance : METRIC_LABELS.cardioDuration;
-    entries = history.filter((item) => item.metric === (hasDistance ? 'distance' : 'duration'));
+    const machine = history.at(-1).machine ?? null;
+    const sameMachine = history.filter((item) => (item.machine ?? null) === machine);
+    const primary = machine === 'cyclette' ? 'power' : 'distance';
+    const hasPrimary = sameMachine.some((item) => item.metric === primary);
+    label = hasPrimary ? METRIC_LABELS[primary === 'power' ? 'cardioPower' : 'cardioDistance'] : METRIC_LABELS.cardioDuration;
+    entries = sameMachine.filter((item) => item.metric === (hasPrimary ? primary : 'duration'));
   }
   const valued = entries.filter((item) => item.value !== null);
   const points = valued.map((item) => ({ date: item.date, value: item.value }));

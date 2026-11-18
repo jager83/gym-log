@@ -385,3 +385,45 @@ test('retiredExercises ignora gli esercizi fuori scheda senza serie fatte', () =
   ];
   assert.deepEqual(retiredExercises(program(), withSkipped), [{ id: 'stacco', name: 'Stacco' }]);
 });
+
+const cardioSession = (id, endedAt, set) => ({ id, workoutId: 'D', endedAt, targets: { corsa: cardioTarget }, entries: { corsa: [set] } });
+
+test('exerciseHistory: cardio riporta la macchina; cyclette usa la potenza massima', () => {
+  const history = exerciseHistory([
+    cardioSession('c1', '2026-11-20T19:00:00.000Z', { machine: 'cyclette', duration: 900, power: 120, cadence: 85, effort: 'giusta' }),
+    cardioSession('c2', '2026-11-22T19:00:00.000Z', { machine: 'camminata', duration: 600, distance: 0.8, effort: 'giusta' }),
+    cardioSession('c3', '2026-11-24T19:00:00.000Z', { duration: 600, distance: 0.6, level: 3, effort: 'giusta' }),
+  ], 'corsa');
+  assert.deepEqual(history.map((item) => [item.machine, item.metric, item.value]), [
+    ['cyclette', 'power', 120],
+    ['camminata', 'distance', 0.8],
+    [null, 'distance', 0.6],
+  ]);
+});
+
+test('chartSeries: cardio usa solo la macchina dell\'ultima voce, potenza per la cyclette', () => {
+  const series = chartSeries([
+    { type: 'cardio', category: 'forza', machine: 'cyclette', metric: 'power', date: '2026-11-20T19:00:00.000Z', value: 110 },
+    { type: 'cardio', category: 'forza', machine: 'camminata', metric: 'distance', date: '2026-11-21T19:00:00.000Z', value: 0.8 },
+    { type: 'cardio', category: 'forza', machine: 'cyclette', metric: 'power', date: '2026-11-22T19:00:00.000Z', value: 120 },
+  ]);
+  assert.equal(series.label, 'Potenza (W)');
+  assert.deepEqual(series.points.map((point) => point.value), [110, 120]);
+});
+
+test('chartSeries: ultima voce camminata in uno storico misto usa la distanza delle sole camminate', () => {
+  const series = chartSeries([
+    { type: 'cardio', category: 'forza', machine: 'camminata', metric: 'distance', date: '2026-11-20T19:00:00.000Z', value: 0.7 },
+    { type: 'cardio', category: 'forza', machine: 'cyclette', metric: 'power', date: '2026-11-21T19:00:00.000Z', value: 120 },
+    { type: 'cardio', category: 'forza', machine: 'camminata', metric: 'distance', date: '2026-11-22T19:00:00.000Z', value: 0.8 },
+  ]);
+  assert.equal(series.label, METRIC_LABELS.cardioDistance);
+  assert.deepEqual(series.points.map((point) => point.value), [0.7, 0.8]);
+});
+
+test('chartSeries: cyclette senza potenza ricade sulla durata', () => {
+  const series = chartSeries([
+    { type: 'cardio', category: 'forza', machine: 'cyclette', metric: 'duration', date: '2026-11-20T19:00:00.000Z', value: 15 },
+  ]);
+  assert.equal(series.label, METRIC_LABELS.cardioDuration);
+});

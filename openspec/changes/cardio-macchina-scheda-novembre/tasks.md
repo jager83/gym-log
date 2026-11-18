@@ -13,7 +13,7 @@ Ogni task di codice: test prima (visto fallire), codice minimo, `npm test` verde
 ## 2. Riepilogo, storico e grafico
 
 - [x] 2.1 `formatSet` per macchina. RED: in `test/format.test.js` "camminata → '10:00 · 1,2 km · 6,5 km/h · 4,5%'", "cyclette → '15:00 · 120 W · 85 rpm' anche con distance valorizzata", "legacy invariato con liv"; falliscono sui casi nuovi. GREEN: `formatSet` in `js/format.js`.
-- [ ] 2.2 Metrica e grafico per macchina. RED: in `test/metrics.test.js` "exerciseHistory cardio riporta machine; cyclette usa la potenza massima", "chartSeries filtra sulla macchina dell'ultima voce con etichetta 'Potenza (W)' o 'Distanza (km)'", "cyclette senza potenza ricade su 'Durata (min)'", "storico solo legacy invariato"; falliscono sulla potenza. GREEN: `cardioMetric`, `exerciseHistory`, `chartSeries`, `METRIC_LABELS.cardioPower` in `js/metrics.js`.
+- [x] 2.2 Metrica e grafico per macchina. RED: in `test/metrics.test.js` "exerciseHistory cardio riporta machine; cyclette usa la potenza massima", "chartSeries filtra sulla macchina dell'ultima voce con etichetta 'Potenza (W)' o 'Distanza (km)'", "cyclette senza potenza ricade su 'Durata (min)'", "storico solo legacy invariato"; falliscono sulla potenza. GREEN: `cardioMetric`, `exerciseHistory`, `chartSeries`, `METRIC_LABELS.cardioPower` in `js/metrics.js`.
 - [ ] 2.3 Storico e riepiloghi delle viste. Verifica: `test/history.test.js` e `test/days.test.js` con una sessione cyclette mostrano "120 W · 85 rpm"; aggiungere il caso se le viste non passano già per `formatSet`, altrimenti nessuna modifica (annotarlo nel commit del task 2.2).
 
 ## 3. Interfaccia cardio
