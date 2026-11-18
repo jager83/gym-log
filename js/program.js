@@ -173,6 +173,11 @@ export const normalizeProgram = (raw) => {
   const defaultSets = requirePositiveInt(raw.defaultSets ?? DEFAULTS.defaultSets, 'defaultSets');
   const defaultRest = requirePositiveInt(raw.defaultRest ?? DEFAULTS.defaultRest, 'defaultRest');
   if (!Array.isArray(raw.workouts) || raw.workouts.length === 0) throw new ProgramError('workouts vuoto');
+  for (const field of ['name', 'from']) {
+    if (raw[field] !== undefined && (typeof raw[field] !== 'string' || raw[field] === '')) {
+      throw new ProgramError(`${field} scheda non valido`);
+    }
+  }
 
   const seenWorkouts = new Set();
   const seenExercises = new Map();
@@ -182,7 +187,14 @@ export const normalizeProgram = (raw) => {
 
   propagateTexts(workouts);
 
-  return { version, defaultSets, defaultRest, workouts };
+  return {
+    version,
+    ...(raw.name !== undefined ? { name: raw.name } : {}),
+    ...(raw.from !== undefined ? { from: raw.from } : {}),
+    defaultSets,
+    defaultRest,
+    workouts,
+  };
 };
 
 const TEXT_FIELDS = ['description', 'steps', 'tips'];

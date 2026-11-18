@@ -352,3 +352,16 @@ test('cardio: machine sconosciuta', () => {
 test('machine ammessa solo per type cardio', () => {
   expectError((r) => { r.workouts[0].blocks[0].exercises[0].machine = 'cyclette'; }, 'esercizio panca: machine ammessa solo per type cardio');
 });
+
+test('normalizeProgram: name e from facoltativi restituiti se presenti', () => {
+  const raw = { ...rawProgram(), name: 'Scheda novembre 2026', from: '2026-11-18' };
+  const p = normalizeProgram(raw);
+  assert.equal(p.name, 'Scheda novembre 2026');
+  assert.equal(p.from, '2026-11-18');
+  assert.equal('name' in program(), false);
+});
+
+test('normalizeProgram: name o from non stringa', () => {
+  expectError((r) => { r.name = 3; }, 'name scheda non valido');
+  expectError((r) => { r.from = ''; }, 'from scheda non valido');
+});
